@@ -1,0 +1,89 @@
+/* ================================================================
+   DANCE FILMS — DESIGN SYSTEM TOKENS
+   Ported verbatim from the Claude Design handoff. Everything visual
+   references these tokens; per-school branding overrides --brand /
+   --brand-2 (and friends) at runtime from the DB, so the same
+   components render as any school's theme.
+
+   Fonts come from next/font (see app/layout.tsx), exposed as
+   --font-display / --font-body. Liberty defaults: Big Shoulders
+   Display (display) + Hanken Grotesk (body/ui).
+   ================================================================ */
+:root {
+  /* type roles — fed by next/font variables, with safe fallbacks */
+  --font-display: var(--font-big-shoulders), "Big Shoulders Display", sans-serif;
+  --font-body: var(--font-hanken), "Hanken Grotesk", system-ui, sans-serif;
+  --font-ui: var(--font-hanken), "Hanken Grotesk", system-ui, sans-serif;
+  --disp: var(--font-display);
+  --body: var(--font-body);
+
+  /* type scale */
+  --fs-display: 96px; --fs-h1: 44px; --fs-h2: 32px; --fs-h3: 24px;
+  --fs-title: 19px; --fs-body: 15.5px; --fs-meta: 12.5px; --fs-label: 11px;
+  --track-title: .01em; --track-label: .14em;
+
+  /* brand palette (per-school: --brand + --brand-2 overridden at runtime) */
+  --brand: #13D1C4; --brand-2: #43576E; --ink: #0B171B; --paper: #F5F1E8; --accent-warm: #E8A54B;
+
+  /* spacing scale */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+
+  /* radius scale */
+  --r-sm: 8px; --r-md: 10px; --r-lg: 14px; --r-xl: 20px; --r-pill: 999px;
+}
+
+/* ---- Customer platform skin (light) ---- */
+[data-app] {
+  --accent: var(--brand); --on-accent: #ffffff;
+  --surface: #ffffff; --surface-2: #F4F6F8; --text: #1B2A33; --text-2: #5C6B75; --border: #E4E9ED;
+  --success: #0B8F86; --danger: #D64D4D;
+  --accent-tint: color-mix(in srgb, var(--accent) 13%, transparent);
+  --success-tint: color-mix(in srgb, var(--success) 15%, transparent);
+  --num: var(--accent);
+  --desk: radial-gradient(1200px 640px at 50% -10%, #dde5e9, #eef2f4 62%);
+  --e-1: 0 1px 3px rgba(30,45,58,.14);
+  --e-2: 0 12px 30px -18px rgba(30,45,58,.28);
+  --e-3: 0 40px 90px -30px rgba(30,45,58,.4);
+  --shadow: var(--e-3); --card-shadow: var(--e-2);
+}
+
+/* ---- Customer platform skin (dark) ---- */
+[data-app][data-theme="dark"] {
+  --surface: #15232E; --surface-2: #1E2E3A; --text: #EAF0F4; --text-2: #93A3AE; --border: #2A3A46;
+  --paper: #1E2E3A; --success: #2AD4C6; --danger: #F06A6A;
+  --desk: radial-gradient(1200px 640px at 50% -10%, #16323a, #0c1922 62%);
+  --e-1: 0 1px 3px rgba(0,0,0,.5);
+  --e-2: 0 14px 34px -20px rgba(0,0,0,.55);
+  --e-3: 0 40px 90px -26px rgba(0,0,0,.7);
+}
+
+/* ---- Admin skin (neutral / functional, same token roots) ---- */
+[data-admin] {
+  --accent: var(--brand); --on-accent: #fff;
+  --app-bg: #EEF1F4; --surface: #fff; --surface-2: #F5F7F9; --sidebar: #1A2A33;
+  --text: #1B2A33; --text-2: #5C6B75; --text-3: #8A97A0; --border: #E4E9ED; --border-2: #D3DBE0;
+  --success: #0B8F86; --success-tint: #E3F5F2; --warn: #B8791C; --warn-tint: #FBF0DC; --danger: #D64D4D; --danger-tint: #FBE7E7;
+  --accent-tint: color-mix(in srgb, var(--accent) 12%, #fff);
+  --e-1: 0 1px 2px rgba(20,35,45,.08); --e-2: 0 4px 16px -6px rgba(20,35,45,.18);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: var(--body);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { opacity: .85; }
+::selection { background: var(--accent); color: #fff; }
+input, textarea, select { font-family: inherit; }
+input::placeholder, textarea::placeholder { color: var(--text-2); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes ovIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ovUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; transition: none !important; }
+}
