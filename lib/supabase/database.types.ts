@@ -336,6 +336,7 @@ export type Database = {
           intro_text: string | null
           price_pence: number
           school_id: string
+          season: string | null
           show_year: number | null
           slug: string
           sort_order: number
@@ -350,6 +351,7 @@ export type Database = {
           intro_text?: string | null
           price_pence?: number
           school_id: string
+          season?: string | null
           show_year?: number | null
           slug: string
           sort_order?: number
@@ -364,6 +366,7 @@ export type Database = {
           intro_text?: string | null
           price_pence?: number
           school_id?: string
+          season?: string | null
           show_year?: number | null
           slug?: string
           sort_order?: number

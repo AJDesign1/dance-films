@@ -1,0 +1,89 @@
+/* Shop layout — responsive bits that can't live in inline styles.
+   All colours/sizes reference the global token variables. */
+
+.headBar {
+  display: flex;
+  align-items: center;
+  height: 88px;
+  background: linear-gradient(105deg, var(--brand-2) 0%, var(--accent) 100%);
+}
+.headInner {
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.logo { height: 104px; filter: brightness(0) invert(1); }
+.logoWord {
+  font-family: var(--disp);
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.body {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px 40px 44px;
+}
+.welcome { margin: 24px 0 46px; text-align: center; }
+.welcomeTitle {
+  font-family: var(--disp);
+  font-weight: 800;
+  font-size: 54px;
+  line-height: .94;
+  letter-spacing: .01em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 0;
+  text-wrap: balance;
+}
+
+.grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.seasonGap { margin-top: 52px; }
+.teamBreakout { margin: 52px -40px -44px; }
+
+/* Card hover (transform can't be inline; respects reduced-motion globally) */
+.cardLink { display: block; cursor: pointer; transition: transform .18s ease; }
+.cardLink:hover { transform: translateY(-4px); }
+.featuredCard { transition: transform .18s ease; }
+.featuredCard:hover { transform: translateY(-2px); }
+.team { display: flex; flex-wrap: wrap; background: var(--paper); border-top: 1px solid var(--border); }
+.teamPhoto { position: relative; flex: 1 1 300px; min-height: 340px; background: var(--surface); }
+.teamBody { flex: 1 1 360px; display: flex; flex-direction: column; justify-content: center; padding: 40px 36px; }
+.featMinH { min-height: 420px; }
+.featPad { padding: 40px; }
+.featTitle { font-size: 72px; }
+
+@media (max-width: 640px) {
+  .featMinH { min-height: 320px; }
+  .featPad { padding: 26px 22px; }
+  .featTitle { font-size: 44px; }
+}
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .headBar { height: 68px; }
+  .headInner { padding: 0 18px; }
+  .logo { height: 60px; }
+  .logoWord { font-size: 22px; }
+  .body { padding: 26px 18px 34px; }
+  .welcomeTitle { font-size: 34px; }
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .seasonGap { margin-top: 38px; }
+  .teamBreakout { margin: 34px -18px -34px; }
+}
