@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+  /* ================================================================
+     LIBERTY PLATFORM - DESIGN SYSTEM  (theme 1: "Liberty")
+     Reskin the entire product from HERE: edit these tokens, or set
+     the brandPrimary / brandSecondary / theme props per school.
+     ----------------------------------------------------------------
+     TYPE   display = Big Shoulders Display (show titles, hero)
+            body    = Hanken Grotesk (paragraphs)
+            ui      = Hanken Grotesk (labels/metadata, tracked caps)
+     COLOUR brand teal + slate, expanded with ink, paper, warm accent,
+            and semantic text / bg / surface / border / success / danger
+     SCALE  spacing (--sp-1..8) · radius (--r-sm..pill) · elevation (--e-1..3)
+     ================================================================ */
+  :root{
+    /* type roles */
+    --font-display:'Big Shoulders Display',sans-serif;
+    --font-body:'Hanken Grotesk',system-ui,sans-serif;
+    --font-ui:'Hanken Grotesk',system-ui,sans-serif;
+    --disp:var(--font-display); --body:var(--font-body);
+    /* type scale */
+    --fs-display:96px; --fs-h1:44px; --fs-h2:32px; --fs-h3:24px;
+    --fs-title:19px; --fs-body:15.5px; --fs-meta:12.5px; --fs-label:11px;
+    --track-title:.01em; --track-label:.14em;
+    /* brand palette (–accent + –brand-2 are overridden from props on [data-app]) */
+    --brand:#13D1C4; --brand-2:#43576E; --ink:#0B171B; --paper:#F5F1E8; --accent-warm:#E8A54B;
+    /* spacing scale */
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+    /* radius scale */
+    --r-sm:8px; --r-md:10px; --r-lg:14px; --r-xl:20px; --r-pill:999px;
+  }
+  [data-app]{
+    --accent:var(--brand); --on-accent:#ffffff;
+    --surface:#ffffff; --surface-2:#F4F6F8; --text:#1B2A33; --text-2:#5C6B75; --border:#E4E9ED;
+    --success:#0B8F86; --danger:#D64D4D;
+    --accent-tint:color-mix(in srgb, var(--accent) 13%, transparent);
+    --success-tint:color-mix(in srgb, var(--success) 15%, transparent);
+    --num:var(--accent);
+    --desk:radial-gradient(1200px 640px at 50% -10%, #dde5e9, #eef2f4 62%);
+    --e-1:0 1px 3px rgba(30,45,58,.14);
+    --e-2:0 12px 30px -18px rgba(30,45,58,.28);
+    --e-3:0 40px 90px -30px rgba(30,45,58,.4);
+    --shadow:var(--e-3); --card-shadow:var(--e-2);
+  }
+  [data-app][data-theme="dark"]{
+    --surface:#15232E; --surface-2:#1E2E3A; --text:#EAF0F4; --text-2:#93A3AE; --border:#2A3A46;
+    --paper:#1E2E3A; --success:#2AD4C6; --danger:#F06A6A;
+    --desk:radial-gradient(1200px 640px at 50% -10%, #16323a, #0c1922 62%);
+    --e-1:0 1px 3px rgba(0,0,0,.5);
+    --e-2:0 14px 34px -20px rgba(0,0,0,.55);
+    --e-3:0 40px 90px -26px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--body);color:var(--text);-webkit-font-smoothing:antialiased;background:#0f1a22}
+  a{color:var(--accent);text-decoration:none} a:hover{opacity:.85}
+  ::selection{background:var(--accent);color:#fff}
+  input{font-family:inherit}
+  input::placeholder{color:var(--text-2)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes ovIn{from{opacity:0}to{opacity:1}}
+  @keyframes ovUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition:none!important}}
+</style>
+</helmet>
+
+<div data-app data-theme="{{ theme }}" style="--accent:{{ brandPrimary }};--brand-2:{{ brandSecondary }};min-height:100vh;background:var(--desk)">
+
+  <!-- prototype toolbar -->
+  <div style="position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 18px;height:54px;background:rgba(15,26,34,.92);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.08)">
+    <div style="display:flex;align-items:center;gap:11px;min-width:0">
+      <img src="uploads/Liberty-logo.svg" alt="Liberty" style="height:18px;filter:brightness(0) invert(1)">
+      <span style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8aa0b3;border:1px solid rgba(255,255,255,.16);padding:3px 8px;border-radius:5px">Prototype</span>
+    </div>
+    <div style="display:flex;gap:4px;background:rgba(255,255,255,.06);padding:4px;border-radius:9px">
+      <button onClick="{{ goAccess }}" style="{{ tAccess }}">Sign in</button>
+      <button onClick="{{ goShop }}" style="{{ tShop }}">Shows</button>
+      <button onClick="{{ goShowTab }}" style="{{ tShow }}">Show</button>
+    </div>
+    <div style="display:flex;gap:4px;background:rgba(255,255,255,.06);padding:4px;border-radius:9px">
+      <button onClick="{{ setMobile }}" style="{{ devMobStyle }}">Phone</button>
+      <button onClick="{{ setDesktop }}" style="{{ devDeskStyle }}">Desktop</button>
+    </div>
+  </div>
+
+  <!-- stage -->
+  <div style="padding:0;background:var(--surface);min-height:calc(100vh - 54px)">
+    <div style="margin:0 auto;{{ frameStyle }}">
+
+      <!-- ============ SIGN IN ============ -->
+      <sc-if value="{{ isAccess }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-wrap:wrap;min-height:{{ accessMinH }};animation:fadeUp .5s ease both">
+        <div style="position:relative;flex:1 1 380px;min-height:280px;background:var(--surface-2)">
+          <image-slot id="access-photo" shape="rect" fit="cover" placeholder="Drop a Liberty show / studio photo"></image-slot>
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(15,26,34,.5) 0%, rgba(15,26,34,.05) 32%, rgba(15,26,34,.72) 100%);pointer-events:none"></div>
+          <img src="uploads/Liberty-logo.svg" alt="Liberty Dance Company" style="position:absolute;top:30px;left:30px;height:104px;filter:brightness(0) invert(1);pointer-events:none">
+          <div style="position:absolute;left:30px;right:30px;bottom:36px;pointer-events:none">
+            <div style="font-family:var(--disp);font-weight:800;font-size:56px;line-height:.92;letter-spacing:.01em;text-transform:uppercase;color:#fff;max-width:16ch">Relive the show, whenever you like.</div>
+            <p style="margin:18px 0 0;color:rgba(255,255,255,.9);font-size:17px;line-height:1.5;max-width:42ch">Sign in to watch your dance school's professionally filmed performances - the full show and every dance.</p>
+          </div>
+        </div>
+        <div style="flex:1 1 360px;display:flex;align-items:center;justify-content:center;padding:44px 34px;background:var(--surface)">
+          <div style="width:100%;max-width:372px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Liberty Dance Company</div>
+            <sc-if value="{{ notSent }}" hint-placeholder-val="{{ true }}">
+              <h1 style="font-family:var(--disp);font-weight:800;font-size:44px;line-height:.92;letter-spacing:.01em;text-transform:uppercase;color:var(--text);margin:18px 0 10px">Welcome back</h1>
+              <p style="margin:0 0 26px;color:var(--text-2);font-size:15.5px;line-height:1.55">Liberty is invite-only. Enter your email and we'll send you a secure link to sign in - no password to remember.</p>
+              <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-2);margin-bottom:9px">Email address</label>
+              <input type="email" value="{{ email }}" onChange="{{ onEmail }}" onKeyDown="{{ onEmailKey }}" placeholder="you@example.com" style="width:100%;padding:15px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface-2);font-size:16px;font-weight:500;color:var(--text);outline:none" style-focus="border-color:var(--accent)">
+              <div style="{{ emailMsgStyle }}">{{ emailMsg }}</div>
+              <button onClick="{{ sendLink }}" style="width:100%;margin-top:14px;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:15px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:.04em;text-transform:uppercase;cursor:pointer" style-hover="filter:brightness(.94)">Send me a login link
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h9M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <p style="margin:16px 0 0;display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--text-2);line-height:1.5">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="1.5" style="flex:0 0 auto;margin-top:1px"><path d="M8 1.8l5 2v3.4c0 3-2 5.2-5 6.4-3-1.2-5-3.4-5-6.4V3.8l5-2z" stroke-linejoin="round"/><path d="M5.8 8l1.6 1.6L10.4 6.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                No passwords, ever. The link signs you in on this device - we'll never share your email.</p>
+            </sc-if>
+            <sc-if value="{{ sent }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:20px;width:56px;height:56px;border-radius:var(--r-lg);background:var(--accent-tint);display:flex;align-items:center;justify-content:center">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5L12 12l8.5-5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <h1 style="font-family:var(--disp);font-weight:800;font-size:40px;line-height:.94;letter-spacing:.01em;text-transform:uppercase;color:var(--text);margin:18px 0 10px">Check your inbox</h1>
+              <p style="margin:0 0 24px;color:var(--text-2);font-size:15.5px;line-height:1.55">We've sent a login link to <strong style="color:var(--text)">{{ email }}</strong>. Open it on this device to sign in.</p>
+              <button onClick="{{ demoOpen }}" style="width:100%;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:15px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-family:var(--disp);font-weight:700;font-size:17px;letter-spacing:.04em;text-transform:uppercase;cursor:pointer" style-hover="filter:brightness(.94)">Open the link (demo)
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h9M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <button onClick="{{ resetSent }}" style="width:100%;margin-top:10px;padding:13px;border-radius:10px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-family:var(--disp);font-weight:600;font-size:15px;letter-spacing:.03em;text-transform:uppercase;cursor:pointer" style-hover="border-color:var(--accent);color:var(--accent)">Use a different email</button>
+              <p style="margin:18px 0 0;text-align:center;font-size:12.5px;color:var(--text-2)">Didn't get it? Check your spam folder.</p>
+            </sc-if>
+            <sc-if value="{{ notInvited }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:20px;width:56px;height:56px;border-radius:var(--r-lg);background:var(--surface-2);display:flex;align-items:center;justify-content:center">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5" stroke-linecap="round"/><circle cx="12" cy="16" r=".8" fill="var(--text-2)" stroke="none"/></svg>
+              </div>
+              <h1 style="font-family:var(--disp);font-weight:800;font-size:38px;line-height:.94;letter-spacing:.01em;text-transform:uppercase;color:var(--text);margin:18px 0 10px">We can't find your invitation</h1>
+              <p style="margin:0 0 24px;color:var(--text-2);font-size:15.5px;line-height:1.55">There's no invitation for <strong style="color:var(--text)">{{ email }}</strong> yet. Liberty is invite-only - please contact Liberty Dance Company and we'll happily add you to the list.</p>
+              <a href="mailto:hello@libertydance.co.uk" style="width:100%;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:15px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-family:var(--disp);font-weight:700;font-size:17px;letter-spacing:.04em;text-transform:uppercase;text-decoration:none;cursor:pointer" style-hover="filter:brightness(.94)">Contact Liberty Dance Co.</a>
+              <button onClick="{{ resetSent }}" style="width:100%;margin-top:10px;padding:13px;border-radius:10px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-family:var(--disp);font-weight:600;font-size:15px;letter-spacing:.03em;text-transform:uppercase;cursor:pointer" style-hover="border-color:var(--accent);color:var(--accent)">Try another email</button>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ SHOWS ============ -->
+      <sc-if value="{{ isShop }}" hint-placeholder-val="{{ true }}">
+      <div style="background:var(--surface);animation:fadeUp .5s ease both">
+        <div style="{{ shopHeadBar }};background:linear-gradient(105deg,var(--brand-2) 0%,var(--accent) 100%)">
+         <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;{{ headInner }}">
+           <img src="uploads/Liberty-logo.svg" alt="Liberty Dance Company" style="height:{{ headLogo }};filter:brightness(0) invert(1)">
+          <div style="font-family:var(--disp);font-weight:800;font-size:26px;letter-spacing:.01em;text-transform:uppercase;color:#fff">Welcome back, {{ firstName }}</div>
+         </div>
+        </div>
+
+        <div style="{{ shopBodyPad }}">
+          <div style="margin:24px 0 46px;text-align:center">
+            <h1 style="font-family:var(--disp);font-weight:800;font-size:{{ welcomeSize }};line-height:.94;letter-spacing:.01em;text-transform:uppercase;color:var(--text);margin:0;text-wrap:balance">Your Liberty Dance Company shows</h1>
+            <p style="margin:12px 0 0;color:var(--accent);font-size:21px;font-weight:600">Ready to watch whenever you are.</p>
+          </div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">Latest production</div>
+          <div onClick="{{ featured.onCta }}" style="position:relative;border-radius:16px;overflow:hidden;cursor:pointer;min-height:{{ featMinH }};display:flex;background:var(--surface-2);box-shadow:var(--card-shadow)" style-hover="transform:translateY(-2px)">
+            <div style="position:absolute;inset:0"><image-slot id="featured" shape="rect" fit="cover" placeholder="Drop the latest show's key artwork"></image-slot></div>
+            <div style="position:absolute;inset:0;background:linear-gradient(90deg, rgba(12,20,26,.9) 0%, rgba(12,20,26,.5) 46%, rgba(12,20,26,.05) 82%);pointer-events:none"></div>
+            <div style="position:relative;align-self:flex-end;padding:{{ featPad }};max-width:600px">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#fff;opacity:.85">{{ featured.tag }} · {{ featured.year }}</div>
+                <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:var(--r-sm)">{{ featured.mediaLabel }}</span>
+              </div>
+              <h2 style="font-family:var(--disp);font-weight:800;font-size:{{ featTitle }};line-height:.9;letter-spacing:.01em;text-transform:uppercase;color:#fff;margin:10px 0 18px">{{ featured.title }}</h2>
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px">
+                <sc-if value="{{ featured.owned }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:9px;padding:13px 20px;border-radius:10px;background:var(--accent);color:#fff;font-family:var(--disp);font-weight:700;font-size:16px;letter-spacing:.04em;text-transform:uppercase">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l9 5-9 5V3z"/></svg>Watch the full show</span>
+                  <span style="font-size:13.5px;font-weight:600;color:#dbe3ea">Yours to rewatch anytime</span></sc-if>
+                <sc-if value="{{ featured.notOwned }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:9px;padding:13px 20px;border-radius:10px;background:#fff;color:var(--ink);font-family:var(--disp);font-weight:700;font-size:16px;letter-spacing:.04em;text-transform:uppercase">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="14" r="1"/><circle cx="13" cy="14" r="1"/><path d="M1 1.5h2l1.8 8.5h8.2l1.4-6H4.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Buy · {{ featured.price }}</span>
+                  <span style="font-size:13.5px;font-weight:600;color:#dbe3ea">One-time purchase · yours forever</span></sc-if>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin:{{ seasonGap }} 0 18px">
+            <h3 style="font-family:var(--disp);font-weight:800;font-size:30px;letter-spacing:.01em;text-transform:uppercase;color:var(--text);margin:0">All shows</h3>
+            <p style="margin:5px 0 0;color:var(--text-2);font-size:14.5px">Every show we've filmed, ready to watch whenever you like.</p>
+          </div>
+
+          <div style="{{ showsGrid }}">
+            <sc-for list="{{ restShows }}" as="show" hint-placeholder-count="5">
+              <div onClick="{{ show.onCta }}" style="cursor:pointer" style-hover="transform:translateY(-4px)">
+                <div style="position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--card-shadow)">
+                  <image-slot id="poster-{{ show.id }}" shape="rect" fit="cover" placeholder="Show artwork"></image-slot>
+                  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,20,26,0) 42%,rgba(12,20,26,.88) 100%);pointer-events:none"></div>
+                  <div style="position:absolute;top:10px;right:10px;display:flex;gap:5px;pointer-events:none">
+                    <sc-if value="{{ show.hasVideo }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(12,20,26,.72);backdrop-filter:blur(3px);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 7px;border-radius:var(--r-sm)"><svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l9 5-9 5V3z"/></svg>Video</span></sc-if>
+                    <sc-if value="{{ show.hasPhotos }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(12,20,26,.72);backdrop-filter:blur(3px);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 7px;border-radius:var(--r-sm)"><svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="11" height="11" rx="2"/><path d="M17 7v9H8"/></svg>Photos</span></sc-if>
+                  </div>
+                  <sc-if value="{{ show.owned }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;left:10px;display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.94);color:var(--success);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 9px;border-radius:7px;pointer-events:none"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round" stroke-linejoin="round"/></svg>Owned</span></sc-if>
+                  <div style="position:absolute;left:13px;right:13px;bottom:13px;pointer-events:none">
+                    <div style="font-family:var(--disp);font-weight:800;font-size:38px;letter-spacing:.01em;text-transform:uppercase;color:#fff;line-height:.88">{{ show.title }}</div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px">
+                      <span style="font-size:12.5px;font-weight:700;color:#fff">{{ show.year }} · {{ show.price }}</span>
+                      <sc-if value="{{ show.owned }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:var(--r-sm);background:var(--accent);color:#fff;font-family:var(--disp);font-weight:700;font-size:13px;letter-spacing:.03em;text-transform:uppercase"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l9 5-9 5V3z"/></svg>Watch</span></sc-if>
+                      <sc-if value="{{ show.notOwned }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:var(--r-sm);background:#fff;color:var(--ink);font-family:var(--disp);font-weight:700;font-size:13px;letter-spacing:.03em;text-transform:uppercase"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="14" r="1"/><circle cx="13" cy="14" r="1"/><path d="M1 1.5h2l1.8 8.5h8.2l1.4-6H4.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Buy</span></sc-if>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- meet the media team -->
+          <div style="{{ teamBreakout }}">
+            <div style="display:flex;flex-wrap:wrap;background:var(--paper);border-top:1px solid var(--border)">
+              <div style="position:relative;flex:1 1 300px;min-height:340px;background:var(--surface)">
+                <image-slot id="team-alex" shape="rect" fit="cover" placeholder="Headshot of Alex Jarvis"></image-slot>
+              </div>
+              <div style="flex:1 1 360px;display:flex;flex-direction:column;justify-content:center;padding:40px 36px">
+                <div style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Meet the media team</div>
+                <h2 style="font-family:var(--disp);font-weight:800;font-size:34px;letter-spacing:.01em;text-transform:uppercase;color:var(--text);margin:12px 0 4px">{{ mediaLead.name }}</h2>
+                <div style="font-size:13px;font-weight:600;color:var(--text-2)">{{ mediaLead.role }}</div>
+                <p style="margin:16px 0 0;color:var(--text-2);font-size:15px;line-height:1.6;max-width:52ch">{{ mediaLead.bio }}</p>
+                <div style="display:flex;align-items:flex-start;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+                  <span style="flex:0 0 auto;width:7px;height:7px;border-radius:var(--r-pill);background:var(--accent);margin-top:7px"></span>
+                  <span style="font-size:14px;color:var(--text);line-height:1.5">{{ mediaLead.approach }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ SHOW ============ -->
+      <sc-if value="{{ isShow }}" hint-placeholder-val="{{ true }}">
+      <div style="background:var(--surface);animation:fadeUp .5s ease both">
+        <div style="{{ showHeadBar }};position:absolute;left:0;right:0;z-index:5">
+         <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;{{ headInner }}">
+           <img src="uploads/Liberty-logo.svg" alt="Liberty Dance Company" style="height:{{ showHeadLogo }};filter:brightness(0) invert(1)">
+          <button onClick="{{ goShop }}" style="display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:9px 14px;border-radius:var(--r-sm);border:1px solid rgba(255,255,255,.32);background:rgba(12,20,26,.4);backdrop-filter:blur(6px);color:#fff;cursor:pointer" style-hover="background:rgba(12,20,26,.6)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13 8H4M7 4L3 8l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>All shows</button>
+         </div>
+        </div>
+
+        <div style="position:relative;min-height:{{ heroMinH }};display:flex;background:var(--surface-2);overflow:hidden">
+          <div style="position:absolute;inset:0"><image-slot id="hero" shape="rect" fit="cover" placeholder="Drop this show's hero artwork"></image-slot></div>
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,20,26,.12) 0%,rgba(12,20,26,.4) 48%,rgba(12,20,26,.92) 100%);pointer-events:none"></div>
+          <div style="position:relative;align-self:flex-end;padding:{{ heroPad }};max-width:760px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#fff;opacity:.85">{{ show.tag }} · {{ show.year }}</div>
+            <h1 style="font-family:var(--disp);font-weight:800;font-size:{{ heroTitle }};line-height:.86;letter-spacing:.01em;text-transform:uppercase;color:#fff;margin:12px 0 16px">{{ show.title }}</h1>
+            <div style="display:flex;flex-wrap:wrap;gap:22px;align-items:center;font-size:13px;font-weight:600;color:#c9d4da">
+              <span>Runtime <span style="color:#fff">1h 48m</span></span>
+              <span style="opacity:.4">·</span>
+              <span><span style="color:#fff">{{ totalPerfs }}</span> performances</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="{{ showBodyPad }}">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">The full show</div>
+          <div style="position:relative;aspect-ratio:16/9;border-radius:var(--r-lg);overflow:hidden;background:#0a1119;box-shadow:var(--card-shadow)">
+            <image-slot id="fullshow" shape="rect" fit="cover" placeholder="Full-show poster frame"></image-slot>
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,17,25,.2),rgba(10,17,25,.6));pointer-events:none"></div>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+              <div style="width:74px;height:74px;border-radius:var(--r-pill);background:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow:0 12px 30px rgba(0,0,0,.35)">
+                <svg width="26" height="26" viewBox="0 0 16 16" fill="#fff"><path d="M4 3l9 5-9 5V3z"/></svg></div>
+            </div>
+            <div style="position:absolute;left:20px;bottom:18px;pointer-events:none">
+              <div style="font-family:var(--disp);font-weight:700;font-size:22px;letter-spacing:.02em;text-transform:uppercase;color:#fff">{{ show.title }} {{ show.year }} - full show</div>
+              <div style="font-size:12.5px;color:#c0ccd6;margin-top:5px">1h 48m</div>
+            </div>
+          </div>
+          <button style="margin-top:14px;display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:10px 15px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer" style-hover="border-color:var(--accent);color:var(--accent)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v7m0 0l3-3m-3 3L5 6M3 13h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Download full show</button>
+
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:{{ seasonGap }} 0 6px">
+            <h2 style="font-family:var(--disp);font-weight:800;font-size:32px;letter-spacing:.01em;text-transform:uppercase;color:var(--text);margin:0">Performances</h2>
+            <span style="font-size:12.5px;font-weight:600;color:var(--text-2);white-space:nowrap">{{ perfCount }}</span>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0 4px">
+            <button onClick="{{ allChip.onClick }}" style="{{ allChip.style }}">All dances</button>
+            <sc-for list="{{ groupChips }}" as="chip" hint-placeholder-count="6">
+              <button onClick="{{ chip.onClick }}" style="{{ chip.style }}">{{ chip.label }} · {{ chip.count }}</button>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px">
+            <span style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-2);margin-right:2px">Style</span>
+            <sc-for list="{{ styleChips }}" as="chip" hint-placeholder-count="4">
+              <button onClick="{{ chip.onClick }}" style="{{ chip.style }}">{{ chip.label }} · {{ chip.count }}</button>
+            </sc-for>
+          </div>
+
+          <div style="{{ progGrid }}">
+            <sc-for list="{{ perfs }}" as="p" hint-placeholder-count="8">
+              <div onClick="{{ p.onClick }}" style="{{ progRow }}" style-hover="background:var(--surface-2)">
+                <div style="flex:0 0 auto;width:{{ progNumW }};font-family:var(--disp);font-weight:800;font-size:{{ progNum }};line-height:.9;color:var(--num)">{{ p.no }}</div>
+                <div style="{{ progThumb }}">
+                  <image-slot id="thumb-{{ p.id }}" shape="rect" fit="cover" placeholder="Dance"></image-slot>
+                  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,17,25,.05),rgba(10,17,25,.4));pointer-events:none"></div>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+                    <sc-if value="{{ p.showPlay }}" hint-placeholder-val="{{ true }}"><div style="width:34px;height:34px;border-radius:var(--r-pill);background:rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 16 16" fill="#1B2A33"><path d="M4 3l9 5-9 5V3z"/></svg></div></sc-if>
+                    <sc-if value="{{ p.galleryOnly }}" hint-placeholder-val="{{ false }}"><div style="width:34px;height:34px;border-radius:var(--r-sm);background:rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#1B2A33" stroke-width="1.6"><rect x="3" y="4" width="11" height="11" rx="2"/><path d="M17 7v9H8"/></svg></div></sc-if>
+                  </div>
+                </div>
+                <div style="flex:1 1 auto;min-width:0">
+                  <div style="font-family:var(--disp);font-weight:700;font-size:{{ progTitle }};letter-spacing:.01em;text-transform:uppercase;color:var(--text);line-height:1">{{ p.title }}</div>
+                  <div style="font-size:12.5px;font-weight:500;color:var(--text-2);margin-top:8px;display:flex;flex-wrap:wrap;gap:5px 12px">
+                    <span>{{ p.group }}</span><span style="color:var(--accent);font-weight:600">{{ p.style }}</span>
+                    <sc-if value="{{ p.hasVideo }}" hint-placeholder-val="{{ true }}"><span>{{ p.dur }}</span></sc-if>
+                    <sc-if value="{{ p.hasPhotos }}" hint-placeholder-val="{{ false }}"><span style="color:var(--text)">{{ p.photosLabel }} · {{ p.photoNote }}</span></sc-if>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ FOOTER ============ -->
+      <sc-if value="{{ showFooter }}" hint-placeholder-val="{{ true }}">
+      <div style="background:var(--brand-2);padding:26px 22px 30px">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <img src="uploads/Liberty-logo.svg" alt="Liberty Dance Company" style="height:28px;filter:brightness(0) invert(1)">
+            <span style="font-size:12px;color:rgba(255,255,255,.6)">© Liberty Dance Company</span>
+          </div>
+          <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;color:rgba(255,255,255,.6)">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="4" width="9" height="8" rx="1.5"/><path d="M10.5 7l4-2v6l-4-2"/></svg>
+            Filmed &amp; delivered by <span style="color:#fff;font-weight:700">Dance Films</span>
+          </span>
+        </div>
+      </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <!-- ============ CHECKOUT (Stripe) ============ -->
+  <sc-if value="{{ isCheckout }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;z-index:60;background:rgba(9,15,20,.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;animation:ovIn .28s ease both">
+    <div style="width:100%;max-width:460px;background:var(--surface);border-radius:16px;overflow:hidden;box-shadow:0 40px 90px -24px rgba(0,0,0,.6);animation:ovUp .3s ease both">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;border-bottom:1px solid var(--border)">
+        <div style="font-family:var(--disp);font-weight:800;font-size:22px;letter-spacing:.01em;text-transform:uppercase;color:var(--text)">Checkout</div>
+        <button onClick="{{ closeCheckout }}" style="width:36px;height:36px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="border-color:var(--accent)">×</button>
+      </div>
+      <div style="padding:22px">
+        <div style="display:flex;gap:14px;align-items:center">
+          <div style="flex:0 0 auto;width:58px;aspect-ratio:3/4;border-radius:var(--r-sm);overflow:hidden;background:var(--surface-2)"><image-slot id="poster-{{ checkoutShow.id }}" shape="rect" fit="cover" placeholder=""></image-slot></div>
+          <div style="min-width:0">
+            <div style="font-family:var(--disp);font-weight:700;font-size:20px;letter-spacing:.01em;text-transform:uppercase;color:var(--text);line-height:1">{{ checkoutShow.title }}</div>
+            <div style="font-size:12.5px;color:var(--text-2);margin-top:5px">{{ checkoutShow.year }} · Full show + all performances</div>
+          </div>
+          <div style="margin-left:auto;font-family:var(--disp);font-weight:700;font-size:24px;color:var(--text)">{{ checkoutShow.price }}</div>
+        </div>
+        <div style="height:1px;background:var(--border);margin:20px 0"></div>
+        <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-2);margin-bottom:8px">Email</label>
+        <div style="padding:13px 15px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface-2);font-size:15px;color:var(--text);font-weight:500">{{ checkoutEmail }}</div>
+        <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-2);margin:16px 0 8px">Card details</label>
+        <input placeholder="1234 1234 1234 1234" style="width:100%;padding:13px 15px;border-radius:10px 10px 0 0;border:1.5px solid var(--border);border-bottom:none;background:var(--surface-2);font-size:15px;color:var(--text);outline:none" style-focus="border-color:var(--accent)">
+        <div style="display:flex">
+          <input placeholder="MM / YY" style="flex:1;padding:13px 15px;border-radius:0 0 0 10px;border:1.5px solid var(--border);background:var(--surface-2);font-size:15px;color:var(--text);outline:none" style-focus="border-color:var(--accent)">
+          <input placeholder="CVC" style="flex:1;padding:13px 15px;border-radius:0 0 10px 0;border:1.5px solid var(--border);border-left:none;background:var(--surface-2);font-size:15px;color:var(--text);outline:none" style-focus="border-color:var(--accent)">
+        </div>
+        <button onClick="{{ completePurchase }}" style="width:100%;margin-top:18px;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:15px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:.04em;text-transform:uppercase;cursor:pointer" style-hover="filter:brightness(.94)">Pay {{ checkoutShow.price }}</button>
+        <div style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:14px;font-size:11.5px;color:var(--text-2)">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
+          Payments secured by <span style="font-weight:700;color:var(--text)">Stripe</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ VIEWING OVERLAY ============ -->
+  <sc-if value="{{ isViewing }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;z-index:60;background:rgba(9,15,20,.96);backdrop-filter:blur(14px);display:flex;flex-direction:column;animation:ovIn .3s ease both">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 20px;flex-shrink:0">
+      <button onClick="{{ closeView }}" style="display:inline-flex;align-items:center;gap:9px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:11px 15px;border-radius:var(--r-sm);border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:#fff;cursor:pointer" style-hover="background:rgba(255,255,255,.12)">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M13 8H4M7 4L3 8l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back to show</button>
+      <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#8aa0b3">{{ viewPos }}</div>
+      <button onClick="{{ closeView }}" style="width:42px;height:42px;border-radius:var(--r-sm);border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.12)">×</button>
+    </div>
+    <div style="flex:1;overflow:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 20px 26px">
+      <div style="width:100%;max-width:1040px;animation:ovUp .34s ease both">
+        <div style="position:relative;aspect-ratio:16/9;border-radius:var(--r-lg);overflow:hidden;background:#05090e;box-shadow:0 30px 80px -24px rgba(0,0,0,.8)">
+          <image-slot id="viewer" shape="rect" fit="cover" placeholder="Vimeo performance video"></image-slot>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+            <div style="width:82px;height:82px;border-radius:var(--r-pill);background:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow:0 12px 34px rgba(0,0,0,.4)">
+              <svg width="30" height="30" viewBox="0 0 16 16" fill="#fff"><path d="M4 3l9 5-9 5V3z"/></svg></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px;margin-top:24px">
+          <div style="min-width:0">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Performance {{ viewCur.no }}</div>
+            <h2 style="font-family:var(--disp);font-weight:800;font-size:38px;letter-spacing:.01em;text-transform:uppercase;color:#fff;margin:8px 0 0">{{ viewCur.title }}</h2>
+            <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:12.5px;font-weight:600;color:#c9d4da">
+              <span>{{ viewCur.group }}</span><span style="color:var(--accent)">{{ viewCur.style }}</span><span style="color:#8aa0b3">{{ viewCur.dur }}</span>
+            </div>
+            <button style="margin-top:18px;display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:11px 16px;border-radius:var(--r-sm);border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.07);color:#fff;cursor:pointer" style-hover="background:rgba(255,255,255,.16)">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 2v7m0 0l3-3m-3 3L5 6M3 13h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Download this dance</button>
+          </div>
+          <div style="display:flex;gap:10px;flex:0 0 auto">
+            <button onClick="{{ viewPrev }}" style="{{ prevBtnStyle }}">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M10 3L6 8l4 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Prev</button>
+            <button onClick="{{ viewNext }}" style="{{ nextBtnStyle }}">Next
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M6 3l4 5-4 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
+        </div>
+        <sc-if value="{{ viewNextTitle }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:16px;font-size:12.5px;color:#6d8296">Up next · <span style="color:#aebccb;font-weight:600">{{ viewNextTitle }}</span></div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:860},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Brand theme&quot;},&quot;brandPrimary&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#13D1C4&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Brand theme&quot;},&quot;brandSecondary&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#43576E&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Brand theme&quot;},&quot;defaultDevice&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mobile&quot;,&quot;desktop&quot;],&quot;default&quot;:&quot;desktop&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;}}">
+class Component extends DCLogic {
+  state = { device:'mobile', screen:'access', selectedShow:'reflections', filter:{k:null,v:null}, viewingId:null, authed:false, accountOpen:false, email:'', emailMsg:null, sent:false, notInvited:false, invited:['emma.hart@gmail.com','david.okoro@outlook.com','you@example.com'], adminNew:'', adminMsg:null, adminBulk:'', owned:{oaat:true, electric:true}, checkoutId:null };
+
+  SHOWS = [
+    { id:'reflections', title:'Reflections', year:'2025', price:'\u00a324', tag:'Summer Showcase', media:'both' },
+    { id:'oaat',        title:'Once Upon a Time', year:'2024', price:'\u00a322', tag:'Winter Show', media:'both' },
+    { id:'electric',    title:'Electric', year:'2023', price:'\u00a320', tag:'Summer Showcase', media:'video' },
+    { id:'believe',     title:'Believe', year:'2022', price:'\u00a320', tag:'Spring Show', media:'both' },
+    { id:'kaleidoscope',title:'Kaleidoscope', year:'2021', price:'\u00a318', tag:'Summer Showcase', media:'photos' },
+    { id:'homegrown',   title:'Homegrown', year:'2020', price:'\u00a318', tag:'Digital Show', media:'video' },
+  ];
+  PERFS = [
+    { id:'p1',  title:'Opening \u2014 Company', group:'Elite Performance Team', style:'Modern/Jazz', dur:'4:12', video:true, photos:0 },
+    { id:'p2',  title:'Twinkle', group:'Minis (3\u20135)', style:'Ballet', dur:'2:05', video:true, photos:24 },
+    { id:'p3',  title:'Playground', group:'Midis (5\u20137)', style:'Tap', dur:'2:48', video:true, photos:0 },
+    { id:'p4',  title:'Rise Up', group:'Juniors (7\u201310)', style:'Street/Commercial', dur:'3:20', video:true, photos:18 },
+    { id:'p5',  title:'Wallflower', group:'Pre-Teens (10\u201312)', style:'Modern/Jazz', dur:'3:05', video:true, photos:0 },
+    { id:'p6',  title:'City Lights', group:'Seniors (13+)', style:'Street/Commercial', dur:'3:40', video:true, photos:0 },
+    { id:'p7',  title:'Swan', group:'Seniors (13+)', style:'Ballet', dur:'4:00', video:true, photos:30 },
+    { id:'p8',  title:'Backstage \u2014 Juniors', group:'Juniors (7\u201310)', style:'Tap', dur:'', video:false, photos:20 },
+    { id:'p9',  title:'Sparks', group:'Elite Performance Team', style:'Modern/Jazz', dur:'3:55', video:true, photos:0 },
+    { id:'p10', title:'Little Stars', group:'Minis (3\u20135)', style:'Modern/Jazz', dur:'1:58', video:true, photos:16 },
+    { id:'p11', title:'Finale \u2014 Full Company', group:'Elite Performance Team', style:'Modern/Jazz', dur:'5:10', video:true, photos:40 },
+  ];
+  PHOTO_PRICE = '\u00a32';
+  TEAM = [
+    { id:'alex', name:'Alex Jarvis', role:'Founder, Dance Films', bio:'Alex is the videographer behind Dance Films, capturing dance shows with a cinematic eye for the moments that matter. [Placeholder \u2014 final copy to follow.]', approach:'Multi-camera capture, colour-graded for a cinematic finish.' },
+  ];
+  GROUPS = ['Minis (3\u20135)','Midis (5\u20137)','Juniors (7\u201310)','Pre-Teens (10\u201312)','Seniors (13+)','Elite Performance Team'];
+  STYLES = ['Ballet','Tap','Modern/Jazz','Street/Commercial'];
+
+  componentDidMount(){ if(this.props.defaultDevice && this.props.defaultDevice!==this.state.device) this.setState({device:this.props.defaultDevice}); }
+
+  go = (screen)=> this.setState({screen});
+  setDevice = (device)=> this.setState({device});
+  openShow = (id)=> this.setState({screen:'show', selectedShow:id, filter:{k:null,v:null}});
+  setFilter = (k,v)=> this.setState({filter:{k,v}});
+  openViewing = (id)=> this.setState({viewingId:id});
+  closeViewing = ()=> this.setState({viewingId:null});
+  step = (dir)=>{ const i=this.PERFS.findIndex(p=>p.id===this.state.viewingId); const n=i+dir; if(n>=0&&n<this.PERFS.length) this.setState({viewingId:this.PERFS[n].id}); };
+  onEmail = (e)=> this.setState({email:e.target.value, emailMsg:null, sent:false, notInvited:false});
+  sendLink = ()=>{ const e=(this.state.email||'').trim(); if(!/.+@.+\..+/.test(e)){ this.setState({emailMsg:'Enter a valid email address.'}); return; } const ok=this.state.invited.some(x=>x.toLowerCase()===e.toLowerCase()); this.setState({sent:ok, notInvited:!ok, emailMsg:null}); };
+  demoOpen = ()=> this.setState({authed:true, screen:'shop', sent:false});
+  resetSent = ()=> this.setState({sent:false, notInvited:false, email:'', emailMsg:null});
+  onAdminNew = (e)=> this.setState({adminNew:e.target.value, adminMsg:null});
+  addInvite = ()=>{ const e=(this.state.adminNew||'').trim(); if(!/.+@.+\..+/.test(e)){ this.setState({adminMsg:'Enter a valid email address.'}); return; } if(this.state.invited.some(x=>x.toLowerCase()===e.toLowerCase())){ this.setState({adminMsg:'That email is already invited.', adminNew:''}); return; } this.setState({invited:[...this.state.invited, e], adminNew:'', adminMsg:null}); };
+  onAdminBulk = (e)=> this.setState({adminBulk:e.target.value});
+  bulkAdd = ()=>{ const parts=(this.state.adminBulk||'').split(/[\s,;]+/).map(x=>x.trim()).filter(x=>/.+@.+\..+/.test(x)); const cur=this.state.invited.slice(); let added=0; parts.forEach(p=>{ if(!cur.some(x=>x.toLowerCase()===p.toLowerCase())){ cur.push(p); added++; } }); this.setState({invited:cur, adminBulk:'', adminMsg: added? (added+' added.') : 'No new emails found.'}); };
+  removeInvite = (email)=> this.setState({invited:this.state.invited.filter(x=>x!==email)});
+  openCheckout = (id)=> this.setState({checkoutId:id});
+  closeCheckout = ()=> this.setState({checkoutId:null});
+  completePurchase = ()=>{ const id=this.state.checkoutId; if(!id) return; this.setState({owned:{...this.state.owned,[id]:true}, checkoutId:null, screen:'show', selectedShow:id, filter:{k:null,v:null}}); };
+
+  pad2(n){ return n<10? '0'+n : ''+n; }
+  tab(active){ const b='font-size:12px;font-weight:700;letter-spacing:.04em;padding:7px 13px;border-radius:6px;border:none;cursor:pointer;font-family:var(--body);'; return active? b+'background:#fff;color:var(--ink)' : b+'background:transparent;color:#9fb2c2'; }
+  devBtn(active){ const b='font-size:12px;font-weight:700;letter-spacing:.04em;padding:7px 12px;border-radius:6px;border:none;cursor:pointer;font-family:var(--body);'; return active? b+'background:var(--accent);color:var(--on-accent)' : b+'background:transparent;color:#9fb2c2'; }
+  chipS(active){ const b='font-size:12.5px;font-weight:600;letter-spacing:.01em;padding:8px 13px;border-radius:var(--r-sm);cursor:pointer;white-space:nowrap;font-family:var(--body);'; return active? b+'border:1px solid var(--accent);background:var(--accent);color:var(--on-accent)' : b+'border:1px solid var(--border);background:transparent;color:var(--text)'; }
+  segTab(active){ const b='flex:1;text-align:center;font-size:12.5px;font-weight:700;letter-spacing:.02em;padding:9px 10px;border-radius:7px;border:none;cursor:pointer;font-family:var(--body);'; return active? b+'background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.14)' : b+'background:transparent;color:var(--text-2)'; }
+  navBtn(enabled){ const b='display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:13px 17px;border-radius:9px;font-family:var(--body);'; return enabled? b+'border:1px solid var(--accent);background:var(--accent-tint);color:var(--accent);cursor:pointer' : b+'border:1px solid rgba(255,255,255,.1);background:transparent;color:#4c5e6e;cursor:not-allowed'; }
+  count(k,v){ return this.PERFS.filter(p=> k==='group'? p.group===v : p.style===v).length; }
+  mediaLabel(m){ return m==='video'? 'Video only' : m==='photos'? 'Photos only' : 'Video + Photos'; }
+
+  renderVals(){
+    const s=this.state, isMobile=s.device==='mobile';
+    const f=s.filter;
+    const vis=this.PERFS.filter(p=> !f.k || (f.k==='group'? p.group===f.v : p.style===f.v));
+    const show=this.SHOWS.find(x=>x.id===s.selectedShow)||this.SHOWS[0];
+
+    const groupChips=this.GROUPS.map(g=>({ label:g, count:this.count('group',g), onClick:()=>this.setFilter('group',g), style:this.chipS(f.k==='group'&&f.v===g) }));
+    const styleChips=this.STYLES.map(st=>({ label:st, count:this.count('style',st), onClick:()=>this.setFilter('style',st), style:this.chipS(f.k==='style'&&f.v===st) }));
+
+    const i=this.PERFS.findIndex(p=>p.id===s.viewingId);
+    const curRaw=this.PERFS[i];
+    const viewCur=curRaw? {...curRaw, no:this.pad2(i+1)} : {title:'',group:'',style:'',dur:'',no:''};
+    const hasPrev=i>0, hasNext=i>=0&&i<this.PERFS.length-1;
+
+    return {
+      theme: this.props.theme || 'dark',
+      frameStyle: isMobile
+        ? 'width:390px;max-width:100%;background:var(--surface);border-radius:30px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border)'
+        : 'width:100%;background:var(--surface);overflow:hidden',
+      headInner: isMobile? 'max-width:100%;margin:0 auto;width:100%' : 'max-width:1280px;margin:0 auto;width:100%;padding:0 40px',
+      shopHeadBar: isMobile? 'display:flex;align-items:center;height:68px;padding:0 18px':'display:flex;align-items:center;height:88px;padding:0',
+      showHeadBar: isMobile? 'padding:16px 18px':'padding:22px 0',
+      accessMinH: isMobile? 'auto':'calc(100vh - 54px)',
+      shopHeadPad: isMobile? 'padding:9px 18px':'padding:11px 40px',
+      headLogo: isMobile? '60px':'104px',
+      shopBodyPad: isMobile? 'padding:26px 18px 34px':'max-width:1280px;margin:0 auto;padding:48px 40px 44px',
+      featMinH: isMobile? '320px':'420px',
+      featPad: isMobile? '26px 22px':'40px 40px',
+      featTitle: isMobile? '44px':'72px',
+      seasonGap: isMobile? '38px':'52px',
+      teamBreakout: isMobile? 'margin:34px -18px -34px':'margin:52px -40px -44px',
+      showHeadPad: isMobile? 'padding:16px 18px':'padding:22px 40px',
+      showHeadLogo: isMobile? '63px':'105px',
+      heroMinH: isMobile? '420px':'540px',
+      heroPad: isMobile? '26px 22px':'50px 44px',
+      heroTitle: isMobile? '52px':'96px',
+      showBodyPad: isMobile? 'padding:30px 18px 40px':'max-width:1280px;margin:0 auto;padding:48px 40px 48px',
+      progGrid: isMobile? 'border-top:1px solid var(--border)' : 'display:grid;grid-template-columns:1fr 1fr;column-gap:36px;border-top:1px solid var(--border)',
+      progRow: (isMobile? 'padding:16px 0;gap:14px;':'padding:20px 0;gap:22px;')+'display:flex;align-items:center;border-bottom:1px solid var(--border);cursor:pointer',
+      progNum: isMobile? '30px':'44px',
+      progNumW: isMobile? '38px':'58px',
+      progThumb: (isMobile? 'width:96px;':'width:150px;')+'position:relative;flex:0 0 auto;aspect-ratio:16/9;border-radius:var(--r-sm);overflow:hidden;background:var(--surface-2)',
+      progTitle: isMobile? '18px':'24px',
+
+      isAccess:s.screen==='access', isShop:s.screen==='shop', isShow:s.screen==='show',
+      welcomeSize: isMobile? '34px':'54px',
+      firstName:(s.email? (s.email.split('@')[0].split(/[.\-_]/)[0].replace(/^./,c=>c.toUpperCase())) : 'Sarah'),
+      fullName:(s.email? (s.email.split('@')[0].split(/[.\-_]/).map(w=>w.replace(/^./,c=>c.toUpperCase())).join(' ')) : 'Sarah Bailey'),
+      initial:(s.email? s.email.charAt(0).toUpperCase() : 'S'),
+      acctEmail:(s.email||'you@example.com'),
+      accountOpen:s.accountOpen, toggleAccount:()=>this.setState({accountOpen:!s.accountOpen}),
+      signOut:()=>this.setState({accountOpen:false, screen:'access', authed:false, email:'', sent:false, notInvited:false}),
+      showFooter:s.screen!=='access', mediaLead:this.TEAM[0], isViewing:!!s.viewingId,
+      tAccess:this.tab(s.screen==='access'), tShop:this.tab(s.screen==='shop'), tShow:this.tab(s.screen==='show'),
+      devMobStyle:this.devBtn(isMobile), devDeskStyle:this.devBtn(!isMobile),
+      setMobile:()=>this.setDevice('mobile'), setDesktop:()=>this.setDevice('desktop'),
+      goAccess:()=>this.go('access'), goShop:()=>this.go('shop'), goShowTab:()=>this.openShow(this.state.selectedShow),
+      shows:this.SHOWS.map(x=>({...x, onClick:()=>this.openShow(x.id)})),
+      featured:(()=>{ const x=this.SHOWS[0], o=!!s.owned[x.id]; return {...x, owned:o, notOwned:!o, hasVideo:x.media!=='photos', hasPhotos:x.media!=='video', mediaLabel:this.mediaLabel(x.media), onCta: o? ()=>this.openShow(x.id) : ()=>this.openCheckout(x.id)}; })(),
+      restShows:this.SHOWS.slice(1).map(x=>{ const o=!!s.owned[x.id]; return {...x, owned:o, notOwned:!o, hasVideo:x.media!=='photos', hasPhotos:x.media!=='video', mediaLabel:this.mediaLabel(x.media), onCta: o? ()=>this.openShow(x.id) : ()=>this.openCheckout(x.id)}; }),
+      showsGrid:(()=>{ const n=this.SHOWS.length-1; const cols=Math.max(1, Math.min(n, isMobile?2:3)); return 'display:grid;gap:18px;grid-template-columns:repeat('+cols+',1fr)'; })(),
+      notSent:(!s.sent && !s.notInvited), sent:s.sent, notInvited:s.notInvited,
+      email:s.email, onEmail:this.onEmail, onEmailKey:(e)=>{ if(e.key==='Enter') this.sendLink(); },
+      sendLink:this.sendLink, demoOpen:this.demoOpen, resetSent:this.resetSent,
+      emailMsg:s.emailMsg||'', emailMsgStyle: s.emailMsg? 'margin-top:9px;font-size:12.5px;color:var(--danger);font-weight:600;min-height:16px':'min-height:0',
+      inviteList:s.invited.map(e=>({email:e, onRemove:()=>this.removeInvite(e)})),
+      inviteCount: s.invited.length + (s.invited.length===1?' parent':' parents'),
+      adminNew:s.adminNew, onAdminNew:this.onAdminNew, onAdminNewKey:(e)=>{ if(e.key==='Enter') this.addInvite(); }, addInvite:this.addInvite,
+      adminBulk:s.adminBulk, onAdminBulk:this.onAdminBulk, bulkAdd:this.bulkAdd,
+      adminMsg:s.adminMsg||'', adminMsgStyle: s.adminMsg? 'margin-top:9px;font-size:12.5px;color:var(--text-2);font-weight:600;min-height:16px':'min-height:0',
+      isCheckout:!!s.checkoutId, checkoutShow:(this.SHOWS.find(x=>x.id===s.checkoutId)||{id:'',title:'',year:'',price:''}), checkoutEmail:(s.email||'you@example.com'),
+      closeCheckout:this.closeCheckout, completePurchase:this.completePurchase,
+      show, totalPerfs:this.PERFS.length,
+      allChip:{ onClick:()=>this.setFilter(null,null), style:this.chipS(!f.k) },
+      groupChips, styleChips,
+      perfs:vis.map(p=>{ const oi=this.PERFS.findIndex(x=>x.id===p.id); return {...p, no:this.pad2(oi+1), onClick:()=>this.openViewing(p.id), hasVideo:!!p.video, hasPhotos:p.photos>0, showPlay:!!p.video, galleryOnly:!p.video&&p.photos>0, photosLabel:(p.photos+' photos'), photoNote:(this.PHOTO_PRICE+' per image'), action:(p.video?'Watch':'Gallery')}; }),
+      perfCount: (vis.length===this.PERFS.length? this.PERFS.length+' dances' : vis.length+' of '+this.PERFS.length),
+      viewCur, viewPos:(i>=0? this.pad2(i+1)+' / '+this.pad2(this.PERFS.length) : ''),
+      viewPrev:()=>this.step(-1), viewNext:()=>this.step(1), closeView:this.closeViewing,
+      prevBtnStyle:this.navBtn(hasPrev), nextBtnStyle:this.navBtn(hasNext),
+      viewNextTitle: hasNext? this.PERFS[i+1].title : '',
+    };
+  }
+}
+</script>
+</body>
+</html>

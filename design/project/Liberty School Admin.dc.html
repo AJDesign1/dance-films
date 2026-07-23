@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+  /* ================================================================
+     SCHOOL ADMIN \u2014 single-school content management.
+     Same design-system tokens as the platform + master admin,
+     rendered in the neutral, efficient admin skin.
+     ================================================================ */
+  :root{
+    --font-display:'Big Shoulders Display',sans-serif;
+    --font-body:'Hanken Grotesk',system-ui,sans-serif;
+    --disp:var(--font-display); --body:var(--font-body);
+    --brand:#13D1C4; --brand-2:#43576E; --ink:#0B171B; --paper:#F5F1E8; --accent-warm:#E8A54B;
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+    --r-sm:8px; --r-md:10px; --r-lg:14px; --r-xl:20px; --r-pill:999px;
+  }
+  [data-admin]{
+    --accent:var(--brand); --on-accent:#fff;
+    --app-bg:#EEF1F4; --surface:#fff; --surface-2:#F5F7F9; --sidebar:#1A2A33;
+    --text:#1B2A33; --text-2:#5C6B75; --text-3:#8A97A0; --border:#E4E9ED; --border-2:#D3DBE0;
+    --success:#0B8F86; --success-tint:#E3F5F2; --warn:#B8791C; --warn-tint:#FBF0DC; --danger:#D64D4D; --danger-tint:#FBE7E7;
+    --accent-tint:color-mix(in srgb, var(--accent) 12%, #fff);
+    --e-1:0 1px 2px rgba(20,35,45,.08); --e-2:0 4px 16px -6px rgba(20,35,45,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--body);color:var(--text);-webkit-font-smoothing:antialiased;background:var(--app-bg)}
+  a{color:var(--accent);text-decoration:none} a:hover{opacity:.85}
+  ::selection{background:var(--accent);color:#fff}
+  input,textarea,select{font-family:inherit}
+  input::placeholder,textarea::placeholder{color:var(--text-3)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition:none!important}}
+</style>
+</helmet>
+
+<div data-admin style="display:flex;min-height:100vh;background:var(--app-bg)">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside style="flex:0 0 auto;width:250px;background:var(--sidebar);display:flex;flex-direction:column;position:sticky;top:0;height:100vh">
+    <div style="padding:14px 16px 0">
+      <button onClick="{{ backToMaster }}" style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--text-3);background:none;border:none;cursor:pointer;font-family:var(--body);padding:0" style-hover="color:#fff">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3L6 8l4 5" stroke-linecap="round" stroke-linejoin="round"/></svg>Back to all schools</button>
+    </div>
+    <div style="padding:14px 20px 16px;border-bottom:1px solid rgba(255,255,255,.08)">
+      <div style="height:68px;display:flex;align-items:center"><image-slot id="school-logo-white" shape="rect" fit="contain" placeholder="White logo (from Branding)"></image-slot></div>
+      <div style="font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-top:10px">{{ schoolName }} · School admin</div>
+    </div>
+    <nav style="flex:1;overflow:auto;padding:14px 12px">
+      <sc-for list="{{ navItems }}" as="it" hint-placeholder-count="6">
+        <button onClick="{{ it.onClick }}" style="{{ it.style }}">
+          <span style="display:flex;align-items:center;gap:11px"><span style="width:18px;display:inline-flex">{{ it.icon }}</span>{{ it.label }}</span>
+          <sc-if value="{{ it.badge }}" hint-placeholder-val="{{ false }}"><span style="background:var(--accent);color:#fff;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:var(--r-pill)">{{ it.badge }}</span></sc-if>
+        </button>
+      </sc-for>
+    </nav>
+    <div style="padding:14px;border-top:1px solid rgba(255,255,255,.08)">
+      <a href="#" style="display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--text-3)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h6v6M21 3l-9 9M14 4H4v16h16V10" stroke-linecap="round" stroke-linejoin="round"/></svg>View live site
+      </a>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <header style="position:sticky;top:0;z-index:10;background:rgba(255,255,255,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 30px;height:62px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <sc-if value="{{ crumb }}" hint-placeholder-val="{{ false }}"><button onClick="{{ crumbBack }}" style="font-size:13px;color:var(--text-3);background:none;border:none;cursor:pointer;font-family:var(--body)">{{ crumb }}</button><span style="color:var(--border-2)">/</span></sc-if>
+        <h1 style="font-family:var(--disp);font-weight:800;font-size:23px;letter-spacing:.01em;text-transform:uppercase;color:var(--text);margin:0">{{ pageTitle }}</h1>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex:0 0 auto">
+        <sc-if value="{{ headerAction }}" hint-placeholder-val="{{ false }}"><button onClick="{{ headerAction.onClick }}" style="{{ primaryBtn }}">{{ headerAction.label }}</button></sc-if>
+      </div>
+    </header>
+
+    <div style="flex:1;padding:30px;animation:fadeUp .3s ease both">
+
+      <!-- ===== BRANDING & CONFIGURATION ===== -->
+      <sc-if value="{{ isBranding }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:start">
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:22px">
+              <div style="font-weight:700;font-size:15px;margin-bottom:14px">Platform &amp; address</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div><label style="{{ fieldLabel }}">Platform name</label><input value="{{ form.platformName }}" onChange="{{ onPlatformName }}" placeholder="e.g. Liberty Platform" style="{{ inputStyle }}"></div>
+                <div><label style="{{ fieldLabel }}">School name</label><input value="{{ form.name }}" onChange="{{ onName }}" style="{{ inputStyle }}"></div>
+              </div>
+              <label style="{{ fieldLabel }}">Subdomain</label>
+              <div style="display:flex;align-items:center;border:1.5px solid var(--border);border-radius:var(--r-md);overflow:hidden;background:var(--surface-2)">
+                <input value="{{ form.sub }}" onChange="{{ onSub }}" placeholder="liberty" style="flex:1;padding:12px 4px 12px 12px;border:none;background:transparent;font-size:14px;color:var(--text);outline:none;text-align:right">
+                <span style="padding:0 12px 0 2px;font-size:13.5px;color:var(--text-3);white-space:nowrap">.dancefilms.co.uk</span>
+              </div>
+            </div>
+
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:22px">
+              <div style="font-weight:700;font-size:15px;margin-bottom:14px">Logo</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div><label style="{{ fieldLabel }}">Colour logo (light bg)</label><div style="height:96px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);background:#fff"><image-slot id="school-logo-colour" shape="rect" fit="contain" placeholder="Colour logo"></image-slot></div></div>
+                <div><label style="{{ fieldLabel }}">White logo (dark bg)</label><div style="height:96px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);background:var(--sidebar)"><image-slot id="school-logo-white" shape="rect" fit="contain" placeholder="White logo"></image-slot></div></div>
+              </div>
+            </div>
+
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:22px">
+              <div style="font-weight:700;font-size:15px;margin-bottom:4px">Theme</div>
+              <p style="font-size:12.5px;color:var(--text-2);margin:0 0 16px">Colour palette and typeface for this school's platform.</p>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px">
+                <sc-for list="{{ palette }}" as="c" hint-placeholder-count="5">
+                  <div>
+                    <label style="{{ fieldLabel }}">{{ c.label }}</label>
+                    <div style="display:flex;align-items:center;gap:9px;border:1.5px solid var(--border);border-radius:var(--r-md);padding:6px 10px;background:var(--surface-2)">
+                      <input type="color" value="{{ c.value }}" onChange="{{ c.onChange }}" style="width:30px;height:30px;border:none;background:none;padding:0;cursor:pointer;flex:0 0 auto">
+                      <span style="font-size:12.5px;font-family:ui-monospace,monospace;color:var(--text-2);text-transform:uppercase">{{ c.value }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <label style="{{ fieldLabel }}">Display typeface</label>
+              <select value="{{ form.font }}" onChange="{{ onFont }}" style="{{ inputStyle }};appearance:auto;cursor:pointer">
+                <sc-for list="{{ fontOptions }}" as="f" hint-placeholder-count="5"><option value="{{ f }}">{{ f }}</option></sc-for>
+              </select>
+              <label style="{{ fieldLabel }}">Default theme</label>
+              <div style="display:flex;gap:8px">
+                <button onClick="{{ setThemeLight }}" style="{{ lightTabStyle }}">Light</button>
+                <button onClick="{{ setThemeDark }}" style="{{ darkTabStyle }}">Dark</button>
+              </div>
+            </div>
+
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:22px">
+              <div style="font-weight:700;font-size:15px;margin-bottom:14px">Key imagery</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div><label style="{{ fieldLabel }}">Sign-in photo</label><div style="height:110px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);background:var(--surface-2)"><image-slot id="school-signin" shape="rect" fit="cover" placeholder="Sign-in image"></image-slot></div></div>
+                <div><label style="{{ fieldLabel }}">Featured show artwork</label><div style="height:110px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);background:var(--surface-2)"><image-slot id="school-featured" shape="rect" fit="cover" placeholder="Featured artwork"></image-slot></div></div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;position:sticky;bottom:0;padding:14px 0"><button style="{{ primaryBtn }}">Save changes</button></div>
+          </div>
+
+          <div style="position:sticky;top:92px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px;display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:var(--r-pill);background:var(--success)"></span>Live preview</div>
+            <div style="border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--border-2);box-shadow:var(--e-2);background:#fff">
+              <div style="padding:16px 18px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(105deg, {{ pv.secondary }} 0%, {{ pv.primary }} 100%)">
+                <span style="font-family:{{ pv.fontStack }};font-weight:800;font-size:19px;letter-spacing:.02em;text-transform:uppercase;color:#fff">{{ pv.platformName }}</span>
+                <span style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.4);padding:4px 8px;border-radius:6px">I have a code</span>
+              </div>
+              <div style="padding:16px 16px 20px;background:{{ pv.appBg }}">
+                <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:{{ pv.primary }};margin-bottom:8px">Latest production</div>
+                <div style="position:relative;border-radius:12px;overflow:hidden;height:150px;background:{{ pv.ink }};display:flex;align-items:flex-end;padding:14px">
+                  <div style="position:absolute;inset:0"><image-slot id="school-featured" shape="rect" fit="cover" placeholder=""></image-slot></div>
+                  <div style="position:absolute;inset:0;background:linear-gradient(90deg, rgba(0,0,0,.82), rgba(0,0,0,.15));pointer-events:none"></div>
+                  <div style="position:relative">
+                    <div style="font-family:{{ pv.fontStack }};font-weight:800;font-size:30px;line-height:.88;letter-spacing:.01em;text-transform:uppercase;color:#fff">Reflections</div>
+                    <div style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 13px;border-radius:8px;background:{{ pv.primary }};color:#fff;font-family:{{ pv.fontStack }};font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.03em">Watch the full show</div>
+                  </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+                  <div style="position:relative;aspect-ratio:3/4;border-radius:9px;overflow:hidden;background:{{ pv.surface2 }};display:flex;align-items:flex-end;padding:10px">
+                    <div style="position:absolute;inset:0"><image-slot id="school-signin" shape="rect" fit="cover" placeholder=""></image-slot></div>
+                    <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.8));pointer-events:none"></div>
+                    <span style="position:relative;font-family:{{ pv.fontStack }};font-weight:700;font-size:16px;text-transform:uppercase;color:#fff;line-height:.9">Electric</span>
+                  </div>
+                  <div style="aspect-ratio:3/4;border-radius:9px;background:{{ pv.surface2 }};border:1px dashed {{ pv.border }};display:flex;align-items:center;justify-content:center;color:{{ pv.text2 }};font-size:11px">Believe</div>
+                </div>
+                <div style="margin-top:14px;padding:12px;border-radius:9px;background:{{ pv.paper }};display:flex;align-items:center;gap:10px">
+                  <span style="width:8px;height:8px;border-radius:var(--r-pill);background:{{ pv.accentWarm }}"></span>
+                  <span style="font-size:11px;color:{{ pv.text2 }}">Accent: highlights &amp; owned tags</span>
+                </div>
+              </div>
+              <div style="padding:12px 16px;background:{{ pv.secondary }};display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:10px;color:rgba(255,255,255,.7)">© {{ pv.name }}</span>
+                <span style="font-size:10px;color:rgba(255,255,255,.7)">Filmed &amp; delivered by <b style="color:#fff">Dance Films</b></span>
+              </div>
+            </div>
+            <p style="font-size:11.5px;color:var(--text-3);margin:12px 2px 0;line-height:1.5">This is how <b style="color:var(--text-2)">{{ pv.sub }}.dancefilms.co.uk</b> will look. Changes apply on save.</p>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== DASHBOARD ===== -->
+      <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+          <sc-for list="{{ stats }}" as="st" hint-placeholder-count="4">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;box-shadow:var(--e-1)">
+              <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)">{{ st.label }}</div>
+              <div style="font-family:var(--disp);font-weight:800;font-size:42px;color:var(--text);margin-top:8px;line-height:1">{{ st.value }}</div>
+              <div style="font-size:12.5px;color:{{ st.deltaColor }};margin-top:6px;font-weight:600">{{ st.delta }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:22px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)">
+              <div style="font-weight:700;font-size:15px">Recent purchases</div>
+              <button onClick="{{ goUsers }}" style="{{ quietBtn }}">All users</button>
+            </div>
+            <sc-for list="{{ recentPurchases }}" as="p" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 20px;border-bottom:1px solid var(--border)">
+                <div style="min-width:0"><div style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.item }}</div><div style="font-size:12px;color:var(--text-2)">{{ p.who }} · {{ p.when }}</div></div>
+                <div style="font-family:var(--disp);font-weight:700;font-size:18px;color:var(--success)">{{ p.amount }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);overflow:hidden">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px">Parents</div>
+            <div style="padding:20px">
+              <div style="display:flex;align-items:flex-end;gap:8px"><span style="font-family:var(--disp);font-weight:800;font-size:38px;line-height:1">{{ signedUpCount }}</span><span style="color:var(--text-2);font-size:14px;margin-bottom:6px">of {{ invitedCount }} invited signed up</span></div>
+              <div style="margin-top:14px;height:10px;border-radius:var(--r-pill);background:var(--surface-2);overflow:hidden"><div style="height:100%;background:var(--accent);width:{{ signedUpPct }}"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--text-2)"><span>{{ signedUpPct }} activated</span><button onClick="{{ goParents }}" style="{{ quietBtn }}">Manage invites</button></div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== SHOWS: LIST ===== -->
+      <sc-if value="{{ isShowList }}" hint-placeholder-val="{{ false }}">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);overflow-x:auto">
+          <div style="min-width:760px">
+          <div style="display:grid;grid-template-columns:36px minmax(200px,1fr) 80px 84px 104px 150px;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)">
+            <span></span><span>Show</span><span>Year</span><span>Price</span><span>Status</span><span></span>
+          </div>
+          <sc-for list="{{ shows }}" as="sh" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:36px minmax(200px,1fr) 80px 84px 104px 150px;gap:12px;align-items:center;padding:13px 20px;border-bottom:1px solid var(--border)">
+              <div style="display:flex;flex-direction:column;gap:2px;align-items:center">
+                <button onClick="{{ sh.onUp }}" style="{{ sh.upStyle }}" title="Move up"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10l4-4 4 4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                <button onClick="{{ sh.onDown }}" style="{{ sh.downStyle }}" title="Move down"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              </div>
+              <div style="display:flex;align-items:center;gap:13px;min-width:0">
+                <div style="flex:0 0 auto;width:46px;height:60px;border-radius:6px;overflow:hidden;background:var(--surface-2)"><image-slot id="showcover-{{ sh.id }}" shape="rect" fit="cover" placeholder=""></image-slot></div>
+                <div style="min-width:0"><div style="font-family:var(--disp);font-weight:700;font-size:19px;text-transform:uppercase;letter-spacing:.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ sh.title }}</div><div style="font-size:12px;color:var(--text-3)">{{ sh.perfCount }} performances · {{ sh.tag }}</div></div>
+              </div>
+              <span style="font-size:14px;color:var(--text-2)">{{ sh.year }}</span>
+              <span style="font-size:14px;font-weight:600">{{ sh.price }}</span>
+              <span style="{{ sh.badge }}">{{ sh.statusLabel }}</span>
+              <div style="display:flex;gap:7px;justify-content:flex-end">
+                <button onClick="{{ sh.onMedia }}" style="{{ quietBtn }}">Performances</button>
+                <button onClick="{{ sh.onEdit }}" style="{{ quietBtn }}">Edit</button>
+              </div>
+            </div>
+          </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== SHOWS: EDITOR ===== -->
+      <sc-if value="{{ isShowEdit }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:22px;align-items:start;max-width:960px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:24px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <div><label style="{{ fieldLabel }}">Show title</label><input value="{{ editShow.title }}" style="{{ inputStyle }}"></div>
+              <div><label style="{{ fieldLabel }}">Season / tag</label><input value="{{ editShow.tag }}" style="{{ inputStyle }}"></div>
+              <div><label style="{{ fieldLabel }}">Year / date</label><input value="{{ editShow.year }}" style="{{ inputStyle }}"></div>
+              <div><label style="{{ fieldLabel }}">Full-show price</label><input value="{{ editShow.price }}" style="{{ inputStyle }}"></div>
+            </div>
+            <label style="{{ fieldLabel }}">Intro text</label>
+            <textarea rows="4" style="{{ textareaStyle }}">{{ editShow.intro }}</textarea>
+            <label style="{{ fieldLabel }}">Cover artwork</label>
+            <div style="height:200px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);background:var(--surface-2)"><image-slot id="showcover-{{ editShow.id }}" shape="rect" fit="cover" placeholder="Drop cover artwork (3:4)"></image-slot></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:20px">
+              <div style="font-weight:700;font-size:14px;margin-bottom:14px">Publish</div>
+              <div style="display:flex;gap:8px;margin-bottom:16px">
+                <button onClick="{{ setShowDraft }}" style="{{ showDraftTab }}">Draft</button>
+                <button onClick="{{ setShowPublished }}" style="{{ showPubTab }}">Published</button>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <button style="{{ primaryBtn }}">Save show</button>
+                <button onClick="{{ backToShows }}" style="{{ secondaryBtn }}">Cancel</button>
+              </div>
+            </div>
+            <button onClick="{{ editShowMedia }}" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:16px 18px;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:var(--body)" style-hover="border-color:var(--accent)">
+              <span><span style="font-weight:700;font-size:14px;display:block">Performances</span><span style="font-size:12.5px;color:var(--text-2)">Manage videos &amp; galleries</span></span>
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="var(--text-3)" stroke-width="2"><path d="M6 3l5 5-5 5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== MEDIA / PERFORMANCES ===== -->
+      <sc-if value="{{ isMedia }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+          <label style="font-size:12.5px;font-weight:600;color:var(--text-2)">Show</label>
+          <select value="{{ activeShowId }}" onChange="{{ onActiveShow }}" style="padding:9px 12px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--surface);font-size:14px;color:var(--text);cursor:pointer">
+            <sc-for list="{{ showOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.title }}</option></sc-for>
+          </select>
+          <span style="font-size:13px;color:var(--text-3)">{{ perfList.length }} performances</span>
+          <div style="flex:1"></div>
+          <button onClick="{{ toggleBulk }}" style="{{ secondaryBtn }}">Bulk add</button>
+          <button onClick="{{ addPerf }}" style="{{ primaryBtn }}">Add performance</button>
+        </div>
+
+        <!-- Full-show video -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:20px;margin-bottom:22px">
+          <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
+            <div style="flex:0 0 auto;width:158px;height:90px;border-radius:var(--r-md);overflow:hidden;background:var(--surface-2)"><image-slot id="fullcover-{{ activeShowId }}" shape="rect" fit="cover" placeholder="Full-show still"></image-slot></div>
+            <div style="flex:1;min-width:260px">
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:3px"><span style="font-weight:700;font-size:15px">Full-show video</span><span style="padding:3px 9px;border-radius:var(--r-pill);background:var(--success-tint);color:var(--success);font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">Whole show</span></div>
+              <p style="font-size:12.5px;color:var(--text-2);margin:0 0 14px;max-width:520px">The complete recording parents receive with the full-show purchase — this is what plays when they watch the entire show. Individual class clips are listed separately below.</p>
+              <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <div style="flex:1;min-width:220px"><label style="{{ fieldLabel }};margin-top:0">Vimeo ID or URL</label><input value="{{ activeShow.fullVimeo }}" onChange="{{ onFullVimeo }}" placeholder="e.g. 903371840" style="{{ inputStyle }};font-family:ui-monospace,monospace"></div>
+                <div style="width:150px"><label style="{{ fieldLabel }};margin-top:0">Total length</label><input value="{{ activeShow.fullDur }}" onChange="{{ onFullDur }}" placeholder="1:12:40" style="{{ inputStyle }};text-align:center"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:11px">
+          <span style="font-weight:700;font-size:15px">Individual performances</span>
+          <span style="font-size:12.5px;color:var(--text-3)">Class clips, sold and watched one by one</span>
+        </div>
+
+        <sc-if value="{{ bulkOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--surface);border:1px solid var(--accent);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:20px;margin-bottom:18px">
+            <div style="font-weight:700;font-size:14px;margin-bottom:6px">Bulk add performances</div>
+            <p style="font-size:12.5px;color:var(--text-2);margin:0 0 12px">One per line: <code style="background:var(--surface-2);padding:1px 6px;border-radius:4px">Title | Category | Vimeo ID | Duration</code>. Category and Vimeo optional.</p>
+            <textarea value="{{ bulkText }}" onChange="{{ onBulkText }}" rows="5" placeholder="Twinkle | Minis (3\u20135) | 903371840 | 2:05&#10;Playground | Midis (5\u20137) | | 2:48" style="{{ textareaStyle }};font-family:ui-monospace,monospace;font-size:13px"></textarea>
+            <div style="display:flex;gap:10px;margin-top:12px"><button onClick="{{ commitBulk }}" style="{{ primaryBtn }}">Add all</button><button onClick="{{ toggleBulk }}" style="{{ secondaryBtn }}">Cancel</button></div>
+          </div>
+        </sc-if>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);overflow-x:auto">
+          <div style="min-width:860px">
+          <div style="display:grid;grid-template-columns:34px 70px minmax(180px,1fr) 170px 150px 90px 70px;gap:12px;padding:11px 18px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)">
+            <span></span><span>Thumb</span><span>Title</span><span>Category</span><span>Vimeo</span><span>Length</span><span></span>
+          </div>
+          <sc-for list="{{ perfList }}" as="p" hint-placeholder-count="5">
+            <div style="display:grid;grid-template-columns:34px 70px minmax(180px,1fr) 170px 150px 90px 70px;gap:12px;align-items:center;padding:11px 18px;border-bottom:1px solid var(--border)">
+              <div style="display:flex;flex-direction:column;gap:2px;align-items:center">
+                <button onClick="{{ p.onUp }}" style="{{ p.upStyle }}"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10l4-4 4 4" stroke-linecap="round"/></svg></button>
+                <button onClick="{{ p.onDown }}" style="{{ p.downStyle }}"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4" stroke-linecap="round"/></svg></button>
+              </div>
+              <div style="width:64px;height:38px;border-radius:6px;overflow:hidden;background:var(--surface-2)"><image-slot id="perfthumb-{{ p.id }}" shape="rect" fit="cover" placeholder=""></image-slot></div>
+              <input value="{{ p.title }}" onChange="{{ p.onTitle }}" style="{{ cellInput }}">
+              <input value="{{ p.category }}" onChange="{{ p.onCategory }}" list="cat-list" style="{{ cellInput }}">
+              <input value="{{ p.vimeo }}" onChange="{{ p.onVimeo }}" placeholder="ID or URL" style="{{ cellInput }};font-family:ui-monospace,monospace;font-size:12.5px">
+              <input value="{{ p.dur }}" onChange="{{ p.onDur }}" placeholder="\u2014" style="{{ cellInput }};text-align:center">
+              <button onClick="{{ p.onRemove }}" style="{{ iconDanger }}" title="Remove"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 5h10M6 5V3h4v2M5 5l.5 8h5L11 5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+          </sc-for>
+          <datalist id="cat-list"><sc-for list="{{ categories }}" as="c" hint-placeholder-count="4"><option value="{{ c.name }}"></option></sc-for></datalist>
+          <sc-if value="{{ noPerfs }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:54px 20px;text-align:center">
+              <div style="font-family:var(--disp);font-weight:700;font-size:20px;text-transform:uppercase">No performances yet</div>
+              <p style="color:var(--text-2);font-size:14px;margin:8px 0 18px">Add them one by one, or paste a list to add several at once.</p>
+              <div style="display:flex;gap:10px;justify-content:center"><button onClick="{{ addPerf }}" style="{{ primaryBtn }}">Add performance</button><button onClick="{{ toggleBulk }}" style="{{ secondaryBtn }}">Bulk add</button></div>
+            </div>
+          </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== CATEGORIES ===== -->
+      <sc-if value="{{ isCategories }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+          <label style="font-size:12.5px;font-weight:600;color:var(--text-2)">Show</label>
+          <select value="{{ activeShowId }}" onChange="{{ onActiveShow }}" style="padding:9px 12px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--surface);font-size:14px;color:var(--text);cursor:pointer">
+            <sc-for list="{{ showOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.title }}</option></sc-for>
+          </select>
+        </div>
+        <div style="max-width:560px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:22px">
+          <div style="font-weight:700;font-size:15px;margin-bottom:4px">Class &amp; group tags</div>
+          <p style="font-size:12.5px;color:var(--text-2);margin:0 0 16px">These appear as filters on the show's performances. Reorder to control filter order.</p>
+          <div style="display:flex;gap:8px;margin-bottom:16px">
+            <input value="{{ newCat }}" onChange="{{ onNewCat }}" onKeyDown="{{ onNewCatKey }}" placeholder="e.g. Seniors (13+)" style="{{ inputStyle }};flex:1">
+            <button onClick="{{ addCat }}" style="{{ primaryBtn }}">Add</button>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden">
+            <sc-for list="{{ categories }}" as="c" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border)">
+                <div style="display:flex;flex-direction:column;gap:1px">
+                  <button onClick="{{ c.onUp }}" style="{{ c.upStyle }}"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10l4-4 4 4" stroke-linecap="round"/></svg></button>
+                  <button onClick="{{ c.onDown }}" style="{{ c.downStyle }}"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4" stroke-linecap="round"/></svg></button>
+                </div>
+                <input value="{{ c.name }}" onChange="{{ c.onRename }}" style="{{ cellInput }};flex:1">
+                <span style="font-size:12px;color:var(--text-3);white-space:nowrap">{{ c.count }} used</span>
+                <button onClick="{{ c.onRemove }}" style="{{ iconDanger }}"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 5h10M6 5V3h4v2M5 5l.5 8h5L11 5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== INVITED PARENTS ===== -->
+      <sc-if value="{{ isParents }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:22px;align-items:start">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);overflow:hidden">
+            <div style="display:grid;grid-template-columns:1fr 130px 90px;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)">
+              <span>Email</span><span>Status</span><span></span>
+            </div>
+            <sc-for list="{{ parents }}" as="pa" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:1fr 130px 90px;gap:12px;align-items:center;padding:13px 20px;border-bottom:1px solid var(--border)">
+                <span style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ pa.email }}</span>
+                <span style="{{ pa.badge }}">{{ pa.statusLabel }}</span>
+                <button onClick="{{ pa.onRemove }}" style="{{ quietBtn }}">Remove</button>
+              </div>
+            </sc-for>
+            <sc-if value="{{ noParents }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:50px 20px;text-align:center"><div style="font-family:var(--disp);font-weight:700;font-size:20px;text-transform:uppercase">No parents invited</div><p style="color:var(--text-2);font-size:14px;margin:8px 0 0">Add emails on the right to open access.</p></div>
+            </sc-if>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:20px">
+              <div style="font-weight:700;font-size:14px;margin-bottom:12px">Add a parent</div>
+              <div style="display:flex;gap:8px"><input value="{{ newEmail }}" onChange="{{ onNewEmail }}" onKeyDown="{{ onNewEmailKey }}" type="email" placeholder="parent@example.com" style="{{ inputStyle }};flex:1"><button onClick="{{ addParent }}" style="{{ primaryBtn }}">Add</button></div>
+              <div style="{{ parentMsgStyle }}">{{ parentMsg }}</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:20px">
+              <div style="font-weight:700;font-size:14px;margin-bottom:6px">Bulk / CSV import</div>
+              <p style="font-size:12px;color:var(--text-2);margin:0 0 10px">Paste emails (one per line or comma-separated), or a CSV \u2014 we'll take the email column.</p>
+              <textarea value="{{ bulkEmails }}" onChange="{{ onBulkEmails }}" rows="4" placeholder="alex@example.com&#10;jamie@example.com, sam@example.com" style="{{ textareaStyle }};font-size:13px"></textarea>
+              <button onClick="{{ importEmails }}" style="{{ secondaryBtn }};margin-top:10px">Import emails</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== USERS & ACCESS ===== -->
+      <sc-if value="{{ isUsers }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <sc-for list="{{ users }}" as="u" hint-placeholder-count="4">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:18px 20px">
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <div style="flex:0 0 auto;width:40px;height:40px;border-radius:var(--r-pill);background:var(--surface-2);color:var(--text-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px">{{ u.initials }}</div>
+                <div style="min-width:0;flex:1"><div style="font-weight:600;font-size:15px">{{ u.name }}</div><div style="font-size:12.5px;color:var(--text-2)">{{ u.email }} · joined {{ u.joined }}</div></div>
+                <div style="font-size:12.5px;color:var(--text-3)">{{ u.ownedCount }} owned · {{ u.spend }} spent</div>
+              </div>
+              <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px">
+                <sc-for list="{{ u.entitlements }}" as="ent" hint-placeholder-count="3">
+                  <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-radius:var(--r-pill);border:1px solid {{ ent.borderColor }};background:{{ ent.bg }}">
+                    <span style="font-size:12.5px;font-weight:600;color:{{ ent.textColor }}">{{ ent.title }}</span>
+                    <button onClick="{{ ent.onToggle }}" style="{{ ent.btnStyle }}">{{ ent.action }}</button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:860}}">
+class Component extends DCLogic {
+  state = {
+    nav:'dashboard',
+    showView:'list', editId:null, editShowStatus:'published',
+    activeShowId:'reflections',
+    bulkOpen:false, bulkText:'', newCat:'', newEmail:'', emailMsg:null, bulkEmails:'',
+    form:{ name:'Liberty Dance Company', platformName:'Liberty Platform', sub:'liberty', font:'Big Shoulders Display', theme:'dark',
+           colours:{primary:'#13D1C4', secondary:'#43576E', ink:'#0B171B', paper:'#F5F1E8', accentWarm:'#E8A54B'} },
+    shows:[
+      { id:'reflections', title:'Reflections', year:'2025', price:'\u00a324', tag:'Summer Showcase', status:'published', fullVimeo:'903371840', fullDur:'1:12:40', intro:'Our 2025 summer showcase \u2014 every class from Minis to the Elite team.' },
+      { id:'oaat', title:'Once Upon a Time', year:'2024', price:'\u00a322', tag:'Winter Show', status:'published', fullVimeo:'812210050', fullDur:'58:20', intro:'A storybook winter show across two acts.' },
+      { id:'electric', title:'Electric', year:'2023', price:'\u00a320', tag:'Summer Showcase', status:'draft', fullVimeo:'', fullDur:'', intro:'' },
+    ],
+    perfs:{
+      reflections:[
+        { id:'p1', title:'Opening \u2014 Company', category:'Elite Performance Team', vimeo:'903371801', dur:'4:12' },
+        { id:'p2', title:'Twinkle', category:'Minis (3\u20135)', vimeo:'903371820', dur:'2:05' },
+        { id:'p3', title:'Playground', category:'Midis (5\u20137)', vimeo:'903371833', dur:'2:48' },
+        { id:'p4', title:'Rise Up', category:'Juniors (7\u201310)', vimeo:'903371848', dur:'3:20' },
+        { id:'p5', title:'Swan', category:'Seniors (13+)', vimeo:'903371861', dur:'4:00' },
+      ],
+      oaat:[
+        { id:'q1', title:'Prologue', category:'Elite Performance Team', vimeo:'812210001', dur:'3:40' },
+        { id:'q2', title:'Fairy Ring', category:'Minis (3\u20135)', vimeo:'812210014', dur:'2:10' },
+      ],
+      electric:[],
+    },
+    cats:{
+      reflections:['Minis (3\u20135)','Midis (5\u20137)','Juniors (7\u201310)','Pre-Teens (10\u201312)','Seniors (13+)','Elite Performance Team'],
+      oaat:['Minis (3\u20135)','Juniors (7\u201310)','Seniors (13+)','Elite Performance Team'],
+      electric:['Juniors (7\u201310)','Seniors (13+)'],
+    },
+    parents:[
+      { email:'emma.hart@gmail.com', status:'signed up' },
+      { email:'david.okoro@outlook.com', status:'signed up' },
+      { email:'sara.lindqvist@gmail.com', status:'invited' },
+      { email:'mo.rahman@icloud.com', status:'invited' },
+      { email:'you@example.com', status:'signed up' },
+    ],
+    users:[
+      { id:'u1', name:'Emma Hart', email:'emma.hart@gmail.com', joined:'Jun 2025', owns:['reflections','oaat'] },
+      { id:'u2', name:'David Okoro', email:'david.okoro@outlook.com', joined:'Jul 2025', owns:['reflections'] },
+      { id:'u3', name:'Alex Parent', email:'you@example.com', joined:'Jul 2025', owns:[] },
+    ],
+  };
+
+  FONTS = ['Big Shoulders Display','Poppins','Montserrat','Hanken Grotesk','Playfair Display'];
+  fontStack(f){ return "'"+f+"', sans-serif"; }
+  backToMaster(){ window.location.href='Dance Films Admin.dc.html'; }
+  setColour(k,v){ this.setState({form:{...this.state.form, colours:{...this.state.form.colours, [k]:v}}}); }
+  setForm(k,v){ this.setState({form:{...this.state.form, [k]:v}}); }
+
+  nav(n){ this.setState({nav:n, showView:'list', bulkOpen:false}); }
+  editShow(id){ const sh=this.state.shows.find(x=>x.id===id); this.setState({nav:'shows', showView:'edit', editId:id, editShowStatus:sh?sh.status:'draft'}); }
+  newShow(){ this.setState({nav:'shows', showView:'edit', editId:null, editShowStatus:'draft'}); }
+  openMedia(id){ this.setState({nav:'media', activeShowId:id, showView:'list', bulkOpen:false}); }
+  move(arr,i,d){ const n=i+d; if(n<0||n>=arr.length) return arr.slice(); const a=arr.slice(); const t=a[i]; a[i]=a[n]; a[n]=t; return a; }
+  moveShow(i,d){ this.setState({shows:this.move(this.state.shows,i,d)}); }
+  setActiveShow(id){ this.setState({activeShowId:id}); }
+  editShowField(k,v){ this.setState({shows:this.state.shows.map(sh=> sh.id===this.state.activeShowId? {...sh,[k]:v}:sh)}); }
+  curPerfs(){ return this.state.perfs[this.state.activeShowId]||[]; }
+  setPerfs(list){ this.setState({perfs:{...this.state.perfs, [this.state.activeShowId]:list}}); }
+  movePerf(i,d){ this.setPerfs(this.move(this.curPerfs(),i,d)); }
+  addPerf(){ const id='p'+Date.now(); this.setPerfs([...this.curPerfs(), {id, title:'New performance', category:'', vimeo:'', dur:''}]); }
+  removePerf(id){ this.setPerfs(this.curPerfs().filter(p=>p.id!==id)); }
+  editPerf(id,k,v){ this.setPerfs(this.curPerfs().map(p=> p.id===id? {...p,[k]:v}:p)); }
+  toggleBulk(){ this.setState({bulkOpen:!this.state.bulkOpen, bulkText:''}); }
+  commitBulk(){ const rows=(this.state.bulkText||'').split('\n').map(l=>l.trim()).filter(Boolean).map((l,i)=>{ const [title,category,vimeo,dur]=l.split('|').map(x=>(x||'').trim()); return {id:'b'+Date.now()+i, title:title||'Untitled', category:category||'', vimeo:vimeo||'', dur:dur||''}; }); this.setPerfs([...this.curPerfs(), ...rows]); this.setState({bulkOpen:false, bulkText:''}); }
+  curCats(){ return this.state.cats[this.state.activeShowId]||[]; }
+  setCats(list){ this.setState({cats:{...this.state.cats, [this.state.activeShowId]:list}}); }
+  moveCat(i,d){ this.setCats(this.move(this.curCats(),i,d)); }
+  addCat(){ const v=(this.state.newCat||'').trim(); if(!v||this.curCats().includes(v)) { this.setState({newCat:''}); return; } this.setCats([...this.curCats(), v]); this.setState({newCat:''}); }
+  renameCat(i,v){ const a=this.curCats().slice(); a[i]=v; this.setCats(a); }
+  removeCat(i){ this.setCats(this.curCats().filter((_,x)=>x!==i)); }
+  addParent(){ const e=(this.state.newEmail||'').trim(); if(!/.+@.+\..+/.test(e)){ this.setState({emailMsg:'Enter a valid email.'}); return; } if(this.state.parents.some(p=>p.email.toLowerCase()===e.toLowerCase())){ this.setState({emailMsg:'Already invited.', newEmail:''}); return; } this.setState({parents:[...this.state.parents,{email:e,status:'invited'}], newEmail:'', emailMsg:null}); }
+  removeParent(email){ this.setState({parents:this.state.parents.filter(p=>p.email!==email)}); }
+  importEmails(){ const found=(this.state.bulkEmails||'').split(/[\s,;]+/).map(x=>x.trim()).filter(x=>/.+@.+\..+/.test(x)); const cur=this.state.parents.slice(); let added=0; found.forEach(e=>{ if(!cur.some(p=>p.email.toLowerCase()===e.toLowerCase())){ cur.push({email:e,status:'invited'}); added++; } }); this.setState({parents:cur, bulkEmails:'', emailMsg: added? (added+' imported.') : 'No new emails found.'}); }
+  toggleEntitlement(uid,showId){ this.setState({users:this.state.users.map(u=> u.id===uid? {...u, owns: u.owns.includes(showId)? u.owns.filter(x=>x!==showId) : [...u.owns, showId]}:u)}); }
+
+  primaryBtn(){ return 'display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:var(--r-md);border:none;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:14px;cursor:pointer;font-family:var(--body)'; }
+  secondaryBtn(){ return 'display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:var(--r-md);border:1.5px solid var(--border-2);background:var(--surface);color:var(--text);font-weight:600;font-size:14px;cursor:pointer;font-family:var(--body)'; }
+  quietBtn(){ return 'padding:7px 12px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;color:var(--text-2);font-weight:600;font-size:12.5px;cursor:pointer;font-family:var(--body)'; }
+  fieldLabel(){ return 'display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2);margin:16px 0 7px'; }
+  input(){ return 'width:100%;padding:11px 13px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--surface-2);font-size:14px;color:var(--text);outline:none'; }
+  textarea(){ return this.input()+';resize:vertical;line-height:1.5;font-family:var(--body)'; }
+  cellInput(){ return 'width:100%;padding:8px 10px;border-radius:var(--r-sm);border:1px solid transparent;background:transparent;font-size:13.5px;color:var(--text);outline:none;font-family:var(--body)'; }
+  iconDanger(){ return 'width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;color:var(--text-3);cursor:pointer'; }
+  arrowBtn(enabled){ return 'width:22px;height:18px;display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;border-radius:4px;cursor:'+(enabled?'pointer':'default')+';color:'+(enabled?'var(--text-2)':'var(--border-2)'); }
+  badge(kind){ const m={ published:['var(--success-tint)','var(--success)'], draft:['var(--warn-tint)','var(--warn)'], 'signed up':['var(--success-tint)','var(--success)'], invited:['var(--surface-2)','var(--text-2)'] }; const c=m[kind]||m.invited; return 'display:inline-flex;align-items:center;gap:5px;justify-self:start;padding:4px 10px;border-radius:var(--r-pill);font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;background:'+c[0]+';color:'+c[1]; }
+  subTab(active){ return 'flex:1;padding:9px;border-radius:var(--r-sm);border:1px solid '+(active?'var(--accent)':'var(--border-2)')+';background:'+(active?'var(--accent)':'var(--surface)')+';color:'+(active?'#fff':'var(--text-2)')+';font-weight:700;font-size:13px;cursor:pointer;font-family:var(--body)'; }
+  navItemCss(active){ return 'width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:var(--r-md);border:none;cursor:pointer;font-family:var(--body);font-size:14px;font-weight:600;text-align:left;'+(active?'background:rgba(255,255,255,.12);color:#fff':'background:transparent;color:#A9B7C0'); }
+  ic(p){ return React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.7,strokeLinecap:'round',strokeLinejoin:'round',dangerouslySetInnerHTML:{__html:p}}); }
+
+  renderVals(){
+    const s=this.state, n=s.nav;
+    const icons={
+      dashboard:this.ic('<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>'),
+      branding:this.ic('<circle cx="13.5" cy="6.5" r="2.5"/><circle cx="6.5" cy="9" r="2.5"/><circle cx="9" cy="16" r="2.5"/><path d="M12 2a10 10 0 100 20c1.5 0 2-1 2-2s-1-1.5-1-2.5 1-1.5 2-1.5h1a4 4 0 004-4A9 9 0 0012 2z"/>'),
+      shows:this.ic('<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M10 8l5 3-5 3z"/>'),
+      media:this.ic('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M4 18l5-4 4 3 3-2 4 3"/>'),
+      categories:this.ic('<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="7" cy="6" r="0"/>'),
+      parents:this.ic('<path d="M16 21v-2a4 4 0 0 0-8 0v2M12 3a4 4 0 100 8 4 4 0 000-8z"/>'),
+      users:this.ic('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 3a4 4 0 100 8 4 4 0 000-8zM22 11l-3 3-1.5-1.5"/>'),
+    };
+    const invited=s.parents.length, signedUp=s.parents.filter(p=>p.status==='signed up').length;
+    const mk=(id,label,badge)=>({ label, icon:icons[id], badge:badge||'', onClick:()=>this.nav(id), style:this.navItemCss(n===id) });
+    const navItems=[ mk('branding','Branding & config'), mk('dashboard','Dashboard'), mk('shows','Shows'), mk('categories','Categories'), mk('parents','Invited parents', s.parents.filter(p=>p.status==='invited').length||''), mk('users','Users & access') ];
+
+    const titles={ dashboard:'Dashboard', shows:'Shows', media:'Performances', categories:'Categories', parents:'Invited parents', users:'Users & access', branding:'Branding & configuration' };
+    let pageTitle=titles[n]; let crumb=''; let crumbBack=()=>{}; let headerAction=null;
+    if(n==='shows'&&s.showView==='edit'){ pageTitle=s.editId? 'Edit show':'New show'; crumb='Shows'; crumbBack=()=>this.setState({showView:'list'}); }
+    if(n==='shows'&&s.showView==='list') headerAction={ label:'New show', onClick:()=>this.newShow() };
+    if(n==='media'){ const _sh=s.shows.find(x=>x.id===s.activeShowId); pageTitle=(_sh?_sh.title:'Show')+' \u2014 videos'; crumb='Shows'; crumbBack=()=>this.setState({nav:'shows',showView:'list'}); }
+    if(n==='categories'){ crumb='Shows'; crumbBack=()=>this.setState({nav:'shows',showView:'list'}); }
+
+    const perfList=this.curPerfs();
+    const cats=this.curCats();
+    const catCount=(name)=> perfList.filter(p=>p.category===name).length;
+    const showTitleById=(id)=>{ const sh=s.shows.find(x=>x.id===id); return sh?sh.title:id; };
+    const f=s.form;
+    const dark=f.theme==='dark';
+    const pv={ name:f.name||'New school', sub:f.sub||'school', platformName:f.platformName||f.name||'Platform', primary:f.colours.primary, secondary:f.colours.secondary, ink:f.colours.ink, paper:dark?'#1E2E3A':f.colours.paper, accentWarm:f.colours.accentWarm, fontStack:this.fontStack(f.font), appBg:dark?'#15232E':'#ffffff', surface2:dark?'#1E2E3A':'#F4F6F8', border:dark?'#2A3A46':'#E4E9ED', text2:dark?'#93A3AE':'#5C6B75' };
+
+    const stats=[
+      { label:'Shows', value:s.shows.length, delta:s.shows.filter(x=>x.status==='published').length+' published', deltaColor:'var(--text-2)' },
+      { label:'Invited parents', value:invited, delta:s.parents.filter(p=>p.status==='invited').length+' not yet signed up', deltaColor:'var(--text-2)' },
+      { label:'Signed up', value:signedUp, delta:Math.round(signedUp/invited*100)+'% of invited', deltaColor:'var(--success)' },
+      { label:'Revenue', value:'\u00a3612', delta:'+\u00a3118 this week', deltaColor:'var(--success)' },
+    ];
+
+    return {
+      navItems, pageTitle, crumb, crumbBack, headerAction,
+      backToMaster:()=>this.backToMaster(), schoolName:s.form.name,
+      isBranding:n==='branding',
+      form:{ name:f.name, platformName:f.platformName, sub:f.sub, font:f.font },
+      onName:(e)=>this.setForm('name',e.target.value), onPlatformName:(e)=>this.setForm('platformName',e.target.value),
+      onSub:(e)=>this.setForm('sub',e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,'')), onFont:(e)=>this.setForm('font',e.target.value),
+      fontOptions:this.FONTS,
+      setThemeLight:()=>this.setForm('theme','light'), setThemeDark:()=>this.setForm('theme','dark'),
+      lightTabStyle:this.subTab(f.theme==='light'), darkTabStyle:this.subTab(f.theme==='dark'),
+      palette:[
+        { key:'primary', label:'Primary', value:f.colours.primary, onChange:(e)=>this.setColour('primary',e.target.value) },
+        { key:'secondary', label:'Secondary', value:f.colours.secondary, onChange:(e)=>this.setColour('secondary',e.target.value) },
+        { key:'ink', label:'Ink / dark', value:f.colours.ink, onChange:(e)=>this.setColour('ink',e.target.value) },
+        { key:'paper', label:'Paper / light', value:f.colours.paper, onChange:(e)=>this.setColour('paper',e.target.value) },
+        { key:'accentWarm', label:'Accent', value:f.colours.accentWarm, onChange:(e)=>this.setColour('accentWarm',e.target.value) },
+      ],
+      pv,
+      primaryBtn:this.primaryBtn(), secondaryBtn:this.secondaryBtn(), quietBtn:this.quietBtn(),
+      fieldLabel:this.fieldLabel(), inputStyle:this.input(), textareaStyle:this.textarea(), cellInput:this.cellInput(), iconDanger:this.iconDanger(),
+
+      isDash:n==='dashboard', isMedia:n==='media', isCategories:n==='categories', isParents:n==='parents', isUsers:n==='users',
+      isShowList:n==='shows'&&s.showView==='list', isShowEdit:n==='shows'&&s.showView==='edit',
+
+      stats, signedUpCount:signedUp, invitedCount:invited, signedUpPct:Math.round(signedUp/invited*100)+'%',
+      recentPurchases:[
+        { item:'Reflections \u2014 full show', who:'Emma Hart', when:'2h ago', amount:'\u00a324' },
+        { item:'Swan (No. 05)', who:'David Okoro', when:'5h ago', amount:'\u00a34' },
+        { item:'Once Upon a Time', who:'Emma Hart', when:'Yesterday', amount:'\u00a322' },
+        { item:'Reflections \u2014 full show', who:'David Okoro', when:'2 days ago', amount:'\u00a324' },
+      ],
+      goUsers:()=>this.nav('users'), goParents:()=>this.nav('parents'),
+
+      shows:s.shows.map((sh,i)=>({ ...sh, perfCount:(s.perfs[sh.id]||[]).length, statusLabel:sh.status==='published'?'Published':'Draft', badge:this.badge(sh.status), onEdit:()=>this.editShow(sh.id), onMedia:()=>this.openMedia(sh.id), onUp:()=>this.moveShow(i,-1), onDown:()=>this.moveShow(i,1), upStyle:this.arrowBtn(i>0), downStyle:this.arrowBtn(i<s.shows.length-1) })),
+      editShow:(s.editId? s.shows.find(x=>x.id===s.editId):{ id:'new', title:'', year:'', price:'', tag:'', intro:'' }),
+      setShowDraft:()=>this.setState({editShowStatus:'draft'}), setShowPublished:()=>this.setState({editShowStatus:'published'}),
+      showDraftTab:this.subTab(s.editShowStatus==='draft'), showPubTab:this.subTab(s.editShowStatus==='published'),
+      backToShows:()=>this.setState({showView:'list'}), editShowMedia:()=>this.openMedia(s.editId||s.activeShowId),
+
+      activeShowId:s.activeShowId, onActiveShow:(e)=>this.setActiveShow(e.target.value),
+      activeShow:s.shows.find(x=>x.id===s.activeShowId)||{},
+      onFullVimeo:(e)=>this.editShowField('fullVimeo',e.target.value), onFullDur:(e)=>this.editShowField('fullDur',e.target.value),
+      showOptions:s.shows.map(sh=>({ id:sh.id, title:sh.title })),
+      perfList:perfList.map((p,i)=>({ ...p, onUp:()=>this.movePerf(i,-1), onDown:()=>this.movePerf(i,1), upStyle:this.arrowBtn(i>0), downStyle:this.arrowBtn(i<perfList.length-1), onRemove:()=>this.removePerf(p.id), onTitle:(e)=>this.editPerf(p.id,'title',e.target.value), onCategory:(e)=>this.editPerf(p.id,'category',e.target.value), onVimeo:(e)=>this.editPerf(p.id,'vimeo',e.target.value), onDur:(e)=>this.editPerf(p.id,'dur',e.target.value) })),
+      noPerfs:perfList.length===0, addPerf:()=>this.addPerf(),
+      bulkOpen:s.bulkOpen, toggleBulk:()=>this.toggleBulk(), bulkText:s.bulkText, onBulkText:(e)=>this.setState({bulkText:e.target.value}), commitBulk:()=>this.commitBulk(),
+
+      categories:cats.map((c,i)=>({ name:c, count:catCount(c), onUp:()=>this.moveCat(i,-1), onDown:()=>this.moveCat(i,1), upStyle:this.arrowBtn(i>0), downStyle:this.arrowBtn(i<cats.length-1), onRename:(e)=>this.renameCat(i,e.target.value), onRemove:()=>this.removeCat(i) })),
+      newCat:s.newCat, onNewCat:(e)=>this.setState({newCat:e.target.value}), onNewCatKey:(e)=>{ if(e.key==='Enter') this.addCat(); }, addCat:()=>this.addCat(),
+
+      parents:s.parents.map(p=>({ ...p, statusLabel:p.status==='signed up'?'Signed up':'Invited', badge:this.badge(p.status), onRemove:()=>this.removeParent(p.email) })),
+      noParents:s.parents.length===0,
+      newEmail:s.newEmail, onNewEmail:(e)=>this.setState({newEmail:e.target.value, emailMsg:null}), onNewEmailKey:(e)=>{ if(e.key==='Enter') this.addParent(); }, addParent:()=>this.addParent(),
+      bulkEmails:s.bulkEmails, onBulkEmails:(e)=>this.setState({bulkEmails:e.target.value}), importEmails:()=>this.importEmails(),
+      parentMsg:s.emailMsg||'', parentMsgStyle: s.emailMsg? 'margin-top:9px;font-size:12.5px;color:var(--text-2);font-weight:600;min-height:16px':'min-height:0',
+
+      users:s.users.map(u=>({ ...u, initials:u.name.split(' ').map(x=>x[0]).join('').slice(0,2), ownedCount:u.owns.length, spend:('\u00a3'+u.owns.length*23),
+        entitlements:s.shows.map(sh=>{ const owned=u.owns.includes(sh.id); return { title:sh.title, borderColor: owned?'var(--success)':'var(--border)', bg: owned?'var(--success-tint)':'var(--surface-2)', textColor: owned?'var(--success)':'var(--text-2)', action: owned?'Revoke':'Grant', onToggle:()=>this.toggleEntitlement(u.id,sh.id), btnStyle:'padding:4px 10px;border-radius:var(--r-pill);border:none;cursor:pointer;font-size:11px;font-weight:700;font-family:var(--body);background:'+(owned?'var(--danger-tint)':'var(--accent)')+';color:'+(owned?'var(--danger)':'#fff') }; }) })),
+    };
+  }
+}
+</script>
+</body>
+</html>

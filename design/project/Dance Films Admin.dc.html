@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Poppins:wght@500;600;700&family=Montserrat:wght@500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+  /* ================================================================
+     DANCE FILMS \u2014 MASTER ADMIN
+     Built from the shared design-system tokens (same as the customer
+     platform), rendered in a neutral, efficient admin skin.
+     ================================================================ */
+  :root{
+    --font-display:'Big Shoulders Display',sans-serif;
+    --font-body:'Hanken Grotesk',system-ui,sans-serif;
+    --disp:var(--font-display); --body:var(--font-body);
+    --brand:#13D1C4; --brand-2:#43576E; --ink:#0B171B; --paper:#F5F1E8; --accent-warm:#E8A54B;
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+    --r-sm:8px; --r-md:10px; --r-lg:14px; --r-xl:20px; --r-pill:999px;
+  }
+  [data-admin]{
+    --accent:var(--brand); --on-accent:#fff;
+    --app-bg:#EEF1F4; --surface:#fff; --surface-2:#F5F7F9; --sidebar:#1A2A33;
+    --text:#1B2A33; --text-2:#5C6B75; --text-3:#8A97A0; --border:#E4E9ED; --border-2:#D3DBE0;
+    --success:#0B8F86; --success-tint:#E3F5F2; --warn:#B8791C; --warn-tint:#FBF0DC; --danger:#D64D4D;
+    --accent-tint:color-mix(in srgb, var(--accent) 12%, #fff);
+    --e-1:0 1px 2px rgba(20,35,45,.08); --e-2:0 4px 16px -6px rgba(20,35,45,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--body);color:var(--text);-webkit-font-smoothing:antialiased;background:var(--app-bg)}
+  a{color:var(--accent);text-decoration:none} a:hover{opacity:.85}
+  ::selection{background:var(--accent);color:#fff}
+  input,textarea,select{font-family:inherit}
+  input::placeholder,textarea::placeholder{color:var(--text-3)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition:none!important}}
+</style>
+</helmet>
+
+<div data-admin style="display:flex;min-height:100vh;background:var(--app-bg)">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside style="flex:0 0 auto;width:250px;background:var(--sidebar);display:flex;flex-direction:column;position:sticky;top:0;height:100vh">
+    <div style="padding:22px 22px 18px;border-bottom:1px solid rgba(255,255,255,.08)">
+      <div style="font-family:var(--disp);font-weight:800;font-size:24px;letter-spacing:.02em;text-transform:uppercase;color:#fff;line-height:.95">Dance Films</div>
+      <div style="font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-top:5px">Master admin</div>
+    </div>
+    <nav style="flex:1;overflow:auto;padding:14px 12px">
+      <sc-for list="{{ navGroups }}" as="grp" hint-placeholder-count="4">
+        <div style="margin-bottom:6px">
+          <sc-if value="{{ grp.heading }}" hint-placeholder-val="{{ false }}"><div style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);padding:14px 12px 6px">{{ grp.heading }}</div></sc-if>
+          <sc-for list="{{ grp.items }}" as="it" hint-placeholder-count="3">
+            <button onClick="{{ it.onClick }}" style="{{ it.style }}">
+              <span style="display:flex;align-items:center;gap:11px"><span style="width:18px;display:inline-flex">{{ it.icon }}</span>{{ it.label }}</span>
+              <sc-if value="{{ it.badge }}" hint-placeholder-val="{{ false }}"><span style="background:var(--accent);color:#fff;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:var(--r-pill)">{{ it.badge }}</span></sc-if>
+            </button>
+          </sc-for>
+        </div>
+      </sc-for>
+    </nav>
+    <div style="padding:14px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:11px">
+      <div style="flex:0 0 auto;width:36px;height:36px;border-radius:var(--r-pill);background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">AJ</div>
+      <div style="min-width:0">
+        <div style="font-size:13px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Alex Jarvis</div>
+        <div style="font-size:11px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">ajdesign@hotmail.co.uk</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <header style="position:sticky;top:0;z-index:10;background:rgba(255,255,255,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 30px;height:62px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <sc-if value="{{ crumb }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--text-3)">{{ crumb }}</span><span style="color:var(--border-2)">/</span></sc-if>
+        <h1 style="font-family:var(--disp);font-weight:800;font-size:23px;letter-spacing:.01em;text-transform:uppercase;color:var(--text);margin:0">{{ pageTitle }}</h1>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex:0 0 auto">
+        <sc-if value="{{ headerAction }}" hint-placeholder-val="{{ false }}"><button onClick="{{ headerAction.onClick }}" style="{{ primaryBtn }}">{{ headerAction.label }}</button></sc-if>
+      </div>
+    </header>
+
+    <div style="flex:1;padding:30px;animation:fadeUp .3s ease both">
+
+      <!-- ===== DASHBOARD ===== -->
+      <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+          <sc-for list="{{ stats }}" as="st" hint-placeholder-count="4">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;box-shadow:var(--e-1)">
+              <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)">{{ st.label }}</div>
+              <div style="font-family:var(--disp);font-weight:800;font-size:42px;letter-spacing:.01em;color:var(--text);margin-top:8px;line-height:1">{{ st.value }}</div>
+              <div style="font-size:12.5px;color:{{ st.deltaColor }};margin-top:6px;font-weight:600">{{ st.delta }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:20px;margin-top:22px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)">
+              <div style="font-weight:700;font-size:15px">Recent enquiries</div>
+              <button onClick="{{ goEnquiries }}" style="{{ quietBtn }}">View all</button>
+            </div>
+            <sc-for list="{{ recentEnquiries }}" as="e" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border)">
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.school }}</div>
+                  <div style="font-size:12.5px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.name }} · {{ e.date }}</div>
+                </div>
+                <span style="{{ e.badge }}">{{ e.statusLabel }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);overflow:hidden">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px">Recent sales</div>
+            <sc-for list="{{ recentSales }}" as="s" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 20px;border-bottom:1px solid var(--border)">
+                <div style="min-width:0">
+                  <div style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.show }}</div>
+                  <div style="font-size:12px;color:var(--text-2)">{{ s.school }} · {{ s.when }}</div>
+                </div>
+                <div style="font-family:var(--disp);font-weight:700;font-size:18px;color:var(--success)">{{ s.amount }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== MARKETING: PAGES ===== -->
+      <sc-if value="{{ isPages }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:220px 1fr;gap:22px">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <sc-for list="{{ pageTabs }}" as="pg" hint-placeholder-count="4">
+              <button onClick="{{ pg.onClick }}" style="{{ pg.style }}">{{ pg.label }}</button>
+            </sc-for>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:24px;max-width:720px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px">
+              <div style="font-family:var(--disp);font-weight:800;font-size:22px;text-transform:uppercase;letter-spacing:.01em">{{ curPage.label }} page</div>
+              <span style="font-size:12px;color:var(--text-3)">dancefilms.co.uk{{ curPage.path }}</span>
+            </div>
+            <label style="{{ fieldLabel }}">Page heading</label>
+            <input value="{{ curPage.heading }}" style="{{ inputStyle }}">
+            <label style="{{ fieldLabel }}">Intro copy</label>
+            <textarea rows="4" style="{{ textareaStyle }}">{{ curPage.intro }}</textarea>
+            <label style="{{ fieldLabel }}">Hero image</label>
+            <div style="height:160px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);background:var(--surface-2)"><image-slot id="pageimg-{{ curPage.id }}" shape="rect" fit="cover" placeholder="Drop hero image for this page"></image-slot></div>
+            <div style="display:flex;gap:10px;margin-top:22px">
+              <button style="{{ primaryBtn }}">Save changes</button>
+              <button style="{{ secondaryBtn }}">Preview</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== MARKETING: BLOG ===== -->
+      <sc-if value="{{ isBlogList }}" hint-placeholder-val="{{ false }}">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);overflow:hidden">
+          <div style="display:grid;grid-template-columns:1fr 120px 120px 90px;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)">
+            <span>Article</span><span>Status</span><span>Date</span><span></span>
+          </div>
+          <sc-for list="{{ posts }}" as="p" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:1fr 120px 120px 90px;gap:12px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:12px;min-width:0">
+                <div style="flex:0 0 auto;width:52px;height:38px;border-radius:6px;overflow:hidden;background:var(--surface-2)"><image-slot id="blogthumb-{{ p.id }}" shape="rect" fit="cover" placeholder=""></image-slot></div>
+                <div style="min-width:0"><div style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.title }}</div><div style="font-size:12px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">/{{ p.slug }}</div></div>
+              </div>
+              <span style="{{ p.badge }}">{{ p.statusLabel }}</span>
+              <span style="font-size:13px;color:var(--text-2)">{{ p.date }}</span>
+              <button onClick="{{ p.onEdit }}" style="{{ quietBtn }}">Edit</button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isBlogEdit }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:22px;align-items:start">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:24px">
+            <label style="{{ fieldLabel }}">Title</label>
+            <input value="{{ editPost.title }}" style="{{ inputStyle }}">
+            <label style="{{ fieldLabel }}">Featured image</label>
+            <div style="height:180px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);background:var(--surface-2)"><image-slot id="blogfeat-{{ editPost.id }}" shape="rect" fit="cover" placeholder="Drop featured image"></image-slot></div>
+            <label style="{{ fieldLabel }}">Body</label>
+            <textarea rows="9" style="{{ textareaStyle }}">{{ editPost.body }}</textarea>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:20px">
+              <div style="font-weight:700;font-size:14px;margin-bottom:14px">Publish</div>
+              <div style="display:flex;gap:8px;margin-bottom:14px">
+                <button onClick="{{ setDraft }}" style="{{ draftTabStyle }}">Draft</button>
+                <button onClick="{{ setPublished }}" style="{{ pubTabStyle }}">Published</button>
+              </div>
+              <div style="display:flex;gap:10px">
+                <button style="{{ primaryBtn }}">Save</button>
+                <button onClick="{{ backToBlog }}" style="{{ secondaryBtn }}">Cancel</button>
+              </div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:20px">
+              <div style="font-weight:700;font-size:14px;margin-bottom:4px">SEO</div>
+              <label style="{{ fieldLabel }}">Meta title</label>
+              <input value="{{ editPost.metaTitle }}" style="{{ inputStyle }}">
+              <label style="{{ fieldLabel }}">Meta description</label>
+              <textarea rows="3" style="{{ textareaStyle }}">{{ editPost.metaDesc }}</textarea>
+              <label style="{{ fieldLabel }}">URL slug</label>
+              <div style="display:flex;align-items:center;border:1.5px solid var(--border);border-radius:var(--r-md);overflow:hidden;background:var(--surface-2)">
+                <span style="padding:0 4px 0 12px;font-size:13px;color:var(--text-3);white-space:nowrap">/blog/</span>
+                <input value="{{ editPost.slug }}" style="flex:1;padding:11px 12px 11px 2px;border:none;background:transparent;font-size:14px;color:var(--text);outline:none">
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== MARKETING: SEO ===== -->
+      <sc-if value="{{ isSeo }}" hint-placeholder-val="{{ false }}">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:24px;max-width:720px">
+          <div style="font-family:var(--disp);font-weight:800;font-size:22px;text-transform:uppercase;margin-bottom:6px">Global SEO</div>
+          <p style="color:var(--text-2);font-size:14px;margin:0 0 20px">Defaults for the marketing site. Per-post overrides live on each blog article.</p>
+          <label style="{{ fieldLabel }}">Site title</label>
+          <input value="Dance Films — cinematic dance show films" style="{{ inputStyle }}">
+          <label style="{{ fieldLabel }}">Default meta description</label>
+          <textarea rows="3" style="{{ textareaStyle }}">Dance Films captures and delivers cinematic films of dance school shows, ready for families to relive and rewatch.</textarea>
+          <label style="{{ fieldLabel }}">Social share image</label>
+          <div style="height:150px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);background:var(--surface-2)"><image-slot id="seo-og" shape="rect" fit="cover" placeholder="Drop 1200×630 share image"></image-slot></div>
+          <div style="margin-top:22px"><button style="{{ primaryBtn }}">Save SEO defaults</button></div>
+        </div>
+      </sc-if>
+
+      <!-- ===== MEDIA LIBRARY ===== -->
+      <sc-if value="{{ isMedia }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px">
+          <label style="aspect-ratio:4/3;border:2px dashed var(--border-2);border-radius:var(--r-lg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text-2);cursor:pointer;background:var(--surface)" style-hover="border-color:var(--accent);color:var(--accent)">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+            <span style="font-size:13px;font-weight:600">Upload asset</span>
+            <input type="file" style="display:none">
+          </label>
+          <sc-for list="{{ mediaItems }}" as="m" hint-placeholder-count="7">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--e-1)">
+              <div style="aspect-ratio:4/3;background:var(--surface-2)"><image-slot id="media-{{ m.id }}" shape="rect" fit="cover" placeholder="Asset"></image-slot></div>
+              <div style="padding:10px 12px"><div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.name }}</div><div style="font-size:11px;color:var(--text-3)">{{ m.meta }}</div></div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- ===== ENQUIRIES ===== -->
+      <sc-if value="{{ isEnquiries }}" hint-placeholder-val="{{ false }}">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);overflow:hidden">
+          <div style="display:grid;grid-template-columns:1fr 1fr 130px 120px;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)">
+            <span>School / contact</span><span>Message</span><span>Status</span><span></span>
+          </div>
+          <sc-for list="{{ enquiries }}" as="e" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:1fr 1fr 130px 120px;gap:12px;align-items:center;padding:15px 20px;border-bottom:1px solid var(--border)">
+              <div style="min-width:0"><div style="font-weight:600;font-size:14px">{{ e.school }}</div><div style="font-size:12.5px;color:var(--text-2)">{{ e.name }} · {{ e.email }}</div></div>
+              <div style="font-size:13px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.message }}</div>
+              <span style="{{ e.badge }}">{{ e.statusLabel }}</span>
+              <button onClick="{{ e.onToggle }}" style="{{ e.actionStyle }}">{{ e.actionLabel }}</button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- ===== SCHOOLS: LIST ===== -->
+      <sc-if value="{{ isSchoolList }}" hint-placeholder-val="{{ false }}">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);overflow:hidden">
+          <div style="display:grid;grid-template-columns:1fr 1fr 110px 130px;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)">
+            <span>School</span><span>Subdomain</span><span>Status</span><span></span>
+          </div>
+          <sc-for list="{{ schools }}" as="sc" hint-placeholder-count="2">
+            <div style="display:grid;grid-template-columns:1fr 1fr 110px 130px;gap:12px;align-items:center;padding:15px 20px;border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:12px;min-width:0">
+                <div style="flex:0 0 auto;width:34px;height:34px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;font-size:15px;color:#fff;background:{{ sc.swatch }}">{{ sc.initial }}</div>
+                <div style="min-width:0"><div style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ sc.name }}</div><div style="font-size:12px;color:var(--text-3)">{{ sc.platformName }}</div></div>
+              </div>
+              <a href="#" style="font-size:13px;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ sc.subdomain }}</a>
+              <span style="{{ sc.badge }}">{{ sc.statusLabel }}</span>
+              <button onClick="{{ sc.onSetup }}" style="{{ quietBtn }}">Configure</button>
+            </div>
+          </sc-for>
+          <sc-if value="{{ noSchools }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:60px 20px;text-align:center">
+              <div style="font-family:var(--disp);font-weight:700;font-size:22px;text-transform:uppercase;color:var(--text)">No schools yet</div>
+              <p style="color:var(--text-2);font-size:14px;margin:8px 0 18px">Add your first school and give it a subdomain to get started.</p>
+              <button onClick="{{ addSchool }}" style="{{ primaryBtn }}">Add a school</button>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ===== SETTINGS ===== -->
+      <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px;max-width:640px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:24px">
+            <div style="font-family:var(--disp);font-weight:800;font-size:20px;text-transform:uppercase;margin-bottom:16px">Admin account</div>
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+              <div style="width:52px;height:52px;border-radius:var(--r-pill);background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px">AJ</div>
+              <div><div style="font-weight:600;font-size:15px">Alex Jarvis</div><div style="font-size:13px;color:var(--text-2)">Owner · full rights</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <div><label style="{{ fieldLabel }}">Name</label><input value="Alex Jarvis" style="{{ inputStyle }}"></div>
+              <div><label style="{{ fieldLabel }}">Email</label><input value="ajdesign@hotmail.co.uk" style="{{ inputStyle }}"></div>
+            </div>
+            <div style="margin-top:16px"><button style="{{ secondaryBtn }}">Send password reset</button></div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-1);padding:24px">
+            <div style="font-family:var(--disp);font-weight:800;font-size:20px;text-transform:uppercase;margin-bottom:16px">General</div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <sc-for list="{{ settingsToggles }}" as="t" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--border)">
+                  <div><div style="font-weight:600;font-size:14px">{{ t.label }}</div><div style="font-size:12.5px;color:var(--text-2)">{{ t.desc }}</div></div>
+                  <button onClick="{{ t.onToggle }}" style="{{ t.style }}"><span style="{{ t.knob }}"></span></button>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:18px"><button style="{{ primaryBtn }}">Save settings</button></div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:860}}">
+class Component extends DCLogic {
+  state = {
+    nav:'dashboard',
+    pageId:'home', blogView:'list', editId:null, editStatus:'draft',
+    schoolView:'list', setupId:null,
+    form:{ name:'Liberty Dance Company', platformName:'Liberty Platform', sub:'liberty', font:'Big Shoulders Display', enabled:true,
+           colours:{primary:'#13D1C4', secondary:'#43576E', ink:'#0B171B', paper:'#F5F1E8', accentWarm:'#E8A54B'} },
+    schools:[
+      { id:'liberty', name:'Liberty Dance Company', platformName:'Liberty Platform', sub:'liberty', enabled:true, primary:'#13D1C4', secondary:'#43576E' },
+      { id:'stardust', name:'Stardust Academy of Dance', platformName:'Stardust Live', sub:'stardust', enabled:false, primary:'#B14BE8', secondary:'#2E2A4A' },
+    ],
+    enquiries:[
+      { id:'e1', school:'Pirouette School of Dance', name:'Rachel Adeyemi', email:'rachel@pirouette.co.uk', message:'We film two shows a year and want families to buy online.', status:'new', date:'21 Jul' },
+      { id:'e2', school:'Motion Dance Studio', name:'Tom Reeves', email:'tom@motiondance.com', message:'Interested in a demo for our summer showcase.', status:'new', date:'19 Jul' },
+      { id:'e3', school:'Elevate Performing Arts', name:'Priya Shah', email:'priya@elevatepa.co.uk', message:'Do you handle photo galleries as well as video?', status:'actioned', date:'14 Jul' },
+      { id:'e4', school:'Riverside Ballet', name:'Grace Miller', email:'grace@riverside.dance', message:'Looking to move away from DVDs this year.', status:'actioned', date:'09 Jul' },
+    ],
+    posts:[
+      { id:'b1', title:'How to film a dance show that families will treasure', slug:'film-a-dance-show', status:'published', date:'12 Jul', metaTitle:'Filming dance shows | Dance Films', metaDesc:'Our approach to capturing dance shows families will rewatch for years.', body:'A great show film starts long before the curtain...' },
+      { id:'b2', title:'Why we shoot multi-camera', slug:'multi-camera', status:'published', date:'28 Jun', metaTitle:'Multi-camera dance filming | Dance Films', metaDesc:'How multi-camera capture keeps every dancer in frame.', body:'One angle is never enough for a full company number...' },
+      { id:'b3', title:'Pricing photo galleries fairly', slug:'photo-gallery-pricing', status:'draft', date:'\u2014', metaTitle:'', metaDesc:'', body:'A note on how we price per-image photo galleries...' },
+    ],
+    pages:{
+      home:{ id:'home', label:'Home', path:'/', heading:'Cinematic films of the shows you\u2019ll never forget', intro:'Dance Films captures your school\u2019s shows and delivers them beautifully \u2014 for families to relive, rewatch and treasure.' },
+      services:{ id:'services', label:'Services', path:'/services', heading:'What we do', intro:'Multi-camera filming, colour-graded edits, photo galleries and a branded platform for every school.' },
+      about:{ id:'about', label:'About', path:'/about', heading:'The team behind the lens', intro:'Founded by Alex Jarvis, Dance Films works with schools across the region.' },
+      contact:{ id:'contact', label:'Contact', path:'/contact', heading:'Talk to us', intro:'Tell us about your school and shows and we\u2019ll be in touch.' },
+    },
+    media:[
+      { id:'m1', name:'home-hero.jpg', meta:'2400×1350 · 640 KB' },
+      { id:'m2', name:'services-banner.jpg', meta:'1920×1080 · 410 KB' },
+      { id:'m3', name:'alex-portrait.jpg', meta:'1200×1500 · 320 KB' },
+      { id:'m4', name:'studio-01.jpg', meta:'1600×1067 · 380 KB' },
+      { id:'m5', name:'og-share.jpg', meta:'1200×630 · 210 KB' },
+      { id:'m6', name:'logo-dancefilms.svg', meta:'SVG · 12 KB' },
+    ],
+    settings:{ enquiryAlerts:true, weeklyDigest:false, autoDraftSeo:true },
+  };
+
+  FONTS = ['Big Shoulders Display','Poppins','Montserrat','Hanken Grotesk','Playfair Display'];
+  fontStack(f){ return "'"+f+"', sans-serif"; }
+
+  nav(n){ this.setState({nav:n, blogView:'list', schoolView:'list'}); }
+  setPage(id){ this.setState({pageId:id}); }
+  editPost(id){ const p=this.state.posts.find(x=>x.id===id); this.setState({nav:'blog', blogView:'edit', editId:id, editStatus:p?p.status:'draft'}); }
+  newPost(){ this.setState({nav:'blog', blogView:'edit', editId:null, editStatus:'draft'}); }
+  toggleEnquiry(id){ this.setState({enquiries:this.state.enquiries.map(e=> e.id===id? {...e, status:e.status==='new'?'actioned':'new'}:e)}); }
+  gotoSchoolAdmin(){ window.location.href='Liberty School Admin.dc.html'; }
+  _setupSchoolOld(id){ const sc=this.state.schools.find(x=>x.id===id); const f=sc? {name:sc.name, platformName:sc.platformName, sub:sc.sub, font:'Big Shoulders Display', enabled:sc.enabled, colours:{primary:sc.primary, secondary:sc.secondary, ink:'#0B171B', paper:'#F5F1E8', accentWarm:'#E8A54B'}} : {name:'', platformName:'', sub:'', font:'Big Shoulders Display', enabled:true, colours:{primary:'#13D1C4', secondary:'#43576E', ink:'#0B171B', paper:'#F5F1E8', accentWarm:'#E8A54B'}}; this.setState({nav:'schools', schoolView:'setup', setupId:id, form:f}); }
+  addSchool(){ this.gotoSchoolAdmin(); }
+  setColour(k,v){ this.setState({form:{...this.state.form, colours:{...this.state.form.colours, [k]:v}}}); }
+  setForm(k,v){ this.setState({form:{...this.state.form, [k]:v}}); }
+  toggleSetting(k){ this.setState({settings:{...this.state.settings, [k]:!this.state.settings[k]}}); }
+
+  primaryBtnCss(){ return 'display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:var(--r-md);border:none;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:14px;letter-spacing:.01em;cursor:pointer;font-family:var(--body)'; }
+  secondaryBtnCss(){ return 'display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:var(--r-md);border:1.5px solid var(--border-2);background:var(--surface);color:var(--text);font-weight:600;font-size:14px;cursor:pointer;font-family:var(--body)'; }
+  quietBtnCss(){ return 'padding:7px 12px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;color:var(--text-2);font-weight:600;font-size:12.5px;cursor:pointer;font-family:var(--body)'; }
+  fieldLabelCss(){ return 'display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2);margin:16px 0 7px'; }
+  inputCss(){ return 'width:100%;padding:11px 13px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--surface-2);font-size:14px;color:var(--text);outline:none'; }
+  textareaCss(){ return this.inputCss()+';resize:vertical;line-height:1.5;font-family:var(--body)'; }
+  badge(kind){ const m={ new:['var(--accent-tint)','var(--success)'], actioned:['var(--surface-2)','var(--text-2)'], published:['var(--success-tint)','var(--success)'], draft:['var(--warn-tint)','var(--warn)'], active:['var(--success-tint)','var(--success)'], disabled:['var(--surface-2)','var(--text-3)'] }; const c=m[kind]||m.actioned; return 'display:inline-flex;align-items:center;gap:5px;justify-self:start;padding:4px 10px;border-radius:var(--r-pill);font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;background:'+c[0]+';color:'+c[1]; }
+  toggleCss(on){ return 'position:relative;width:42px;height:24px;border-radius:var(--r-pill);border:none;cursor:pointer;transition:background .15s;background:'+(on?'var(--accent)':'var(--border-2)'); }
+  knobCss(on){ return 'position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:var(--r-pill);background:#fff;transition:transform .15s;transform:translateX('+(on?'18px':'0')+')'; }
+  navItemCss(active){ return 'width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:var(--r-md);border:none;cursor:pointer;font-family:var(--body);font-size:14px;font-weight:600;text-align:left;'+(active?'background:rgba(255,255,255,.12);color:#fff':'background:transparent;color:#A9B7C0'); }
+  pageTabCss(active){ return 'width:100%;text-align:left;padding:11px 14px;border-radius:var(--r-md);border:1px solid '+(active?'var(--accent)':'var(--border)')+';background:'+(active?'var(--accent-tint)':'var(--surface)')+';color:var(--text);font-weight:600;font-size:14px;cursor:pointer;font-family:var(--body)'; }
+  subTabCss(active){ return 'flex:1;padding:9px;border-radius:var(--r-sm);border:1px solid '+(active?'var(--accent)':'var(--border-2)')+';background:'+(active?'var(--accent)':'var(--surface)')+';color:'+(active?'#fff':'var(--text-2)')+';font-weight:700;font-size:13px;cursor:pointer;font-family:var(--body)'; }
+
+  ic(p){ return React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.7,strokeLinecap:'round',strokeLinejoin:'round',dangerouslySetInnerHTML:{__html:p}}); }
+
+  renderVals(){
+    const s=this.state, n=s.nav, f=s.form;
+    const titles={ dashboard:'Dashboard', pages:'Pages', blog:'Blog', seo:'SEO', media:'Media library', enquiries:'Enquiries', schools:'Schools', settings:'Settings' };
+    const crumbs={ pages:'Marketing', blog:'Marketing', seo:'Marketing' };
+    const newCount=s.enquiries.filter(e=>e.status==='new').length;
+
+    const icons={
+      dashboard:this.ic('<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>'),
+      pages:this.ic('<path d="M4 3h11l5 5v13H4z"/><path d="M15 3v5h5"/>'),
+      blog:this.ic('<path d="M4 5h16M4 12h16M4 19h10"/>'),
+      seo:this.ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>'),
+      media:this.ic('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M4 18l5-4 4 3 3-2 4 3"/>'),
+      enquiries:this.ic('<path d="M4 5h16v11H8l-4 4z"/>'),
+      schools:this.ic('<path d="M3 21h18M5 21V8l7-4 7 4v13M9 21v-5h6v5"/>'),
+      settings:this.ic('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>'),
+    };
+    const mk=(id,label,badge)=>({ label, icon:icons[id], badge:badge||'', onClick:()=>this.nav(id), style:this.navItemCss(n===id || (id==='blog'&&n==='blog')) });
+    const navGroups=[
+      { heading:'', items:[ mk('dashboard','Dashboard') ] },
+      { heading:'Marketing', items:[ mk('pages','Pages'), mk('blog','Blog'), mk('seo','SEO'), mk('media','Media library') ] },
+      { heading:'Business', items:[ mk('enquiries','Enquiries', newCount||''), mk('schools','Schools') ] },
+      { heading:'', items:[ mk('settings','Settings') ] },
+    ];
+
+    // header action per screen
+    let headerAction=null;
+    if(n==='blog' && s.blogView==='list') headerAction={ label:'New article', onClick:()=>this.newPost() };
+    if(n==='schools' && s.schoolView==='list') headerAction={ label:'Add school', onClick:()=>this.addSchool() };
+    let pageTitle=titles[n]||'Dashboard';
+    if(n==='blog' && s.blogView==='edit') pageTitle = s.editId? 'Edit article':'New article';
+    if(n==='schools' && s.schoolView==='setup') pageTitle = s.setupId? 'Configure school':'Add school';
+
+    const pv={
+      name:f.name||'New school', sub:f.sub||'school', platformName:f.platformName||f.name||'Platform',
+      primary:f.colours.primary, secondary:f.colours.secondary, ink:f.colours.ink, paper:f.colours.paper, accentWarm:f.colours.accentWarm,
+      appBg:'#ffffff', surface2:'#F4F6F8', border:'#E4E9ED', text2:'#5C6B75', fontStack:this.fontStack(f.font),
+    };
+
+    return {
+      navGroups, pageTitle, crumb:crumbs[n]||'', headerAction,
+      primaryBtn:this.primaryBtnCss(), secondaryBtn:this.secondaryBtnCss(), quietBtn:this.quietBtnCss(),
+      fieldLabel:this.fieldLabelCss(), inputStyle:this.inputCss(), textareaStyle:this.textareaCss(),
+
+      isDash:n==='dashboard', isPages:n==='pages', isSeo:n==='seo', isMedia:n==='media', isEnquiries:n==='enquiries', isSettings:n==='settings',
+      isBlogList:n==='blog'&&s.blogView==='list', isBlogEdit:n==='blog'&&s.blogView==='edit',
+      isSchoolList:n==='schools'&&s.schoolView==='list', isSchoolSetup:false,
+
+      stats:[
+        { label:'Active schools', value:s.schools.filter(x=>x.enabled).length, delta:s.schools.length+' total', deltaColor:'var(--text-2)' },
+        { label:'New enquiries', value:newCount, delta:'awaiting action', deltaColor:'var(--success)' },
+        { label:'Sales this month', value:'\u00a31,284', delta:'+18% vs last month', deltaColor:'var(--success)' },
+        { label:'Sign-ups', value:'46', delta:'+7 this week', deltaColor:'var(--success)' },
+      ],
+      recentEnquiries:s.enquiries.slice(0,3).map(e=>({ ...e, statusLabel:e.status==='new'?'New':'Actioned', badge:this.badge(e.status) })),
+      recentSales:[
+        { show:'Reflections \u2014 full show', school:'Liberty', when:'2h ago', amount:'\u00a324' },
+        { show:'Swan (No. 07)', school:'Liberty', when:'5h ago', amount:'\u00a24' },
+        { show:'Electric \u2014 full show', school:'Liberty', when:'Yesterday', amount:'\u00a320' },
+        { show:'Once Upon a Time', school:'Liberty', when:'Yesterday', amount:'\u00a322' },
+      ],
+      goEnquiries:()=>this.nav('enquiries'),
+
+      pageTabs:Object.values(s.pages).map(p=>({ label:p.label, onClick:()=>this.setPage(p.id), style:this.pageTabCss(s.pageId===p.id) })),
+      curPage:s.pages[s.pageId],
+
+      posts:s.posts.map(p=>({ ...p, statusLabel:p.status==='published'?'Published':'Draft', badge:this.badge(p.status), onEdit:()=>this.editPost(p.id) })),
+      editPost:(s.editId? s.posts.find(x=>x.id===s.editId):{ id:'new', title:'', slug:'', body:'', metaTitle:'', metaDesc:'' }),
+      setDraft:()=>this.setState({editStatus:'draft'}), setPublished:()=>this.setState({editStatus:'published'}),
+      draftTabStyle:this.subTabCss(s.editStatus==='draft'), pubTabStyle:this.subTabCss(s.editStatus==='published'),
+      backToBlog:()=>this.setState({blogView:'list'}),
+
+      mediaItems:s.media,
+      enquiries:s.enquiries.map(e=>({ ...e, statusLabel:e.status==='new'?'New':'Actioned', badge:this.badge(e.status), onToggle:()=>this.toggleEnquiry(e.id), actionLabel:e.status==='new'?'Mark actioned':'Reopen', actionStyle:this.quietBtnCss() })),
+
+      schools:s.schools.map(sc=>({ ...sc, initial:sc.name.charAt(0), swatch:sc.primary, subdomain:sc.sub+'.dancefilms.co.uk', statusLabel:sc.enabled?'Active':'Disabled', badge:this.badge(sc.enabled?'active':'disabled'), onSetup:()=>this.gotoSchoolAdmin() })),
+      noSchools:s.schools.length===0, addSchool:()=>this.addSchool(),
+
+      form:{ name:f.name, platformName:f.platformName, sub:f.sub, font:f.font },
+      onName:(e)=>this.setForm('name',e.target.value), onPlatformName:(e)=>this.setForm('platformName',e.target.value),
+      onSub:(e)=>this.setForm('sub',e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,'')), onFont:(e)=>this.setForm('font',e.target.value),
+      fontOptions:this.FONTS,
+      palette:[
+        { key:'primary', label:'Primary', value:f.colours.primary, onChange:(e)=>this.setColour('primary',e.target.value) },
+        { key:'secondary', label:'Secondary', value:f.colours.secondary, onChange:(e)=>this.setColour('secondary',e.target.value) },
+        { key:'ink', label:'Ink / dark', value:f.colours.ink, onChange:(e)=>this.setColour('ink',e.target.value) },
+        { key:'paper', label:'Paper / light', value:f.colours.paper, onChange:(e)=>this.setColour('paper',e.target.value) },
+        { key:'accentWarm', label:'Accent', value:f.colours.accentWarm, onChange:(e)=>this.setColour('accentWarm',e.target.value) },
+      ],
+      enabledLabel:f.enabled?'Enabled':'Disabled', enabledColor:f.enabled?'var(--success)':'var(--text-3)',
+      toggleEnabled:()=>this.setForm('enabled',!f.enabled), toggleStyle:this.toggleCss(f.enabled), knobStyle:this.knobCss(f.enabled),
+      saveSchool:()=>this.nav('schools'), backToSchools:()=>this.setState({schoolView:'list'}),
+      pv,
+
+      settingsToggles:[
+        { key:'enquiryAlerts', label:'Email me new enquiries', desc:'Get an email the moment a school submits the contact form.', style:this.toggleCss(s.settings.enquiryAlerts), knob:this.knobCss(s.settings.enquiryAlerts), onToggle:()=>this.toggleSetting('enquiryAlerts') },
+        { key:'weeklyDigest', label:'Weekly sales digest', desc:'A Monday summary of sales across all schools.', style:this.toggleCss(s.settings.weeklyDigest), knob:this.knobCss(s.settings.weeklyDigest), onToggle:()=>this.toggleSetting('weeklyDigest') },
+        { key:'autoDraftSeo', label:'Auto-fill SEO on new posts', desc:'Pre-populate meta fields from the article title and intro.', style:this.toggleCss(s.settings.autoDraftSeo), knob:this.knobCss(s.settings.autoDraftSeo), onToggle:()=>this.toggleSetting('autoDraftSeo') },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
