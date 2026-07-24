@@ -82,31 +82,30 @@ export default async function ShowsPage() {
           </>
         )}
 
-        {/* Meet the media team (placeholder copy from the design; see Stage 4 notes) */}
-        <div className={styles.teamBreakout}>
-          <div className={styles.team}>
-            <div className={styles.teamPhoto}>
-              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, var(--surface-2), var(--brand-2))" }} />
-            </div>
-            <div className={styles.teamBody}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--accent)" }}>
-                Meet the media team
-              </div>
-              <h2 style={{ fontFamily: "var(--disp)", fontWeight: 800, fontSize: 34, letterSpacing: ".01em", textTransform: "uppercase", color: "var(--text)", margin: "12px 0 4px" }}>
-                Alex Jarvis
-              </h2>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)" }}>Founder, Dance Films</div>
-              <p style={{ margin: "16px 0 0", color: "var(--text-2)", fontSize: 15, lineHeight: 1.6, maxWidth: "52ch" }}>
-                Alex is the videographer behind Dance Films, capturing dance shows with a
-                cinematic eye for the moments that matter. [Placeholder — final copy to follow.]
-              </p>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-                <span style={{ flex: "0 0 auto", width: 7, height: 7, borderRadius: "var(--r-pill)", background: "var(--accent)", marginTop: 7 }} />
-                <span style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.5 }}>
-                  Multi-camera capture, colour-graded for a cinematic finish.
-                </span>
-              </div>
-            </div>
+      </div>
+
+      {/* Meet the media team — full-width band (placeholder copy; see Stage 4 notes) */}
+      <div className={styles.team}>
+        <div className={styles.teamPhoto}>
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, var(--surface-2), var(--brand-2))" }} />
+        </div>
+        <div className={styles.teamBody}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--accent)" }}>
+            Meet the media team
+          </div>
+          <h2 style={{ fontFamily: "var(--disp)", fontWeight: 800, fontSize: 34, letterSpacing: ".01em", textTransform: "uppercase", color: "var(--brand-2)", margin: "12px 0 4px" }}>
+            Alex Jarvis
+          </h2>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)" }}>Founder, Dance Films</div>
+          <p style={{ margin: "16px 0 0", color: "var(--text-2)", fontSize: 15, lineHeight: 1.6, maxWidth: "52ch" }}>
+            Alex is the videographer behind Dance Films, capturing dance shows with a
+            cinematic eye for the moments that matter. [Placeholder — final copy to follow.]
+          </p>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+            <span style={{ flex: "0 0 auto", width: 7, height: 7, borderRadius: "var(--r-pill)", background: "var(--accent)", marginTop: 7 }} />
+            <span style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.5 }}>
+              Multi-camera capture, colour-graded for a cinematic finish.
+            </span>
           </div>
         </div>
       </div>
