@@ -2,13 +2,13 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 import styles from "@/app/(platform)/show/[slug]/show.module.css";
+import { getEmbedUrl } from "@/app/(platform)/show/[slug]/embed-actions";
 
 export type PerfItem = {
-  id: string;
+  id: string; // DB uuid — safe to expose; vimeo_id is NOT sent to the client
   title: string;
-  vimeoId: string;
   thumbnailUrl: string | null;
-  duration: string; // formatted "4:12"
+  duration: string;
   group: string | null;
   style: string | null;
 };
@@ -16,7 +16,8 @@ export type PerfItem = {
 type Props = {
   showTitle: string;
   showYear: number | null;
-  fullShowVimeoId: string | null;
+  showId: string;
+  fullShowAvailable: boolean;
   fullShowDuration: string;
   performances: PerfItem[];
   groups: string[];
@@ -26,13 +27,13 @@ type Props = {
 type Viewing = { type: "full" } | { type: "perf"; id: string } | null;
 
 const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
-const vimeoSrc = (id: string) =>
-  `https://player.vimeo.com/video/${id}?title=0&byline=0&portrait=0&autoplay=1`;
+const noContextMenu = (e: React.MouseEvent) => e.preventDefault();
 
 export default function ShowExperience({
   showTitle,
   showYear,
-  fullShowVimeoId,
+  showId,
+  fullShowAvailable,
   fullShowDuration,
   performances,
   groups,
@@ -43,6 +44,8 @@ export default function ShowExperience({
     value: null,
   });
   const [viewing, setViewing] = useState<Viewing>(null);
+  const [embedUrl, setEmbedUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const visible = useMemo(() => {
     if (!filter.kind) return performances;
@@ -54,38 +57,39 @@ export default function ShowExperience({
   const count = (kind: "group" | "style", value: string) =>
     performances.filter((p) => (kind === "group" ? p.group === value : p.style === value)).length;
 
-  // Current performance + neighbours (within the filtered list) for the overlay.
   const perfIndex = viewing?.type === "perf" ? visible.findIndex((p) => p.id === viewing.id) : -1;
   const curPerf = perfIndex >= 0 ? visible[perfIndex] : null;
   const hasPrev = perfIndex > 0;
   const hasNext = perfIndex >= 0 && perfIndex < visible.length - 1;
+
+  async function play(v: Viewing) {
+    setViewing(v);
+    setEmbedUrl(null);
+    if (!v) return;
+    setLoading(true);
+    const url = v.type === "full" ? await getEmbedUrl("full", showId) : await getEmbedUrl("perf", v.id);
+    setEmbedUrl(url);
+    setLoading(false);
+  }
+
   const step = (d: number) => {
     const n = perfIndex + d;
-    if (n >= 0 && n < visible.length) setViewing({ type: "perf", id: visible[n].id });
+    if (n >= 0 && n < visible.length) play({ type: "perf", id: visible[n].id });
   };
 
-  const currentVimeoId = viewing?.type === "full" ? fullShowVimeoId : curPerf?.vimeoId ?? null;
+  const close = () => {
+    setViewing(null);
+    setEmbedUrl(null);
+  };
 
   return (
     <div className={styles.body}>
-      {/* Full show */}
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 12 }}>
         The full show
       </div>
       <button
-        onClick={() => fullShowVimeoId && setViewing({ type: "full" })}
-        style={{
-          position: "relative",
-          width: "100%",
-          aspectRatio: "16 / 9",
-          borderRadius: "var(--r-lg)",
-          overflow: "hidden",
-          background: "#0a1119",
-          boxShadow: "var(--card-shadow)",
-          border: "none",
-          cursor: fullShowVimeoId ? "pointer" : "default",
-          padding: 0,
-        }}
+        onClick={() => fullShowAvailable && play({ type: "full" })}
+        style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", borderRadius: "var(--r-lg)", overflow: "hidden", background: "#0a1119", boxShadow: "var(--card-shadow)", border: "none", cursor: fullShowAvailable ? "pointer" : "default", padding: 0 }}
       >
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, var(--brand-2), var(--ink))" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(10,17,25,.2),rgba(10,17,25,.6))", pointerEvents: "none" }} />
@@ -102,7 +106,6 @@ export default function ShowExperience({
         </div>
       </button>
 
-      {/* Performances header + filters */}
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, margin: "52px 0 6px" }}>
         <h2 style={{ fontFamily: "var(--disp)", fontWeight: 800, fontSize: 32, letterSpacing: ".01em", textTransform: "uppercase", color: "var(--text)", margin: 0 }}>
           Performances
@@ -131,10 +134,9 @@ export default function ShowExperience({
         </div>
       )}
 
-      {/* Performance library */}
       <div className={styles.progGrid} style={{ marginTop: 10 }}>
-        {visible.map((p, i) => (
-          <button key={p.id} className={styles.progRow} onClick={() => setViewing({ type: "perf", id: p.id })}>
+        {visible.map((p) => (
+          <button key={p.id} className={styles.progRow} onClick={() => play({ type: "perf", id: p.id })}>
             <div className={styles.progNum}>{pad2(performances.indexOf(p) + 1)}</div>
             <div className={styles.progThumb}>
               {p.thumbnailUrl ? (
@@ -167,24 +169,30 @@ export default function ShowExperience({
         )}
       </div>
 
-      {/* Viewing overlay */}
       {viewing && (
         <div className={styles.overlay} role="dialog" aria-modal="true">
           <div className={styles.overlayTop}>
-            <button onClick={() => setViewing(null)} style={backBtn}>
+            <button onClick={close} style={backBtn}>
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M13 8H4M7 4L3 8l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               Back to show
             </button>
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: "#8aa0b3" }}>
               {viewing.type === "perf" && perfIndex >= 0 ? `${pad2(perfIndex + 1)} / ${pad2(visible.length)}` : "Full show"}
             </div>
-            <button onClick={() => setViewing(null)} aria-label="Close" style={{ ...backBtn, width: 42, height: 42, padding: 0, justifyContent: "center", fontSize: 20 }}>×</button>
+            <button onClick={close} aria-label="Close" style={{ ...backBtn, width: 42, height: 42, padding: 0, justifyContent: "center", fontSize: 20 }}>×</button>
           </div>
           <div className={styles.overlayScroll}>
             <div className={styles.overlayStage}>
-              <div className={styles.player}>
-                {currentVimeoId ? (
-                  <iframe src={vimeoSrc(currentVimeoId)} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen title={viewing.type === "full" ? `${showTitle} — full show` : curPerf?.title ?? "Performance"} />
+              <div className={styles.player} onContextMenu={noContextMenu}>
+                {loading ? (
+                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#8aa0b3", fontSize: 13 }}>Loading…</div>
+                ) : embedUrl ? (
+                  <iframe
+                    src={embedUrl}
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    allowFullScreen
+                    title={viewing.type === "full" ? `${showTitle} — full show` : curPerf?.title ?? "Performance"}
+                  />
                 ) : (
                   <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#8aa0b3", fontSize: 14 }}>
                     No video available.

@@ -99,7 +99,7 @@ export default async function ShowPage({
 
   const { data: perfRows } = await supabase
     .from("performances")
-    .select("id, title, vimeo_id, thumbnail_url, duration_seconds, sort_order")
+    .select("id, title, thumbnail_url, duration_seconds, sort_order")
     .eq("show_id", show.id)
     .order("sort_order", { ascending: true });
 
@@ -129,7 +129,6 @@ export default async function ShowPage({
     return {
       id: p.id,
       title: p.title,
-      vimeoId: p.vimeo_id,
       thumbnailUrl: p.thumbnail_url,
       duration: formatDuration(p.duration_seconds),
       group,
@@ -152,7 +151,8 @@ export default async function ShowPage({
       <ShowExperience
         showTitle={show.title}
         showYear={show.show_year}
-        fullShowVimeoId={video?.full_show_vimeo_id ?? null}
+        showId={show.id}
+        fullShowAvailable={!!video?.full_show_vimeo_id}
         fullShowDuration={formatRuntime(video?.duration_seconds)}
         performances={performances}
         groups={groups}
