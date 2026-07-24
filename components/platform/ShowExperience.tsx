@@ -39,9 +39,9 @@ export default function ShowExperience({
   groups,
   styles: styleList,
 }: Props) {
-  const [filter, setFilter] = useState<{ kind: "group" | "style" | null; value: string | null }>({
-    kind: null,
-    value: null,
+  const [filter, setFilter] = useState<{ group: string | null; style: string | null }>({
+    group: null,
+    style: null,
   });
   const [viewing, setViewing] = useState<Viewing>(null);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
@@ -50,9 +50,8 @@ export default function ShowExperience({
   const [downloadMsg, setDownloadMsg] = useState<string | null>(null);
 
   const visible = useMemo(() => {
-    if (!filter.kind) return performances;
-    return performances.filter((p) =>
-      filter.kind === "group" ? p.group === filter.value : p.style === filter.value,
+    return performances.filter(
+      (p) => (!filter.group || p.group === filter.group) && (!filter.style || p.style === filter.style),
     );
   }, [performances, filter]);
 
@@ -141,26 +140,33 @@ export default function ShowExperience({
         </span>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", margin: "16px 0 4px" }}>
-        <button onClick={() => setFilter({ kind: null, value: null })} style={chip(!filter.kind)}>All dances</button>
-        {groups.map((g) => (
-          <button key={g} onClick={() => setFilter({ kind: "group", value: g })} style={chip(filter.kind === "group" && filter.value === g)}>
-            {g} · {count("group", g)}
-          </button>
-        ))}
-      </div>
-      {styleList.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 6 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--text-2)", marginRight: 2 }}>Style</span>
-          {styleList.map((st) => (
-            <button key={st} onClick={() => setFilter({ kind: "style", value: st })} style={chip(filter.kind === "style" && filter.value === st)}>
-              {st} · {count("style", st)}
-            </button>
-          ))}
+      {(groups.length > 0 || styleList.length > 0) && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-end", marginTop: 18 }}>
+          {groups.length > 0 && (
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={filterLabel}>Group</span>
+              <select value={filter.group ?? ""} onChange={(e) => setFilter((f) => ({ ...f, group: e.target.value || null }))} style={filterSelect}>
+                <option value="">All groups</option>
+                {groups.map((g) => <option key={g} value={g}>{g} · {count("group", g)}</option>)}
+              </select>
+            </label>
+          )}
+          {styleList.length > 0 && (
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={filterLabel}>Style</span>
+              <select value={filter.style ?? ""} onChange={(e) => setFilter((f) => ({ ...f, style: e.target.value || null }))} style={filterSelect}>
+                <option value="">All styles</option>
+                {styleList.map((st) => <option key={st} value={st}>{st} · {count("style", st)}</option>)}
+              </select>
+            </label>
+          )}
+          {(filter.group || filter.style) && (
+            <button onClick={() => setFilter({ group: null, style: null })} style={clearBtn}>Clear filters</button>
+          )}
         </div>
       )}
 
-      <div className={styles.progGrid} style={{ marginTop: 10 }}>
+      <div className={styles.progGrid} style={{ marginTop: 40 }}>
         {visible.map((p) => (
           <button key={p.id} className={styles.progRow} onClick={() => play({ type: "perf", id: p.id })}>
             <div className={styles.progNum}>{pad2(performances.indexOf(p) + 1)}</div>
@@ -267,21 +273,41 @@ export default function ShowExperience({
   );
 }
 
-function chip(active: boolean): CSSProperties {
-  return {
-    fontSize: 12.5,
-    fontWeight: 600,
-    letterSpacing: ".01em",
-    padding: "8px 13px",
-    borderRadius: "var(--r-sm)",
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-    fontFamily: "var(--body)",
-    border: active ? "1px solid var(--accent)" : "1px solid var(--border)",
-    background: active ? "var(--accent)" : "transparent",
-    color: active ? "var(--on-accent)" : "var(--text)",
-  };
-}
+const filterLabel: CSSProperties = {
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: ".12em",
+  textTransform: "uppercase",
+  color: "var(--text-2)",
+};
+
+const filterSelect: CSSProperties = {
+  appearance: "auto",
+  padding: "11px 14px",
+  borderRadius: "var(--r-sm)",
+  border: "1px solid var(--border)",
+  background: "var(--surface)",
+  color: "var(--text)",
+  fontSize: 14,
+  fontWeight: 600,
+  fontFamily: "var(--body)",
+  cursor: "pointer",
+  minWidth: 190,
+};
+
+const clearBtn: CSSProperties = {
+  padding: "11px 15px",
+  borderRadius: "var(--r-sm)",
+  border: "1px solid var(--border)",
+  background: "transparent",
+  color: "var(--text-2)",
+  fontSize: 12.5,
+  fontWeight: 700,
+  letterSpacing: ".04em",
+  textTransform: "uppercase",
+  cursor: "pointer",
+  fontFamily: "var(--body)",
+};
 
 const backBtn: CSSProperties = {
   display: "inline-flex",
