@@ -118,9 +118,16 @@ export default function BrandingForm({
         </div>
 
         <div className={`${styles.card} ${styles.cardPad}`}>
-          <div className={styles.cardTitle} style={{ marginBottom: 14 }}>Sign-in photo</div>
-          <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Image URL (shown on the login screen)</label>
-          <input className={styles.input} style={{ fontFamily: "ui-monospace,monospace", fontSize: 12.5 }} value={form.signInImageUrl} onChange={(e) => set("signInImageUrl", e.target.value)} placeholder="https://…" />
+          <div className={styles.cardTitle} style={{ marginBottom: 4 }}>Sign-in photo</div>
+          <p style={{ fontSize: 12.5, color: "var(--text-2)", margin: "0 0 12px" }}>Shown on the login screen (left panel).</p>
+          <div style={{ height: 150, borderRadius: "var(--r-md)", border: "1px solid var(--border)", background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            {form.signInImageUrl ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={form.signInImageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 11, color: "var(--text-3)" }}>No photo yet</span>}
+          </div>
+          <label className={styles.secondaryBtn} style={{ marginTop: 8, width: "100%", cursor: uploading ? "default" : "pointer" }}>
+            {uploading === "sign-in" ? "Uploading…" : form.signInImageUrl ? "Replace photo" : "Upload photo"}
+            <input type="file" accept="image/*" style={{ display: "none" }} disabled={!!uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage("sign-in", "signInImageUrl", f); e.target.value = ""; }} />
+          </label>
+          <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 8 }}>JPG or PNG, up to 2MB. A landscape studio/show photo works best.</div>
         </div>
 
         <div style={{ display: "flex", gap: 10, position: "sticky", bottom: 0, padding: "14px 0", alignItems: "center" }}>
