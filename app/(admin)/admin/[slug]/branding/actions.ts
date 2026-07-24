@@ -25,6 +25,35 @@ export type BrandingResult = { ok: true } | { error: string };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
+export type UploadResult = { url: string } | { error: string };
+
+/**
+ * Upload a branding image (logo/photo) to the public `branding` bucket via the
+ * service role and return its public URL. The URL is then saved with the rest
+ * of the branding form. Accepts images up to 2MB (incl. SVG).
+ */
+export async function uploadBrandingImage(
+  schoolId: string,
+  slot: "logo-colour" | "logo-white" | "sign-in",
+  formData: FormData,
+): Promise<UploadResult> {
+  await requireAdmin();
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { error: "No file selected." };
+  if (!file.type.startsWith("image/")) return { error: "Please choose an image file." };
+  if (file.size > 2 * 1024 * 1024) return { error: "Image must be under 2MB." };
+
+  const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const path = `${schoolId}/${slot}-${crypto.randomUUID()}.${ext}`;
+
+  const admin = createAdminClient();
+  const { error } = await admin.storage.from("branding").upload(path, file, { contentType: file.type, upsert: true });
+  if (error) return { error: "Upload failed. Please try again." };
+
+  const { data } = admin.storage.from("branding").getPublicUrl(path);
+  return { url: data.publicUrl };
+}
+
 export async function updateBranding(schoolId: string, slug: string, form: BrandingForm): Promise<BrandingResult> {
   await requireAdmin();
 

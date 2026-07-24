@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
-import { updateBranding, type BrandingForm as FormT } from "@/app/(admin)/admin/[slug]/branding/actions";
+import { updateBranding, uploadBrandingImage, type BrandingForm as FormT } from "@/app/(admin)/admin/[slug]/branding/actions";
 
 const FONTS = ["Big Shoulders Display", "Poppins", "Montserrat", "Hanken Grotesk", "Playfair Display"];
 
@@ -19,6 +19,18 @@ export default function BrandingForm({
   const [msg, setMsg] = useState<{ ok?: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
   const set = <K extends keyof FormT>(k: K, v: FormT[K]) => setForm((f) => ({ ...f, [k]: v }));
+  const [uploading, setUploading] = useState<string | null>(null);
+
+  async function uploadImage(slot: "logo-colour" | "logo-white" | "sign-in", field: keyof FormT, file: File) {
+    setMsg(null);
+    setUploading(slot);
+    const fd = new FormData();
+    fd.set("file", file);
+    const res = await uploadBrandingImage(schoolId, slot, fd);
+    setUploading(null);
+    if ("url" in res) set(field, res.url as FormT[typeof field]);
+    else setMsg({ ok: false, text: res.error });
+  }
 
   function save() {
     setMsg(null);
@@ -56,20 +68,27 @@ export default function BrandingForm({
           <div className={styles.cardTitle} style={{ marginBottom: 14 }}>Logo</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div>
-              <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Colour logo URL (light bg)</label>
-              <input className={styles.input} style={{ fontFamily: "ui-monospace,monospace", fontSize: 12.5 }} value={form.logoColourUrl} onChange={(e) => set("logoColourUrl", e.target.value)} placeholder="https://…" />
-              <div style={{ height: 70, marginTop: 8, borderRadius: "var(--r-md)", border: "1px solid var(--border)", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                {form.logoColourUrl ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={form.logoColourUrl} alt="" style={{ maxHeight: "80%", maxWidth: "80%", objectFit: "contain" }} /> : <span style={{ fontSize: 11, color: "var(--text-3)" }}>preview</span>}
+              <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Colour logo (light bg)</label>
+              <div style={{ height: 96, borderRadius: "var(--r-md)", border: "1px solid var(--border)", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                {form.logoColourUrl ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={form.logoColourUrl} alt="" style={{ maxHeight: "78%", maxWidth: "82%", objectFit: "contain" }} /> : <span style={{ fontSize: 11, color: "var(--text-3)" }}>No logo yet</span>}
               </div>
+              <label className={styles.secondaryBtn} style={{ marginTop: 8, width: "100%", cursor: uploading ? "default" : "pointer" }}>
+                {uploading === "logo-colour" ? "Uploading…" : form.logoColourUrl ? "Replace" : "Upload logo"}
+                <input type="file" accept="image/*" style={{ display: "none" }} disabled={!!uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage("logo-colour", "logoColourUrl", f); e.target.value = ""; }} />
+              </label>
             </div>
             <div>
-              <label className={styles.fieldLabel} style={{ marginTop: 0 }}>White logo URL (dark bg)</label>
-              <input className={styles.input} style={{ fontFamily: "ui-monospace,monospace", fontSize: 12.5 }} value={form.logoWhiteUrl} onChange={(e) => set("logoWhiteUrl", e.target.value)} placeholder="https://…" />
-              <div style={{ height: 70, marginTop: 8, borderRadius: "var(--r-md)", border: "1px solid var(--border)", background: "var(--sidebar)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                {form.logoWhiteUrl ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={form.logoWhiteUrl} alt="" style={{ maxHeight: "80%", maxWidth: "80%", objectFit: "contain" }} /> : <span style={{ fontSize: 11, color: "var(--text-3)" }}>preview</span>}
+              <label className={styles.fieldLabel} style={{ marginTop: 0 }}>White logo (dark bg)</label>
+              <div style={{ height: 96, borderRadius: "var(--r-md)", border: "1px solid var(--border)", background: "var(--sidebar)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                {form.logoWhiteUrl ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={form.logoWhiteUrl} alt="" style={{ maxHeight: "78%", maxWidth: "82%", objectFit: "contain" }} /> : <span style={{ fontSize: 11, color: "var(--text-3)" }}>No logo yet</span>}
               </div>
+              <label className={styles.secondaryBtn} style={{ marginTop: 8, width: "100%", cursor: uploading ? "default" : "pointer" }}>
+                {uploading === "logo-white" ? "Uploading…" : form.logoWhiteUrl ? "Replace" : "Upload logo"}
+                <input type="file" accept="image/*" style={{ display: "none" }} disabled={!!uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage("logo-white", "logoWhiteUrl", f); e.target.value = ""; }} />
+              </label>
             </div>
           </div>
+          <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 8 }}>PNG or SVG, up to 2MB. Uploads immediately; click Save changes to apply.</div>
         </div>
 
         <div className={`${styles.card} ${styles.cardPad}`}>
