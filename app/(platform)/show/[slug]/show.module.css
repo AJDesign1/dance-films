@@ -66,7 +66,7 @@
 .progRow:hover { background: var(--surface-2); }
 .progNum { width: 58px; flex: 0 0 auto; font-family: var(--disp); font-weight: 800; font-size: 44px; line-height: .9; color: var(--num); }
 .progThumb { width: 150px; position: relative; flex: 0 0 auto; aspect-ratio: 16/9; border-radius: var(--r-sm); overflow: hidden; background: var(--surface-2); }
-.progTitle { font-size: 24px; }
+.progTitle { font-size: 19px; }
 
 @media (max-width: 900px) {
   .progGrid { grid-template-columns: 1fr; }
@@ -82,7 +82,7 @@
   .progRow { gap: 14px; padding: 16px 0; }
   .progNum { width: 38px; font-size: 30px; }
   .progThumb { width: 96px; }
-  .progTitle { font-size: 18px; }
+  .progTitle { font-size: 16px; }
 }
 
 /* Viewing overlay */
