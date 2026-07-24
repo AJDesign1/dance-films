@@ -60,7 +60,7 @@ export default async function ShowsPage() {
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 12 }}>
               Latest production
             </div>
-            <FeaturedShow show={featured} />
+            <FeaturedShow show={featured} email={profile.email} />
 
             {rest.length > 0 && (
               <>
@@ -74,7 +74,7 @@ export default async function ShowsPage() {
                 </div>
                 <div className={styles.grid}>
                   {rest.map((s) => (
-                    <ShowCard key={s.slug} show={s} />
+                    <ShowCard key={s.slug} show={s} email={profile.email} />
                   ))}
                 </div>
               </>

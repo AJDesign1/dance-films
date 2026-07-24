@@ -5,12 +5,20 @@ import { getCurrentSchool } from "@/lib/school";
 import { createClient } from "@/lib/supabase/server";
 import { formatPrice, formatDuration, formatRuntime } from "@/lib/format";
 import Footer from "@/components/platform/Footer";
+import BuyButton from "@/components/platform/BuyButton";
 import ShowExperience, { type PerfItem } from "@/components/platform/ShowExperience";
 import styles from "./show.module.css";
 
-export default async function ShowPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ShowPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ purchase?: string }>;
+}) {
   const { slug } = await params;
-  await requireOnboardedProfile();
+  const { purchase } = await searchParams;
+  const profile = await requireOnboardedProfile();
   const school = await getCurrentSchool();
   const supabase = await createClient();
 
@@ -71,9 +79,10 @@ export default async function ShowPage({ params }: { params: Promise<{ slug: str
               <strong style={{ color: "var(--text)" }}>{formatPrice(show.price_pence)}</strong> to watch the full show
               and every performance. Checkout is wired in Stage 6.
             </p>
-            <Link href="/shows" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 20px", borderRadius: 10, background: "var(--accent)", color: "#fff", fontFamily: "var(--disp)", fontWeight: 700, fontSize: 16, letterSpacing: ".04em", textTransform: "uppercase" }}>
-              Buy · {formatPrice(show.price_pence)}
-            </Link>
+            <BuyButton
+              show={{ slug: show.slug, title: show.title, show_year: show.show_year, price_pence: show.price_pence }}
+              email={profile.email}
+            />
           </div>
         </div>
         <Footer schoolName={schoolName} logoWhiteUrl={logoWhite} />
@@ -135,6 +144,11 @@ export default async function ShowPage({ params }: { params: Promise<{ slug: str
     <div style={{ background: "var(--surface)" }}>
       {header}
       <Hero show={show} runtime={formatRuntime(video?.duration_seconds)} perfCount={performances.length} />
+      {purchase === "success" && (
+        <div style={{ background: "var(--success)", color: "#fff", textAlign: "center", padding: "12px 20px", fontSize: 14, fontWeight: 600 }}>
+          Purchase complete — {show.title} is now yours to watch. Enjoy the show!
+        </div>
+      )}
       <ShowExperience
         showTitle={show.title}
         showYear={show.show_year}
