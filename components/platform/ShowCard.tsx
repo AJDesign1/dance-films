@@ -61,8 +61,8 @@ export default function ShowCard({ show, email }: { show: ShopShow; email: strin
             </span>
           )}
 
-          <div style={{ position: "absolute", left: 13, right: 13, bottom: 13, pointerEvents: "none" }}>
-            <div style={{ fontFamily: "var(--disp)", fontWeight: 800, fontSize: 38, letterSpacing: ".01em", textTransform: "uppercase", color: "#fff", lineHeight: ".88" }}>
+          <div style={{ position: "absolute", left: 13, right: 13, bottom: 18, pointerEvents: "none" }}>
+            <div style={{ fontFamily: "var(--disp)", fontWeight: 800, fontSize: 38, letterSpacing: ".01em", textTransform: "uppercase", color: "#fff", lineHeight: ".98" }}>
               {show.title}
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 10 }}>
