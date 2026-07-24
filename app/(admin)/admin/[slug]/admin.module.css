@@ -1,0 +1,77 @@
+/* School admin — neutral/functional skin on the shared token system. */
+
+.shell { display: flex; min-height: 100vh; background: var(--app-bg); }
+
+.sidebar {
+  flex: 0 0 auto; width: 250px; background: var(--sidebar);
+  display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh;
+}
+.sidebarTop { padding: 14px 16px 0; }
+.backLink {
+  display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600;
+  color: var(--text-3); background: none; border: none; cursor: pointer; font-family: var(--body); padding: 0; text-decoration: none;
+}
+.backLink:hover { color: #fff; }
+.sidebarBrand { padding: 14px 20px 16px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.sidebarSchool { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-top: 10px; }
+.sidebarWord { font-family: var(--disp); font-weight: 800; font-size: 22px; letter-spacing: .02em; text-transform: uppercase; color: #fff; line-height: .95; }
+.nav { flex: 1; overflow: auto; padding: 14px 12px; }
+.navItem {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 12px; border-radius: var(--r-md); border: none; cursor: pointer;
+  font-family: var(--body); font-size: 14px; font-weight: 600; text-align: left;
+  background: transparent; color: #A9B7C0; text-decoration: none; margin-bottom: 2px;
+}
+.navItem:hover { background: rgba(255,255,255,.06); color: #fff; }
+.navItemActive { background: rgba(255,255,255,.12); color: #fff; }
+.navBadge { background: var(--accent); color: #fff; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: var(--r-pill); }
+.sidebarFoot { padding: 14px; border-top: 1px solid rgba(255,255,255,.08); }
+
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.header {
+  position: sticky; top: 0; z-index: 10; background: rgba(255,255,255,.86); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border); padding: 0 30px; height: 62px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.headerLeft { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.crumb { font-size: 13px; color: var(--text-3); background: none; border: none; cursor: pointer; font-family: var(--body); text-decoration: none; }
+.pageTitle { font-family: var(--disp); font-weight: 800; font-size: 23px; letter-spacing: .01em; text-transform: uppercase; color: var(--text); margin: 0; }
+.content { flex: 1; padding: 30px; animation: fadeUp .3s ease both; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--e-1); }
+.cardPad { padding: 22px; }
+.cardTitle { font-weight: 700; font-size: 15px; }
+
+.fieldLabel { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); margin: 16px 0 7px; }
+.input, .textarea, .select {
+  width: 100%; padding: 11px 13px; border-radius: var(--r-md); border: 1.5px solid var(--border);
+  background: var(--surface-2); font-size: 14px; color: var(--text); outline: none; font-family: var(--body);
+}
+.textarea { resize: vertical; line-height: 1.5; }
+.input:focus, .textarea:focus, .select:focus { border-color: var(--accent); }
+
+.primaryBtn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; border-radius: var(--r-md); border: none; background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 14px; cursor: pointer; font-family: var(--body); }
+.secondaryBtn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; border-radius: var(--r-md); border: 1.5px solid var(--border-2); background: var(--surface); color: var(--text); font-weight: 600; font-size: 14px; cursor: pointer; font-family: var(--body); }
+.quietBtn { padding: 7px 12px; border-radius: var(--r-sm); border: 1px solid var(--border); background: transparent; color: var(--text-2); font-weight: 600; font-size: 12.5px; cursor: pointer; font-family: var(--body); }
+.quietBtn:hover { border-color: var(--accent); color: var(--accent); }
+.dangerBtn { padding: 7px 12px; border-radius: var(--r-sm); border: 1px solid var(--danger); background: var(--danger-tint); color: var(--danger); font-weight: 700; font-size: 12.5px; cursor: pointer; font-family: var(--body); }
+
+.badge { display: inline-flex; align-items: center; gap: 5px; justify-self: start; padding: 4px 10px; border-radius: var(--r-pill); font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+.badgeOk { background: var(--success-tint); color: var(--success); }
+.badgeMuted { background: var(--surface-2); color: var(--text-2); }
+.badgeWarn { background: var(--warn-tint); color: var(--warn); }
+
+.msg { margin-top: 9px; font-size: 12.5px; font-weight: 600; min-height: 16px; }
+.msgOk { color: var(--success); }
+.msgErr { color: var(--danger); }
+
+.statGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.statValue { font-family: var(--disp); font-weight: 800; font-size: 42px; color: var(--text); margin-top: 8px; line-height: 1; }
+.statLabel { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); }
+
+@media (max-width: 760px) {
+  .sidebar { width: 64px; }
+  .sidebarWord, .sidebarSchool, .navItem span:not(.navBadge), .backLink span { display: none; }
+  .content { padding: 18px; }
+  .header { padding: 0 16px; }
+}
