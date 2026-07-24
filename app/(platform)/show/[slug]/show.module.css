@@ -32,6 +32,17 @@
 .body { max-width: 1280px; margin: 0 auto; padding: 48px 40px 48px; }
 .fullTitle { font-size: 22px; }
 
+/* Show summary — half the content width on desktop, full on mobile */
+.summary {
+  width: 50%;
+  margin: 22px 0 0;
+  text-align: left;
+  color: var(--text-2);
+  font-size: 15.5px;
+  line-height: 1.6;
+}
+@media (max-width: 760px) { .summary { width: 100%; } }
+
 .progGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;

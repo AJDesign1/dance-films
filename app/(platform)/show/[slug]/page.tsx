@@ -152,6 +152,7 @@ export default async function ShowPage({
         showTitle={show.title}
         showYear={show.show_year}
         showId={show.id}
+        intro={show.intro_text}
         fullShowAvailable={!!video?.full_show_vimeo_id}
         fullShowDuration={formatRuntime(video?.duration_seconds)}
         performances={performances}

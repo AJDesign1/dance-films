@@ -17,6 +17,7 @@ type Props = {
   showTitle: string;
   showYear: number | null;
   showId: string;
+  intro: string | null;
   fullShowAvailable: boolean;
   fullShowDuration: string;
   performances: PerfItem[];
@@ -33,6 +34,7 @@ export default function ShowExperience({
   showTitle,
   showYear,
   showId,
+  intro,
   fullShowAvailable,
   fullShowDuration,
   performances,
@@ -130,6 +132,8 @@ export default function ShowExperience({
           {downloadMsg && <div style={{ marginTop: 8, fontSize: 12.5, color: "var(--text-2)" }}>{downloadMsg}</div>}
         </div>
       )}
+
+      {intro && <p className={styles.summary}>{intro}</p>}
 
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, margin: "52px 0 6px" }}>
         <h2 style={{ fontFamily: "var(--disp)", fontWeight: 800, fontSize: 32, letterSpacing: ".01em", textTransform: "uppercase", color: "var(--text)", margin: 0 }}>
