@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 import styles from "@/app/(platform)/show/[slug]/show.module.css";
-import { getEmbedUrl } from "@/app/(platform)/show/[slug]/embed-actions";
+import { getEmbedUrl, getFullShowDownloadUrl } from "@/app/(platform)/show/[slug]/embed-actions";
 
 export type PerfItem = {
   id: string; // DB uuid — safe to expose; vimeo_id is NOT sent to the client
@@ -46,6 +46,8 @@ export default function ShowExperience({
   const [viewing, setViewing] = useState<Viewing>(null);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadMsg, setDownloadMsg] = useState<string | null>(null);
 
   const visible = useMemo(() => {
     if (!filter.kind) return performances;
@@ -82,6 +84,16 @@ export default function ShowExperience({
     setEmbedUrl(null);
   };
 
+  // Owner-only download, resolved on demand (URL never in page markup).
+  async function downloadFullShow() {
+    setDownloadMsg(null);
+    setDownloading(true);
+    const url = await getFullShowDownloadUrl(showId);
+    setDownloading(false);
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+    else setDownloadMsg("Download isn't available yet — check back soon.");
+  }
+
   return (
     <div className={styles.body}>
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 12 }}>
@@ -105,6 +117,20 @@ export default function ShowExperience({
           {fullShowDuration && <div style={{ fontSize: 12.5, color: "#c0ccd6", marginTop: 5 }}>{fullShowDuration}</div>}
         </div>
       </button>
+
+      {fullShowAvailable && (
+        <div>
+          <button
+            onClick={downloadFullShow}
+            disabled={downloading}
+            style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", padding: "10px 15px", borderRadius: "var(--r-sm)", border: "1px solid var(--border)", background: "transparent", color: "var(--text)", cursor: "pointer" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v7m0 0l3-3m-3 3L5 6M3 13h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            {downloading ? "Preparing…" : "Download full show"}
+          </button>
+          {downloadMsg && <div style={{ marginTop: 8, fontSize: 12.5, color: "var(--text-2)" }}>{downloadMsg}</div>}
+        </div>
+      )}
 
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, margin: "52px 0 6px" }}>
         <h2 style={{ fontFamily: "var(--disp)", fontWeight: 800, fontSize: 32, letterSpacing: ".01em", textTransform: "uppercase", color: "var(--text)", margin: 0 }}>

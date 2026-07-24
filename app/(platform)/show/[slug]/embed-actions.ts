@@ -32,3 +32,20 @@ export async function getEmbedUrl(kind: "full" | "perf", id: string): Promise<st
     .maybeSingle();
   return data?.full_show_vimeo_id ? vimeoEmbedUrl(data.full_show_vimeo_id, { autoplay: true }) : null;
 }
+
+/**
+ * Resolve the full-show download URL on demand. RLS returns the row only if the
+ * caller owns the show, so the URL never reaches a non-entitled user and is
+ * never rendered into page markup.
+ */
+export async function getFullShowDownloadUrl(showId: string): Promise<string | null> {
+  const user = await getUser();
+  if (!user) return null;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("show_videos")
+    .select("download_url")
+    .eq("show_id", showId)
+    .maybeSingle();
+  return data?.download_url ?? null;
+}

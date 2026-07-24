@@ -20,12 +20,20 @@ function rev(slug: string) {
   revalidatePath(`/admin/${slug}/performances`);
 }
 
-export async function setFullShowVideo(showId: string, slug: string, vimeoId: string, duration: string): Promise<ActionResult> {
+export async function setFullShowVideo(showId: string, slug: string, vimeoId: string, duration: string, downloadUrl: string): Promise<ActionResult> {
   await requireAdmin();
   const admin = createAdminClient();
   const { error } = await admin
     .from("show_videos")
-    .upsert({ show_id: showId, full_show_vimeo_id: vimeoId.trim() || null, duration_seconds: parseDuration(duration) }, { onConflict: "show_id" });
+    .upsert(
+      {
+        show_id: showId,
+        full_show_vimeo_id: vimeoId.trim() || null,
+        duration_seconds: parseDuration(duration),
+        download_url: downloadUrl.trim() || null,
+      },
+      { onConflict: "show_id" },
+    );
   if (error) return { error: "Couldn't save the full-show video." };
   rev(slug);
   return { ok: true };

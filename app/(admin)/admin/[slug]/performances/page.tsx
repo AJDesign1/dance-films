@@ -48,7 +48,7 @@ export default async function PerformancesPage({
   const activeShow = showList.find((s) => s.id === show) ?? showList[0];
 
   const [{ data: video }, { data: perfs }, { data: cats }] = await Promise.all([
-    admin.from("show_videos").select("full_show_vimeo_id, duration_seconds").eq("show_id", activeShow.id).maybeSingle(),
+    admin.from("show_videos").select("full_show_vimeo_id, duration_seconds, download_url").eq("show_id", activeShow.id).maybeSingle(),
     admin.from("performances").select("id, title, vimeo_id, duration_seconds, sort_order").eq("show_id", activeShow.id).order("sort_order", { ascending: true }),
     admin.from("categories").select("id, name, kind, sort_order").eq("show_id", activeShow.id).order("sort_order", { ascending: true }),
   ]);
@@ -91,6 +91,7 @@ export default async function PerformancesPage({
           showId={activeShow.id}
           fullVimeo={video?.full_show_vimeo_id ?? ""}
           fullDuration={clock(video?.duration_seconds ?? null)}
+          fullDownload={video?.download_url ?? ""}
           performances={performances}
           groups={groups}
           styles={styleCats}

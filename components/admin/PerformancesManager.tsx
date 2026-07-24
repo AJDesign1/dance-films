@@ -19,9 +19,9 @@ export type PerfRow = {
 type Cat = { id: string; name: string };
 
 export default function PerformancesManager({
-  slug, showId, fullVimeo, fullDuration, performances, groups, styles: styleCats,
+  slug, showId, fullVimeo, fullDuration, fullDownload, performances, groups, styles: styleCats,
 }: {
-  slug: string; showId: string; fullVimeo: string; fullDuration: string;
+  slug: string; showId: string; fullVimeo: string; fullDuration: string; fullDownload: string;
   performances: PerfRow[]; groups: Cat[]; styles: Cat[];
 }) {
   const router = useRouter();
@@ -56,14 +56,19 @@ export default function PerformancesManager({
           <div style={{ flex: 1, minWidth: 220 }}>
             <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Vimeo ID or URL</label>
             <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace" }} defaultValue={fullVimeo} placeholder="e.g. 903371840"
-              onBlur={(e) => run(() => setFullShowVideo(showId, slug, e.target.value, fullDuration))} />
+              onBlur={(e) => run(() => setFullShowVideo(showId, slug, e.target.value, fullDuration, fullDownload))} />
           </div>
           <div style={{ width: 150 }}>
             <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Total length</label>
             <input className={styles.input} style={{ textAlign: "center" }} defaultValue={fullDuration} placeholder="1:12:40"
-              onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullVimeo, e.target.value))} />
+              onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullVimeo, e.target.value, fullDownload))} />
           </div>
         </div>
+        <label className={styles.fieldLabel}>Download URL (full-show file — parents download their purchased show)</label>
+        <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace", fontSize: 12.5 }} defaultValue={fullDownload}
+          placeholder="https://…  (Vimeo download link on the paid plan, or any hosted file)"
+          onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullVimeo, fullDuration, e.target.value))} />
+        <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 6 }}>Leave blank to hide the download button. The link is entitlement-gated — only owners can fetch it.</div>
       </div>
 
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 11 }}>

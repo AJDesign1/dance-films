@@ -304,16 +304,19 @@ export type Database = {
       }
       show_videos: {
         Row: {
+          download_url: string | null
           duration_seconds: number | null
           full_show_vimeo_id: string | null
           show_id: string
         }
         Insert: {
+          download_url?: string | null
           duration_seconds?: number | null
           full_show_vimeo_id?: string | null
           show_id: string
         }
         Update: {
+          download_url?: string | null
           duration_seconds?: number | null
           full_show_vimeo_id?: string | null
           show_id?: string
