@@ -1,0 +1,100 @@
+/* Show page + viewing overlay — responsive layout on the token system. */
+
+.headBar {
+  position: absolute;
+  left: 0; right: 0;
+  z-index: 5;
+  padding: 22px 0;
+}
+.headInner {
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.headLogo { height: 105px; filter: brightness(0) invert(1); }
+.headWord { font-family: var(--disp); font-weight: 800; font-size: 24px; letter-spacing: .02em; text-transform: uppercase; color: #fff; }
+
+.hero {
+  position: relative;
+  min-height: 540px;
+  display: flex;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.heroPad { position: relative; align-self: flex-end; padding: 50px 44px; max-width: 760px; }
+.heroTitle { font-size: 96px; }
+
+.body { max-width: 1280px; margin: 0 auto; padding: 48px 40px 48px; }
+.fullTitle { font-size: 22px; }
+
+.progGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 36px;
+  border-top: 1px solid var(--border);
+}
+.progRow {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  background: transparent;
+  border-left: none; border-right: none; border-top: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--body);
+  transition: background .15s ease;
+}
+.progRow:hover { background: var(--surface-2); }
+.progNum { width: 58px; flex: 0 0 auto; font-family: var(--disp); font-weight: 800; font-size: 44px; line-height: .9; color: var(--num); }
+.progThumb { width: 150px; position: relative; flex: 0 0 auto; aspect-ratio: 16/9; border-radius: var(--r-sm); overflow: hidden; background: var(--surface-2); }
+.progTitle { font-size: 24px; }
+
+@media (max-width: 900px) {
+  .progGrid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .headInner { padding: 0 18px; }
+  .headBar { padding: 16px 0; }
+  .headLogo { height: 63px; }
+  .hero { min-height: 420px; }
+  .heroPad { padding: 26px 22px; }
+  .heroTitle { font-size: 52px; }
+  .body { padding: 30px 18px 40px; }
+  .progRow { gap: 14px; padding: 16px 0; }
+  .progNum { width: 38px; font-size: 30px; }
+  .progThumb { width: 96px; }
+  .progTitle { font-size: 18px; }
+}
+
+/* Viewing overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(9,15,20,.96);
+  backdrop-filter: blur(14px);
+  display: flex;
+  flex-direction: column;
+  animation: ovIn .3s ease both;
+}
+.overlayTop {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; padding: 16px 20px; flex-shrink: 0;
+}
+.overlayScroll { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 20px 26px; }
+.overlayStage { width: 100%; max-width: 1040px; animation: ovUp .34s ease both; }
+.player { position: relative; aspect-ratio: 16/9; border-radius: var(--r-lg); overflow: hidden; background: #05090e; box-shadow: 0 30px 80px -24px rgba(0,0,0,.8); }
+.player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.viewTitle { font-size: 38px; }
+
+@media (max-width: 640px) {
+  .viewTitle { font-size: 26px; }
+}
