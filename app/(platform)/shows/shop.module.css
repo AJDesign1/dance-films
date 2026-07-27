@@ -60,7 +60,7 @@
 .featuredCard { transition: transform .18s ease; }
 .featuredCard:hover { transform: translateY(-2px); }
 .team { display: flex; flex-wrap: wrap; background: var(--paper); border-top: 1px solid var(--border); }
-.teamPhoto { position: relative; flex: 1 1 300px; min-height: 340px; background: var(--surface); }
+.teamPhoto { position: relative; flex: 1 1 300px; min-height: 260px; background: var(--surface); }
 .teamBody { flex: 1 1 360px; display: flex; flex-direction: column; justify-content: center; padding: 40px 36px; }
 .featMinH { min-height: 420px; }
 .featPad { padding: 40px; }
@@ -70,6 +70,7 @@
   .featMinH { min-height: 320px; }
   .featPad { padding: 26px 22px; }
   .featTitle { font-size: 44px; }
+  .teamPhoto { min-height: 160px; flex-basis: 100%; }
 }
 
 @media (max-width: 900px) {
