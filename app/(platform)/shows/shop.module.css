@@ -62,19 +62,23 @@
 .team { display: flex; flex-wrap: wrap; background: var(--paper); border-top: 1px solid var(--border); }
 .teamPhoto { position: relative; flex: 1 1 300px; min-height: 260px; background: var(--surface); }
 .teamBody { flex: 1 1 360px; display: flex; flex-direction: column; justify-content: center; padding: 40px 36px; }
-.featMinH { min-height: 420px; }
+/* Matches the grid card height at each column count (aspect-ratio 3:4,
+   minus the grid's own gap) so the hero reads as one consistent row height
+   with the cards below it, not a shorter banner. */
+.featMinH { min-height: 520px; }
 .featPad { padding: 40px; }
 .featTitle { font-size: 72px; }
 
+@media (max-width: 900px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .featMinH { min-height: 535px; }
+}
+
 @media (max-width: 640px) {
-  .featMinH { min-height: 320px; }
+  .featMinH { min-height: 236px; }
   .featPad { padding: 26px 22px; }
   .featTitle { font-size: 44px; }
   .teamPhoto { min-height: 160px; flex-basis: 100%; }
-}
-
-@media (max-width: 900px) {
-  .grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 640px) {
