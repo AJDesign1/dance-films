@@ -88,6 +88,22 @@
   cursor: default;
 }
 
+.link {
+  display: block;
+  margin: var(--sp-4) auto 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.link:hover {
+  color: var(--accent-on-dark, var(--accent));
+}
+
 .error {
   margin: var(--sp-4) 0 0;
   font-size: 13px;

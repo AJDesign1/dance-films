@@ -1,8 +1,10 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getOrigin } from "@/lib/url";
 
 export type AdminLoginResult = { status: "error"; message: string };
+export type ResetRequestResult = { status: "sent" | "error"; message: string };
 
 /**
  * Admin sign-in with email + password.
@@ -47,4 +49,33 @@ export async function signInWithPassword(
     await supabase.auth.signOut();
     return { status: "error", message: "Incorrect email or password." };
   }
+}
+
+/**
+ * Self-service "forgot password" — deliberately separate from Supabase
+ * Dashboard's built-in recovery button, which always redirects to the bare
+ * Site URL with no way to point it at a specific page. This sets redirectTo
+ * explicitly, same pattern as the magic-link's emailRedirectTo, so the
+ * recovery link lands on /admin/reset-password instead of the apex home page.
+ *
+ * Always returns the same "sent" message regardless of whether the email
+ * exists or is an admin, so this can't be used to enumerate accounts.
+ */
+export async function requestPasswordReset(email: string): Promise<ResetRequestResult> {
+  const clean = email.trim().toLowerCase();
+  const genericSent: ResetRequestResult = {
+    status: "sent",
+    message: "If that email has an admin account, a reset link is on its way.",
+  };
+  if (!clean) {
+    return { status: "error", message: "Enter your email address." };
+  }
+
+  const origin = await getOrigin();
+  const supabase = await createClient();
+  await supabase.auth.resetPasswordForEmail(clean, {
+    redirectTo: `${origin}/admin/reset-password`,
+  });
+
+  return genericSent;
 }
