@@ -37,6 +37,11 @@ export async function getEmbedUrl(kind: "full" | "perf", id: string): Promise<st
  * Resolve the full-show download URL on demand. RLS returns the row only if the
  * caller owns the show, so the URL never reaches a non-entitled user and is
  * never rendered into page markup.
+ *
+ * Also records the download (informational "Downloaded" badge only — see the
+ * `downloads` table; this never restricts or blocks a repeat download). Only
+ * called after the customer has confirmed in the download modal, so this
+ * fires on genuine download intent, not on page load.
  */
 export async function getFullShowDownloadUrl(showId: string): Promise<string | null> {
   const user = await getUser();
@@ -47,5 +52,17 @@ export async function getFullShowDownloadUrl(showId: string): Promise<string | n
     .select("download_url")
     .eq("show_id", showId)
     .maybeSingle();
-  return data?.download_url ?? null;
+
+  if (!data?.download_url) return null;
+
+  // Best-effort: a failed insert shouldn't block the download itself, only
+  // the "Downloaded" badge would go stale until the next successful one.
+  await supabase
+    .from("downloads")
+    .upsert(
+      { user_id: user.id, show_id: showId },
+      { onConflict: "user_id,show_id", ignoreDuplicates: true },
+    );
+
+  return data.download_url;
 }

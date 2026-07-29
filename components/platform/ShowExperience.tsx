@@ -3,6 +3,7 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import styles from "@/app/(platform)/show/[slug]/show.module.css";
 import { getEmbedUrl, getFullShowDownloadUrl } from "@/app/(platform)/show/[slug]/embed-actions";
+import DownloadConfirmModal from "@/components/platform/DownloadConfirmModal";
 
 export type PerfItem = {
   id: string; // DB uuid — safe to expose; vimeo_id is NOT sent to the client
@@ -20,6 +21,7 @@ type Props = {
   intro: string | null;
   fullShowAvailable: boolean;
   fullShowDuration: string;
+  alreadyDownloaded: boolean;
   performances: PerfItem[];
   groups: string[];
   styles: string[];
@@ -37,6 +39,7 @@ export default function ShowExperience({
   intro,
   fullShowAvailable,
   fullShowDuration,
+  alreadyDownloaded,
   performances,
   groups,
   styles: styleList,
@@ -48,8 +51,10 @@ export default function ShowExperience({
   const [viewing, setViewing] = useState<Viewing>(null);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [confirmingDownload, setConfirmingDownload] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadMsg, setDownloadMsg] = useState<string | null>(null);
+  const [downloaded, setDownloaded] = useState(alreadyDownloaded);
 
   const visible = useMemo(() => {
     return performances.filter(
@@ -86,13 +91,20 @@ export default function ShowExperience({
   };
 
   // Owner-only download, resolved on demand (URL never in page markup).
-  async function downloadFullShow() {
+  // Only runs after the customer confirms in the terms modal — never on the
+  // button click itself, and never for streaming/watching.
+  async function confirmDownload() {
     setDownloadMsg(null);
     setDownloading(true);
     const url = await getFullShowDownloadUrl(showId);
     setDownloading(false);
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
-    else setDownloadMsg("Download isn't available yet — check back soon.");
+    setConfirmingDownload(false);
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+      setDownloaded(true); // informational only — never blocks downloading again
+    } else {
+      setDownloadMsg("Download isn't available yet — check back soon.");
+    }
   }
 
   return (
@@ -120,17 +132,32 @@ export default function ShowExperience({
       </button>
 
       {fullShowAvailable && (
-        <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <button
-            onClick={downloadFullShow}
+            onClick={() => setConfirmingDownload(true)}
             disabled={downloading}
             style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", padding: "10px 15px", borderRadius: "var(--r-sm)", border: "1px solid var(--border)", background: "transparent", color: "var(--text)", cursor: "pointer" }}
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v7m0 0l3-3m-3 3L5 6M3 13h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             {downloading ? "Preparing…" : "Download full show"}
           </button>
-          {downloadMsg && <div style={{ marginTop: 8, fontSize: 12.5, color: "var(--text-2)" }}>{downloadMsg}</div>}
+          {downloaded && (
+            <span style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", padding: "9px 12px", borderRadius: "var(--r-sm)", background: "var(--success-tint)", color: "var(--success)" }}>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M3 8.5l3.5 3.5L13 5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              Downloaded
+            </span>
+          )}
+          {downloadMsg && <div style={{ width: "100%", fontSize: 12.5, color: "var(--text-2)" }}>{downloadMsg}</div>}
         </div>
+      )}
+
+      {confirmingDownload && (
+        <DownloadConfirmModal
+          title={`${showTitle}${showYear ? ` ${showYear}` : ""} — full show`}
+          pending={downloading}
+          onConfirm={confirmDownload}
+          onClose={() => setConfirmingDownload(false)}
+        />
       )}
 
       {intro && <p className={styles.summary}>{intro}</p>}

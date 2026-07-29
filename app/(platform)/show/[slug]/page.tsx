@@ -99,6 +99,16 @@ export default async function ShowPage({
     .eq("show_id", show.id)
     .maybeSingle();
 
+  // Informational "Downloaded" badge — explicitly scoped to this user (not
+  // just RLS's default) so an admin previewing doesn't see another
+  // customer's download show up as their own.
+  const { data: downloadRow } = await supabase
+    .from("downloads")
+    .select("id")
+    .eq("show_id", show.id)
+    .eq("user_id", profile.id)
+    .maybeSingle();
+
   const { data: perfRows } = await supabase
     .from("performances")
     .select("id, title, thumbnail_url, duration_seconds, sort_order")
@@ -157,6 +167,7 @@ export default async function ShowPage({
         intro={show.intro_text}
         fullShowAvailable={!!video?.full_show_vimeo_id}
         fullShowDuration={formatRuntime(video?.duration_seconds)}
+        alreadyDownloaded={!!downloadRow}
         performances={performances}
         groups={groups}
         styles={styleList}

@@ -66,6 +66,13 @@ Schools list, Add school, Configure, enable/disable.
 - Apex holding page rebranded: stacked logo, signature gradient, strapline with "dance show" in pink
 - Recorded an accessibility tint for pink on dark grounds in the design guide (full-strength pink fails AA at small sizes on the blue)
 
+## Download protection
+
+- Confirmation modal before a full-show download starts (personal/family-use terms), never shown for streaming
+- "Downloaded" badge after a successful download — informational only, never blocks re-downloading
+- New `downloads` table + RLS tracks this, separate from `entitlements` (ownership vs usage history)
+- Kept the existing admin-pasted, server-resolved download URL rather than building toward live Vimeo API downloads — that needs Vimeo API access (Pro+, a Personal Access Token) that isn't confirmed to exist yet (see `DECISIONS.md`)
+
 ## Repo hygiene
 
 - Connected the repository to GitHub (`AJDesign1/dance-films`)

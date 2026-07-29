@@ -12,6 +12,15 @@ Streaming uses the Vimeo iframe embed exclusively, never a direct file URL. Embe
 
 This is explicitly a **deterrent**, not DRM — screen recording can't be stopped by any of this. The real access control is Vimeo's **domain-restricted embed**, an account-level setting available on paid Vimeo plans. The code is structured so enabling that later requires zero changes — we already only use the iframe embed.
 
+## Download confirmation + tracking: full-show only, no live Vimeo API
+
+Full-show downloads get a confirmation modal (personal/family-use terms) before the link opens, and a "Downloaded" badge afterward — informational only, it never blocks re-downloading. Two scope calls made deliberately narrow, both confirmed with the school owner rather than assumed:
+
+- **Full-show only, not per-performance.** Matches the existing V1 decision above ("Video: iframe-only embeds") that downloads are a DVD/USB replacement, not a per-dance feature. Adding per-performance downloads would mean a `download_url` on `performances` plus new admin UI — a real scope increase, not part of this change.
+- **No live Vimeo API integration.** Genuinely temporary, self-expiring download links require calling Vimeo's API at request time (`GET /videos/{id}` returns short-lived signed URLs), which needs a Vimeo plan with API access and a Personal Access Token — neither confirmed to exist. Rather than build toward Vimeo access that may not be there, the existing model stands: an admin-pasted `show_videos.download_url`, resolved server-side on demand and never placed in page markup (already the case pre-existing). The confirmation modal's stated terms are the actual deterrent here, not a technical wall — consistent with the brief's own framing ("discourage casual sharing... not fight legitimate customers").
+
+Download tracking lives in its own `downloads` table (user_id, show_id, unique together) rather than extending `entitlements`, since entitlements mean *ownership* and this means *usage history* — different concepts that shouldn't share a row. RLS lets a user insert their own row only for a show they already hold an entitlement for (reuses the existing `has_entitlement()` helper), so it can't be used to fake a "downloaded" badge for an unowned show.
+
 ## Categories have a `kind` (group vs style)
 
 The show page has two independent filter rows: class/age group (e.g. "Minis (3–5)") and dance style (e.g. "Ballet"). Rather than a second table, `categories` has a `kind` enum (`'group' | 'style'`). The admin's Performances screen has a select for each kind per dance.

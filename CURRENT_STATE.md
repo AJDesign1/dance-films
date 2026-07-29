@@ -6,7 +6,7 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 
 | Area | Status |
 |---|---|
-| Schema + RLS | ✅ 10 migrations applied (`supabase/migrations/`), RLS enabled on every table, `service_role` granted project-wide |
+| Schema + RLS | ✅ 11 migrations applied (`supabase/migrations/`), RLS enabled on every table, `service_role` granted project-wide |
 | Subdomain theming | ✅ Middleware resolves school by subdomain/`?school=`; DB `theme` jsonb → CSS variables at runtime |
 | Auth | ✅ Invite-only magic link (allowlist checked server-side before OTP send); name capture on first sign-in; admin flag auto-set for the configured admin email |
 | Shows shop | ✅ Unified shop, owned ("Watch") / not-owned ("Buy") from real entitlements |
@@ -16,7 +16,7 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 | School admin | ✅ Branding (colours/font/theme + live preview), Shows (list+editor), Performances (Vimeo refs, bulk add, group/style tagging), Categories, Invited parents (add/CSV), Users & access (grant/revoke) |
 | Image uploads | ✅ Logo (colour + white) and sign-in photo upload to Supabase Storage (`branding` bucket) — no more URL-only fields |
 | Master admin | ✅ Schools list, Add school, Configure, enable/disable. Marketing/Blog/SEO deferred (by design — see Master Brief) |
-| Download button | ✅ Full-show download, owner-only, resolved on demand, admin-set URL |
+| Download button | ✅ Full-show download, owner-only, resolved on demand, admin-set URL. Confirmation modal (personal/family-use terms) before the link opens; "Downloaded" badge afterward, informational only — never blocks re-downloading. `downloads` table tracks this, separate from `entitlements` |
 | Responsive pass | ✅ Mobile/tablet checked with real screenshots; show-card and performance-title spacing tuned |
 | Git hygiene | ✅ GitHub connected (`AJDesign1/dance-films`); a leaked Supabase PAT + DB password were scrubbed from history (`filter-branch`) — **rotate that token/password if not already done** |
 | Hosting | ✅ Live on Netlify at `dancefilms.co.uk`, auto-deploying from `master`. `liberty.dancefilms.co.uk` live with SSL. New schools need their subdomain added manually in Netlify (plan doesn't allow a wildcard alias) |
@@ -36,4 +36,4 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 ## Needs confirmation
 
 - Whether the leaked Supabase access token / DB password have actually been rotated yet
-- Real Vimeo account tier/timeline for enabling domain-restricted embeds
+- Real Vimeo account tier/timeline for enabling domain-restricted embeds, and separately, whether API access (Pro+, a Personal Access Token) is available — that would let full-show downloads use genuinely temporary, self-expiring links instead of the current admin-pasted static URL (see `DECISIONS.md`)
