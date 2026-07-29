@@ -16,8 +16,8 @@
 /* lighter pink tint — full-strength pink fails AA at this size on the dark sidebar */
 .sidebarSchool { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-on-dark); margin-top: 10px; }
 .sidebarWord { font-family: var(--disp); font-weight: 700; font-size: 19px; letter-spacing: .01em; color: #fff; line-height: 1.15; }
-/* Dance Films linear logo — secondary mark, for compact/nav areas (DESIGN_GUIDE §4) */
-.sidebarLogo { display: block; width: 132px; height: auto; }
+/* Dance Films stacked logo — primary mark; the sidebar has the vertical space for it (DESIGN_GUIDE §4) */
+.sidebarLogo { display: block; width: 168px; height: auto; }
 .nav { flex: 1; overflow: auto; padding: 14px 12px; }
 .navItem {
   width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
