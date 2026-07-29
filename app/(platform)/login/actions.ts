@@ -24,31 +24,38 @@ export async function requestMagicLink(email: string): Promise<LoginResult> {
     return { status: "error", message: "Enter a valid email address." };
   }
 
+  const isPlatformAdmin = clean === ADMIN_EMAIL;
   const school = await getCurrentSchool();
-  if (!school) {
+
+  // No school resolved (e.g. signing in from the apex /admin) is only valid
+  // for the platform admin — everyone else needs a school context to check
+  // against its invite list.
+  if (!school && !isPlatformAdmin) {
     return { status: "error", message: "Something went wrong. Please try again." };
   }
 
-  // Allowlist check (service role — bypasses RLS on invited_emails).
-  const admin = createAdminClient();
-  const { data: invite } = await admin
-    .from("invited_emails")
-    .select("id")
-    .eq("school_id", school.id)
-    .ilike("email", clean)
-    .maybeSingle();
+  if (!isPlatformAdmin) {
+    // Allowlist check (service role — bypasses RLS on invited_emails).
+    const admin = createAdminClient();
+    const { data: invite } = await admin
+      .from("invited_emails")
+      .select("id")
+      .eq("school_id", school!.id)
+      .ilike("email", clean)
+      .maybeSingle();
 
-  const isPlatformAdmin = clean === ADMIN_EMAIL;
-  if (!invite && !isPlatformAdmin) {
-    return { status: "not_invited", email: clean };
+    if (!invite) {
+      return { status: "not_invited", email: clean };
+    }
   }
 
-  // Invited → send the magic link.
+  // Invited (or platform admin) → send the magic link.
   const origin = await getOrigin();
+  const next = school ? "/shows" : "/admin";
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email: clean,
-    options: { emailRedirectTo: `${origin}/auth/callback` },
+    options: { emailRedirectTo: `${origin}/auth/callback?next=${next}` },
   });
 
   if (error) {

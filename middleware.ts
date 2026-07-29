@@ -28,7 +28,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/api") ||
-    pathname.startsWith("/coming-soon");
+    pathname.startsWith("/coming-soon") ||
+    pathname === "/login";
 
   if (!slug && !isTenantIndependent) {
     const url = request.nextUrl.clone();
