@@ -95,6 +95,8 @@
   /* paired with an icon, not colour alone (DESIGN_GUIDE §5) */
   color: #FF9A9A;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 7px;
+  line-height: 1.5;
 }
+.error svg { flex: 0 0 auto; margin-top: 2px; }
