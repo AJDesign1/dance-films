@@ -1,6 +1,11 @@
 [build]
   command = "npm run build"
   publish = ".next"
+  # Skip the build when the only changes are to paths that can't affect the
+  # deployed app: docs, brand source files (public/brand/ IS served, so it's
+  # not excluded), the old design-handoff prototypes, and DB migrations
+  # (applied separately via Supabase, not by `next build`).
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':!*.md' ':!docs' ':!brand' ':!brand-assets' ':!design' ':!supabase' ':!Liberty Platform prototype delivery-handoff.zip'"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
