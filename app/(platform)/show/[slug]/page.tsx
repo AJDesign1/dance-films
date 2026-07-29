@@ -38,7 +38,9 @@ export default async function ShowPage({
     .select("id")
     .eq("show_id", show.id)
     .maybeSingle();
-  const owned = !!ent;
+  // Admin previews every show fully unlocked, regardless of entitlement —
+  // RLS already allows admin to read the gated tables either way.
+  const owned = !!ent || profile.is_admin;
 
   const schoolName = school?.name ?? "Dance Films";
   const logoWhite = school?.logo_white_url ?? null;

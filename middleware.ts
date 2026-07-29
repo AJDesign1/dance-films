@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { SCHOOL_SLUG_HEADER, schoolSlugFromHost } from "@/lib/tenant";
+import { sharedCookieDomain } from "@/lib/cookieDomain";
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
@@ -38,6 +39,7 @@ export async function middleware(request: NextRequest) {
   }
 
   let response = NextResponse.next({ request: { headers: requestHeaders } });
+  const domain = sharedCookieDomain(request.headers.get("host"));
 
   // Keep the Supabase session fresh (writes refreshed auth cookies onto the response).
   const supabase = createServerClient(
@@ -54,7 +56,7 @@ export async function middleware(request: NextRequest) {
           );
           response = NextResponse.next({ request: { headers: requestHeaders } });
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
+            response.cookies.set(name, value, { ...options, domain }),
           );
         },
       },

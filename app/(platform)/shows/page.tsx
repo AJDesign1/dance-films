@@ -34,7 +34,9 @@ export default async function ShowsPage() {
     season: s.season,
     price_pence: s.price_pence,
     artwork_url: s.artwork_url,
-    owned: ownedSlugs.has(s.slug),
+    // Admin previews every show fully unlocked, regardless of entitlement —
+    // RLS already allows admin to read the gated tables either way.
+    owned: ownedSlugs.has(s.slug) || profile.is_admin,
   }));
 
   const featured = shows[0];

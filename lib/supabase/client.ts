@@ -1,5 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "./database.types";
+import { sharedCookieDomain } from "@/lib/cookieDomain";
 
 /**
  * Browser Supabase client (anon/publishable key only).
@@ -9,5 +10,6 @@ export function createClient() {
   return createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookieOptions: { domain: sharedCookieDomain(window.location.hostname) } },
   );
 }
