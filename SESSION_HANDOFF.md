@@ -38,6 +38,18 @@ directly (no local admin session available at the time). Worth a look through
 Branding / Shows / Performances after the password is set, in case any screen
 carried a hard-coded colour the token remap didn't reach.
 
+**Admin full-preview access** (shared session cookie across subdomains +
+`is_admin` treated as owning every show) is also unverified end-to-end for the
+same reason. After signing in fresh (existing sessions predate the shared
+cookie — see below), click through Master admin → **View site** → a show →
+play a performance, and confirm it doesn't ask for a magic link and the video
+actually plays.
+
+**One-time re-login required**: the admin's current session cookie was set
+before cross-subdomain sharing existed (host-only, apex-scoped). It won't
+retroactively become shared — sign out and back in once; every session after
+that will carry across every school subdomain automatically.
+
 ## Where things stand technically
 
 See `CURRENT_STATE.md` for the full status table. Short version: the app is feature-complete for the Liberty V1 scope described in `docs/Dance Show Platform - Master Brief.md`, is deployed on the real domain, and is not yet receiving real traffic.
