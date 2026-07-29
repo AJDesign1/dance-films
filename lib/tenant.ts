@@ -3,17 +3,14 @@
  *
  * Production: <slug>.dancefilms.co.uk  → school = <slug>
  * Local dev:  <slug>.localhost:3000    → school = <slug>
- *             (or ?school=<slug> as a fallback for plain localhost)
+ *             (or ?school=<slug> as an override on any host, incl. apex)
  *
- * The apex (dancefilms.co.uk) is reserved for the deferred marketing site.
- * Until it exists, an apex/unknown host falls back to the default school so
- * the platform is viewable during development.
+ * The apex (dancefilms.co.uk, and the raw Netlify domain) is reserved for the
+ * deferred marketing site. An apex/unknown host resolves to `null` — no
+ * default tenant — and middleware routes those requests to a placeholder.
  */
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "dancefilms.co.uk";
-
-/** First-launch default tenant while Liberty is the only live school. */
-export const DEFAULT_SCHOOL_SLUG = "liberty";
 
 /** Header used to pass the resolved school slug from middleware to the app. */
 export const SCHOOL_SLUG_HEADER = "x-school-slug";
@@ -21,11 +18,11 @@ export const SCHOOL_SLUG_HEADER = "x-school-slug";
 export function schoolSlugFromHost(
   host: string | null,
   searchParams?: URLSearchParams,
-): string {
+): string | null {
   const override = searchParams?.get("school");
   if (override) return normalise(override);
 
-  if (!host) return DEFAULT_SCHOOL_SLUG;
+  if (!host) return null;
 
   // strip port
   const hostname = host.split(":")[0].toLowerCase();
@@ -33,9 +30,6 @@ export function schoolSlugFromHost(
   // <slug>.localhost
   if (hostname.endsWith(".localhost")) {
     return normalise(hostname.replace(/\.localhost$/, ""));
-  }
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
-    return DEFAULT_SCHOOL_SLUG;
   }
 
   // <slug>.dancefilms.co.uk
@@ -45,8 +39,8 @@ export function schoolSlugFromHost(
     if (sub && sub !== "www") return normalise(sub);
   }
 
-  // apex, Netlify preview URLs, unknown hosts → default for now
-  return DEFAULT_SCHOOL_SLUG;
+  // apex, Netlify default domain, bare localhost, unknown hosts → no tenant
+  return null;
 }
 
 function normalise(slug: string): string {

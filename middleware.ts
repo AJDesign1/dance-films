@@ -18,7 +18,23 @@ export async function middleware(request: NextRequest) {
 
   // Forward the resolved slug to the app on the request headers.
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set(SCHOOL_SLUG_HEADER, slug);
+  requestHeaders.set(SCHOOL_SLUG_HEADER, slug ?? "");
+
+  // No tenant resolved (apex domain, Netlify default domain, unknown host):
+  // serve the placeholder instead of any school's platform. Admin, auth, and
+  // API routes don't depend on subdomain tenancy, so leave them alone.
+  const { pathname } = request.nextUrl;
+  const isTenantIndependent =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/coming-soon");
+
+  if (!slug && !isTenantIndependent) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/coming-soon";
+    return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+  }
 
   let response = NextResponse.next({ request: { headers: requestHeaders } });
 

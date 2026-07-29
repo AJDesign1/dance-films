@@ -2,7 +2,7 @@ import "server-only";
 import { headers } from "next/headers";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { SCHOOL_SLUG_HEADER, DEFAULT_SCHOOL_SLUG } from "@/lib/tenant";
+import { SCHOOL_SLUG_HEADER } from "@/lib/tenant";
 import type { SchoolTheme } from "@/lib/theme";
 
 export type School = {
@@ -24,7 +24,8 @@ export type School = {
  */
 export const getCurrentSchool = cache(async (): Promise<School | null> => {
   const h = await headers();
-  const slug = h.get(SCHOOL_SLUG_HEADER) ?? DEFAULT_SCHOOL_SLUG;
+  const slug = h.get(SCHOOL_SLUG_HEADER);
+  if (!slug) return null;
 
   const supabase = await createClient();
   const { data } = await supabase
