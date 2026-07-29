@@ -45,3 +45,38 @@ export async function toggleSchoolStatus(id: string, next: "active" | "disabled"
   revalidatePath("/admin");
   return { ok: true };
 }
+
+/**
+ * Permanently delete a school and everything scoped to it (shows, show
+ * videos, categories, performances, entitlements, invited emails — all
+ * on delete cascade from schools/shows in the schema). Parent profiles
+ * themselves are untouched; they just lose entitlements to this school.
+ *
+ * Blocked if the school has any orders on record: orders.show_id has no
+ * cascade specifically so purchase history is never silently destroyed —
+ * disable the school instead if it needs to stop selling but keep records.
+ */
+export async function deleteSchool(id: string): Promise<{ ok: true } | { error: string }> {
+  await requireAdmin();
+  const admin = createAdminClient();
+
+  const { data: schoolShows } = await admin.from("shows").select("id").eq("school_id", id);
+  const showIds = (schoolShows ?? []).map((s) => s.id);
+
+  if (showIds.length) {
+    const { count } = await admin
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .in("show_id", showIds);
+    if (count && count > 0) {
+      return {
+        error: `This school has ${count} order${count === 1 ? "" : "s"} on record and can't be deleted — disable it instead to keep the purchase history.`,
+      };
+    }
+  }
+
+  const { error } = await admin.from("schools").delete().eq("id", id);
+  if (error) return { error: "Couldn't delete the school." };
+  revalidatePath("/admin");
+  return { ok: true };
+}

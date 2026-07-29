@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
-import { createSchool, toggleSchoolStatus } from "@/app/(admin)/admin/actions";
+import { createSchool, toggleSchoolStatus, deleteSchool } from "@/app/(admin)/admin/actions";
 
 export type SchoolRow = {
   id: string;
@@ -21,6 +21,7 @@ export default function SchoolsManager({ schools }: { schools: SchoolRow[] }) {
   const [name, setName] = useState("");
   const [sub, setSub] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function submitNew() {
@@ -34,6 +35,23 @@ export default function SchoolsManager({ schools }: { schools: SchoolRow[] }) {
   function toggle(id: string, status: "active" | "disabled") {
     startTransition(async () => {
       await toggleSchoolStatus(id, status === "active" ? "disabled" : "active");
+      router.refresh();
+    });
+  }
+
+  function remove(id: string, name: string) {
+    const sure = window.confirm(
+      `Permanently delete "${name}"?\n\nThis removes its shows, performances, categories, branding and parent invites for good. This can't be undone.`,
+    );
+    if (!sure) return;
+
+    setDeleteError(null);
+    startTransition(async () => {
+      const res = await deleteSchool(id);
+      if (res && "error" in res) {
+        setDeleteError(res.error);
+        return;
+      }
       router.refresh();
     });
   }
@@ -69,16 +87,19 @@ export default function SchoolsManager({ schools }: { schools: SchoolRow[] }) {
       )}
 
       <div className={styles.card} style={{ overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 110px 190px", gap: 12, padding: "12px 20px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--text-3)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 110px 360px", gap: 12, padding: "12px 20px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--text-3)" }}>
           <span>School</span><span>Subdomain</span><span>Status</span><span></span>
         </div>
+        {deleteError && (
+          <div className={`${styles.msg} ${styles.msgErr}`} style={{ padding: "12px 20px", margin: 0, borderBottom: "1px solid var(--border)" }}>{deleteError}</div>
+        )}
         {schools.length === 0 ? (
           <div style={{ padding: "60px 20px", textAlign: "center" }}>
             <div style={{ fontFamily: "var(--disp)", fontWeight: 700, fontSize: 22, textTransform: "uppercase", color: "var(--text)" }}>No schools yet</div>
             <p style={{ color: "var(--text-2)", fontSize: 14, margin: "8px 0 0" }}>Add your first school and give it a subdomain to get started.</p>
           </div>
         ) : schools.map((s) => (
-          <div key={s.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 110px 190px", gap: 12, alignItems: "center", padding: "15px 20px", borderBottom: "1px solid var(--border)" }}>
+          <div key={s.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 110px 360px", gap: 12, alignItems: "center", padding: "15px 20px", borderBottom: "1px solid var(--border)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
               <div style={{ flex: "0 0 auto", width: 34, height: 34, borderRadius: "var(--r-sm)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--disp)", fontWeight: 800, fontSize: 15, color: "#fff", background: s.primary }}>{s.name.charAt(0)}</div>
               <div style={{ minWidth: 0 }}>
@@ -88,9 +109,11 @@ export default function SchoolsManager({ schools }: { schools: SchoolRow[] }) {
             </div>
             <a href={`/?school=${s.slug}`} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "var(--accent)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.slug}.dancefilms.co.uk</a>
             <span className={`${styles.badge} ${s.status === "active" ? styles.badgeOk : styles.badgeMuted}`}>{s.status === "active" ? "Active" : "Disabled"}</span>
-            <div style={{ display: "flex", gap: 7, justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", gap: 7, justifyContent: "flex-end", flexWrap: "wrap" }}>
+              <a href={`https://${s.slug}.dancefilms.co.uk`} target="_blank" rel="noreferrer" className={styles.quietBtn}>View site</a>
               <button className={styles.quietBtn} disabled={pending} onClick={() => toggle(s.id, s.status)}>{s.status === "active" ? "Disable" : "Enable"}</button>
               <Link href={`/admin/${s.slug}`} className={styles.primaryBtn} style={{ padding: "7px 14px", fontSize: 12.5 }}>Configure</Link>
+              <button className={styles.dangerBtn} disabled={pending} onClick={() => remove(s.id, s.name)}>Delete</button>
             </div>
           </div>
         ))}
