@@ -17,6 +17,9 @@
   --disp: var(--font-display);
   --body: var(--font-body);
 
+  /* Dance Films' own brand typeface — admin + marketing, not the school skin */
+  --font-brand: var(--font-montserrat), Montserrat, Arial, Helvetica, sans-serif;
+
   /* type scale */
   --fs-display: 96px; --fs-h1: 44px; --fs-h2: 32px; --fs-h3: 24px;
   --fs-title: 19px; --fs-body: 15.5px; --fs-meta: 12.5px; --fs-label: 11px;
@@ -24,6 +27,14 @@
 
   /* brand palette (per-school: --brand + --brand-2 overridden at runtime) */
   --brand: #13D1C4; --brand-2: #43576E; --ink: #0B171B; --paper: #F5F1E8; --accent-warm: #E8A54B;
+
+  /* ---- Dance Films' own brand (fixed; never overridden by a school theme) ----
+     See brand/DESIGN_GUIDE.md. --df-pink-light is an accessibility tint, not a
+     new brand colour: #E5007E on #232835 is only 3.3:1, which fails AA for
+     small text, so dark surfaces use the lighter tint (5.4:1) instead. */
+  --df-blue: #232835;
+  --df-pink: #E5007E;
+  --df-pink-light: #FF62B0;
 
   /* spacing scale */
   --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
@@ -57,18 +68,48 @@
   --e-3: 0 40px 90px -26px rgba(0,0,0,.7);
 }
 
-/* ---- Admin skin (neutral / functional, same token roots) ---- */
+/* ---- Admin skin (Dance Films' own brand — efficient / structured) ----
+   The admin manages every school, so it wears Dance Films' brand rather than
+   any one school's: Dance Films Blue chrome, pink accent, Montserrat. --disp /
+   --body are remapped here so existing admin CSS picks up Montserrat without
+   each rule changing. */
 [data-admin] {
-  --accent: var(--brand); --on-accent: #fff;
-  --app-bg: #EEF1F4; --surface: #fff; --surface-2: #F5F7F9; --sidebar: #1A2A33;
-  --text: #1B2A33; --text-2: #5C6B75; --text-3: #8A97A0; --border: #E4E9ED; --border-2: #D3DBE0;
+  --disp: var(--font-brand); --body: var(--font-brand);
+  --accent: var(--df-pink); --on-accent: #fff;
+  /* pink is only 3.3:1 on the blue sidebar — use the lighter tint on dark */
+  --accent-on-dark: var(--df-pink-light);
+  --app-bg: #EDEFF3; --surface: #fff; --surface-2: #F5F6F9; --sidebar: var(--df-blue);
+  --text: var(--df-blue); --text-2: #5C6472; --text-3: #8A91A0; --border: #E3E6EC; --border-2: #D1D6DE;
   --success: #0B8F86; --success-tint: #E3F5F2; --warn: #B8791C; --warn-tint: #FBF0DC; --danger: #D64D4D; --danger-tint: #FBE7E7;
-  --accent-tint: color-mix(in srgb, var(--accent) 12%, #fff);
-  --e-1: 0 1px 2px rgba(20,35,45,.08); --e-2: 0 4px 16px -6px rgba(20,35,45,.18);
+  --accent-tint: color-mix(in srgb, var(--accent) 10%, #fff);
+  --e-1: 0 1px 2px rgba(35,40,53,.08); --e-2: 0 4px 16px -6px rgba(35,40,53,.18);
+}
+
+/* ---- Dance Films brand surface (admin login, holding page) ---- */
+[data-brand] {
+  --body: var(--font-brand); --disp: var(--font-brand);
+  --accent: var(--df-pink); --on-accent: #fff;
+  --text: #fff; --text-2: #A8AEBD; --border: rgba(255,255,255,.14);
+  background: var(--df-blue);
+  color: var(--text);
+  font-family: var(--body);
+}
+/* Signature gradient, anchored top-right and allowed to scale (DESIGN_GUIDE §7).
+   Large and expressive by default; data-brand="compact" pulls it back for
+   dense, task-focused screens so controls stay easy to read. */
+[data-brand] { --brand-glow: min(92vw, 780px); }
+[data-brand="compact"] { --brand-glow: min(56vw, 460px); }
+[data-brand]::before {
+  content: ""; position: fixed; top: 0; right: 0; z-index: 0; pointer-events: none;
+  width: var(--brand-glow); aspect-ratio: 1;
+  background: url("/brand/DanceFilms_bg.svg") top right / contain no-repeat;
+  transform: translate(18%, -20%);
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
+/* keep the page ground blue behind brand surfaces (overscroll, short viewports) */
+body:has([data-brand]) { background: var(--df-blue); }
 body {
   font-family: var(--body);
   color: var(--text);

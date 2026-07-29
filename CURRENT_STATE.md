@@ -19,18 +19,21 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 | Download button | ✅ Full-show download, owner-only, resolved on demand, admin-set URL |
 | Responsive pass | ✅ Mobile/tablet checked with real screenshots; show-card and performance-title spacing tuned |
 | Git hygiene | ✅ GitHub connected (`AJDesign1/dance-films`); a leaked Supabase PAT + DB password were scrubbed from history (`filter-branch`) — **rotate that token/password if not already done** |
+| Hosting | ✅ Live on Netlify at `dancefilms.co.uk`, auto-deploying from `master`. `liberty.dancefilms.co.uk` live with SSL. New schools need their subdomain added manually in Netlify (plan doesn't allow a wildcard alias) |
+| Auth email | ✅ Resend SMTP through Supabase, sending from `@dancefilms.co.uk` (DKIM + SPF verified) |
+| Tenant routing | ✅ Apex/unknown hosts serve a Dance Films holding page instead of defaulting to Liberty; school resolution is subdomain-only (`?school=` still works as a preview override) |
+| Dance Films brand | ✅ Assets + design guide in-repo; Montserrat, Blue `#232835` / Pink `#E5007E` applied to the admin area, admin sign-in and holding page. Contrast checked against WCAG AA (pink needed a lighter tint on dark — see `DECISIONS.md`) |
+| Admin sign-in | ✅ Password login at `/admin/login`, `is_admin`-gated, reachable at `dancefilms.co.uk/admin`. **No password set on the admin account yet** — see `SESSION_HANDOFF.md` |
 
 ## Not done / deferred
 
 - **Stage 9/10 (harden & test)** — no formal RLS test sweep, mobile/tablet review was ad hoc (not exhaustive), no accessibility (reduced-motion/focus) audit yet
-- **Netlify** — `netlify.toml` exists but the site is not connected/deployed
-- **Magic-link email delivery** — Supabase Auth Site URL/redirect allowlist and SMTP not configured; local testing currently relies on minting links via the Auth admin API
 - **Real content** — shows/performances/categories/parents in the DB are demo seed data; real Liberty content (shows, Vimeo IDs, parent list) hasn't been loaded
+- **Authenticated admin screens not visually re-checked** after the brand change — tokens and contrast were verified, but the individual admin pages weren't viewed (no local admin session at the time)
 - **Marketing site** (`dancefilms.co.uk`) — explicitly out of scope for V1, architecture allows it later
 - **Photo galleries, per-dance download, PayPal** — explicitly out of scope for V1
 
 ## Needs confirmation
 
-- Whether Netlify hosting is still the intended deploy target, or something else has been decided since
 - Whether the leaked Supabase access token / DB password have actually been rotated yet
 - Real Vimeo account tier/timeline for enabling domain-restricted embeds

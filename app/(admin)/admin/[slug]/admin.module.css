@@ -13,8 +13,11 @@
 }
 .backLink:hover { color: #fff; }
 .sidebarBrand { padding: 14px 20px 16px; border-bottom: 1px solid rgba(255,255,255,.08); }
-.sidebarSchool { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-top: 10px; }
-.sidebarWord { font-family: var(--disp); font-weight: 800; font-size: 22px; letter-spacing: .02em; text-transform: uppercase; color: #fff; line-height: .95; }
+/* lighter pink tint — full-strength pink fails AA at this size on the dark sidebar */
+.sidebarSchool { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-on-dark); margin-top: 10px; }
+.sidebarWord { font-family: var(--disp); font-weight: 700; font-size: 19px; letter-spacing: .01em; color: #fff; line-height: 1.15; }
+/* Dance Films linear logo — secondary mark, for compact/nav areas (DESIGN_GUIDE §4) */
+.sidebarLogo { display: block; width: 132px; height: auto; }
 .nav { flex: 1; overflow: auto; padding: 14px 12px; }
 .navItem {
   width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -35,7 +38,8 @@
 }
 .headerLeft { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .crumb { font-size: 13px; color: var(--text-3); background: none; border: none; cursor: pointer; font-family: var(--body); text-decoration: none; }
-.pageTitle { font-family: var(--disp); font-weight: 800; font-size: 23px; letter-spacing: .01em; text-transform: uppercase; color: var(--text); margin: 0; }
+/* Montserrat bold, sentence case — hierarchy through weight/scale, not uppercase */
+.pageTitle { font-family: var(--disp); font-weight: 700; font-size: 21px; letter-spacing: -.01em; color: var(--text); margin: 0; }
 .content { flex: 1; padding: 30px; animation: fadeUp .3s ease both; }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--e-1); }

@@ -1,0 +1,100 @@
+/* Dance Films admin sign-in — brand-led (stacked logo + gradient), unlike the
+   per-school parent login. See brand/DESIGN_GUIDE.md §4, §7. */
+
+.wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-5);
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 380px;
+}
+
+.logo {
+  display: block;
+  width: 168px;
+  height: auto;
+  margin: 0 auto var(--sp-7);
+}
+
+.heading {
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--sp-2);
+}
+
+.sub {
+  font-size: 14px;
+  color: var(--text-2);
+  margin: 0 0 var(--sp-6);
+  line-height: 1.5;
+}
+
+.label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  margin-bottom: 7px;
+}
+
+.field {
+  margin-bottom: var(--sp-4);
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 15px;
+  font-family: var(--body);
+  outline: none;
+}
+.input:focus {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.submit {
+  width: 100%;
+  margin-top: var(--sp-2);
+  padding: 13px 18px;
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+.submit:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  margin: var(--sp-4) 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  /* paired with an icon, not colour alone (DESIGN_GUIDE §5) */
+  color: #FF9A9A;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}

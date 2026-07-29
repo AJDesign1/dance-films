@@ -32,6 +32,50 @@ The design's chip-row filters (group + style) got visually messy with real categ
 
 Originally shipped as plain URL text fields (fastest to build). Replaced with real file uploads to a Supabase Storage `branding` bucket for logo (colour + white) and sign-in photo, matching how a non-technical school admin actually expects to set branding.
 
+## Admin signs in with a password; parents keep magic links
+
+Two different sign-in flows, deliberately:
+
+- **Parents** — invite-only magic link. They visit once or twice a season; a
+  password is friction they'd have forgotten by the next show, and it would mean
+  building reset flows for non-technical users.
+- **Admin** — email + password (`/admin/login`). Signing in frequently, from
+  multiple devices, wanting a credential the browser/password manager can save.
+
+Passwords didn't replace magic links because they wouldn't have removed the
+email dependency anyway — verification and reset still need mail delivery.
+
+A correct password alone isn't enough: the account must also be `is_admin`, or
+the session is discarded immediately, so this page can't become a second
+authentication route for parent accounts. Errors are deliberately generic
+("Incorrect email or password") so the page doesn't disclose which emails exist.
+The magic-link path still works for the admin email as a recovery route if the
+password is lost.
+
+## Dance Films' brand vs each school's brand
+
+The admin manages every school, so it wears **Dance Films'** brand (Dance Films
+Blue, pink accent, Montserrat) rather than whichever school is being edited.
+Same for the apex holding page. Only the parent portal (`[data-app]`) takes its
+colours and fonts from the school's saved theme.
+
+Practically: `--df-blue` / `--df-pink` are fixed tokens no school theme can
+override, and the admin skin remaps `--disp`/`--body` to Montserrat so existing
+admin CSS picked up the brand font without every rule changing.
+
+The holding page also moved out of the `(platform)` route group for this reason
+— inside it, it inherited the school theming layer and fell back to Liberty's
+palette on a page that is not Liberty's.
+
+## Pink needed an accessibility tint on dark
+
+Dance Films Pink on Dance Films Blue is 3.25:1 — it fails WCAG AA for normal
+text, which matters because the design guide calls for pink on dark chrome. Dark
+surfaces therefore use `#FF62B0` (5.35:1) for pink text and small pink elements,
+recorded in `brand/DESIGN_GUIDE.md` as an accessibility tint rather than a new
+brand colour. Full-strength pink is retained on white and in solid buttons,
+where it measures 4.53:1.
+
 ## Local git history was rewritten once to remove a leaked secret
 
 A Supabase personal access token and DB password were briefly committed inside `.claude/settings.local.json` (an AI-tool local config file that should never be tracked). GitHub's push protection caught it before it reached the remote. History was rewritten (`git filter-branch`) to remove the file from every commit, `.gitignore` was updated, and the push succeeded clean. **The exposed credentials should be rotated** regardless (see `SESSION_HANDOFF.md`).

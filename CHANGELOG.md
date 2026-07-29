@@ -51,6 +51,21 @@ Schools list, Add school, Configure, enable/disable.
 - Branding images (logo colour/white, sign-in photo) moved from URL fields to real Supabase Storage uploads
 - Responsive review pass on mobile/tablet
 
+## Going live
+
+- Deployed to Netlify on `dancefilms.co.uk`, with `liberty.dancefilms.co.uk` as the first live school subdomain
+- Apex and unknown hosts no longer default to Liberty — they serve a holding page instead, reserved for the future marketing site
+- Auth email moved to Resend SMTP, sending from `@dancefilms.co.uk` instead of Supabase's shared default sender
+- Fixed the magic-link post-login redirect landing on the apex rather than the school's own subdomain (Netlify's runtime doesn't preserve the hostname in `request.url`)
+
+## Dance Films brand
+
+- Brand assets and design guide added to the repo (`brand/` sources, `public/brand/` web SVGs)
+- Montserrat added; admin area and marketing pages now wear Dance Films' own brand (Blue `#232835`, Pink `#E5007E`) rather than a school's theme
+- New password-based admin sign-in at `/admin/login`, separate from the parents' magic-link flow, with the master admin now reachable at `dancefilms.co.uk/admin`
+- Apex holding page rebranded: stacked logo, signature gradient, strapline with "dance show" in pink
+- Recorded an accessibility tint for pink on dark grounds in the design guide (full-strength pink fails AA at small sizes on the blue)
+
 ## Repo hygiene
 
 - Connected the repository to GitHub (`AJDesign1/dance-films`)

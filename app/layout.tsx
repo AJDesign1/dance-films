@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Big_Shoulders, Hanken_Grotesk } from "next/font/google";
+import { Big_Shoulders, Hanken_Grotesk, Montserrat } from "next/font/google";
 import "./globals.css";
 
 // Liberty's default type pairing, self-hosted via next/font.
@@ -21,6 +21,15 @@ const hanken = Hanken_Grotesk({
   display: "swap",
 });
 
+// Dance Films' own brand typeface (see brand/DESIGN_GUIDE.md). Used by the
+// admin area and the marketing/holding pages — the customer platform stays on
+// whichever pairing the school's theme specifies.
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Dance Films",
   description:
@@ -33,7 +42,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${bigShoulders.variable} ${hanken.variable}`}>
+    <html
+      lang="en"
+      className={`${bigShoulders.variable} ${hanken.variable} ${montserrat.variable}`}
+    >
       <body>{children}</body>
     </html>
   );

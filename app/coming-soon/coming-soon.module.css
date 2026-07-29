@@ -1,0 +1,56 @@
+/* Dance Films holding page — brand-led placeholder for the apex domain until
+   the marketing site is built. Lives outside the (platform) route group so it
+   never inherits a school's theme. See brand/DESIGN_GUIDE.md. */
+
+.wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-6);
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+  max-width: 560px;
+  text-align: center;
+}
+
+.logo {
+  display: block;
+  width: min(72vw, 260px);
+  height: auto;
+  margin: 0 auto var(--sp-7);
+}
+
+.strapline {
+  font-weight: 700;
+  font-size: clamp(26px, 5.4vw, 40px);
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--sp-4);
+}
+
+/* "dance show" set in Dance Films Pink (DESIGN_GUIDE §3). On the blue ground
+   the lighter tint is used so it stays legible at every scale. */
+.accent {
+  color: var(--accent-on-dark, #ff62b0);
+}
+
+.supporting {
+  font-size: clamp(14px, 2.4vw, 16.5px);
+  line-height: 1.6;
+  color: var(--text-2);
+  margin: 0 auto;
+  max-width: 30em;
+}
+
+.note {
+  margin-top: var(--sp-7);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}

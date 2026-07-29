@@ -26,8 +26,14 @@ components/
 lib/                  Supabase clients (browser/server/admin), auth, tenant, theme, format, stripe, vimeo helpers
 supabase/migrations/  Version-controlled schema — the source of truth for the DB
 design/project/       Claude Design handoff (HTML/CSS/JS prototypes) — the UI spec; preserve, don't restyle
+brand/                Dance Films brand: DESIGN_GUIDE.md + source artwork (.ai, PDFs)
+public/brand/         Web-served brand SVGs (stacked + linear logos, gradient)
 docs/                 Original product/schema spec docs (see below)
 ```
+
+Two brands live here: each **school's** theme (from the database) skins the parent
+portal, while **Dance Films'** own brand — see [`brand/DESIGN_GUIDE.md`](brand/DESIGN_GUIDE.md) —
+skins the admin area and the marketing/holding pages.
 
 ## Getting started
 

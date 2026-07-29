@@ -6,9 +6,10 @@ Read this before making changes. It supplements — doesn't replace — the orig
 
 1. **Preserve the design.** The UI came from a Claude Design handoff (`design/project/*.dc.html`). Wire up functionality; don't restyle finished screens. New connected states (empty/error/loading, admin) should match the existing look and use the token system, not new hard-coded values.
 2. **Everything themeable via CSS-variable tokens.** No hard-coded colours/fonts/radii/spacing. A school's branding lives in `schools.theme` (jsonb) and is applied at runtime — see `lib/theme.ts` and `app/(platform)/layout.tsx`.
-3. **Never expose the Supabase service-role key or Stripe secret to the browser.** Privileged operations (webhooks, allowlist checks, admin writes) run server-side only, via `lib/supabase/admin.ts` (marked `server-only`).
-4. **Access is enforced by RLS, not the UI.** Every table has RLS enabled. If you add a table, add RLS policies in the same migration — don't rely on the app hiding a button.
-5. **Video/photos are never served by the app.** Vimeo hosts video (iframe embed only, never a file URL); images go through Supabase Storage.
+3. **Two brands, kept separate.** The parent portal (`[data-app]`) wears the *school's* brand. The admin area (`[data-admin]`) and marketing/holding pages (`[data-brand]`) wear *Dance Films'* own brand — read `brand/DESIGN_GUIDE.md` before touching either. A school theme must never restyle Dance Films' chrome, and don't put Dance Films pages inside the `(platform)` route group (they'd inherit the school theming layer).
+4. **Never expose the Supabase service-role key or Stripe secret to the browser.** Privileged operations (webhooks, allowlist checks, admin writes) run server-side only, via `lib/supabase/admin.ts` (marked `server-only`).
+5. **Access is enforced by RLS, not the UI.** Every table has RLS enabled. If you add a table, add RLS policies in the same migration — don't rely on the app hiding a button.
+6. **Video/photos are never served by the app.** Vimeo hosts video (iframe embed only, never a file URL); images go through Supabase Storage.
 
 ## Schema changes
 

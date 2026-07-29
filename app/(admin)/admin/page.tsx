@@ -27,8 +27,9 @@ export default async function MasterAdmin() {
   return (
     <div data-admin className={styles.shell}>
       <aside className={styles.sidebar}>
-        <div className={styles.sidebarBrand} style={{ borderTop: "none" }}>
-          <div className={styles.sidebarWord}>Dance Films</div>
+        <div className={styles.sidebarBrand} style={{ borderTop: "none", paddingTop: 22 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/DanceFilms_logo_linear.svg" alt="Dance Films" className={styles.sidebarLogo} />
           <div className={styles.sidebarSchool}>Master admin</div>
         </div>
         <nav className={styles.nav}>

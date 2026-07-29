@@ -16,10 +16,14 @@ export type ManagedSchool = {
   theme: SchoolTheme;
 };
 
-/** Gate for all admin pages/actions: must be signed in AND is_admin. */
+/**
+ * Gate for all admin pages/actions: must be signed in AND is_admin.
+ * Signed-out visitors go to the admin's own password sign-in, not the
+ * per-school parent magic-link screen.
+ */
 export async function requireAdmin() {
   const profile = await getProfile();
-  if (!profile) redirect("/login");
+  if (!profile) redirect("/admin/login");
   if (!profile.is_admin) redirect("/shows");
   return profile;
 }

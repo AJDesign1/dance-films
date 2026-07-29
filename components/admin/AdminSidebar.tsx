@@ -39,7 +39,9 @@ export default function AdminSidebar({
         </Link>
       </div>
       <div className={styles.sidebarBrand}>
-        <div className={styles.sidebarWord}>{schoolName}</div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/DanceFilms_logo_linear.svg" alt="Dance Films" className={styles.sidebarLogo} />
+        <div className={styles.sidebarWord} style={{ marginTop: 14 }}>{schoolName}</div>
         <div className={styles.sidebarSchool}>School admin</div>
       </div>
       <nav className={styles.nav}>
