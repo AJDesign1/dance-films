@@ -22,12 +22,22 @@
 .hero {
   position: relative;
   min-height: 540px;
-  display: flex;
   background: var(--surface-2);
   overflow: hidden;
 }
-.heroPad { position: relative; align-self: flex-end; padding: 50px 44px; max-width: 760px; }
-.heroTitle { font-size: 96px; }
+/* Full-bleed background, but the text column lines up with .headInner/.body's
+   content edge (same max-width + padding), not the hero's own edge-to-edge box. */
+.heroInner {
+  position: absolute;
+  inset: 0;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  align-items: flex-end;
+}
+.heroPad { position: relative; padding: 50px 0; max-width: 720px; }
+.heroTitle { font-size: 96px; line-height: 0.94; }
 
 .body { max-width: 1280px; margin: 0 auto; padding: 48px 40px 48px; }
 .fullTitle { font-size: 22px; }
@@ -76,7 +86,8 @@
   .headBar { padding: 16px 0; }
   .headLogo { height: 63px; }
   .hero { min-height: 420px; }
-  .heroPad { padding: 26px 22px; }
+  .heroInner { padding: 0 18px; }
+  .heroPad { padding: 26px 0; }
   .heroTitle { font-size: 52px; }
   .body { padding: 30px 18px 40px; }
   .progRow { gap: 14px; padding: 16px 0; }

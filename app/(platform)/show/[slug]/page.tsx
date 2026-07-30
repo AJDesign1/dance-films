@@ -195,20 +195,22 @@ function Hero({
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(120deg, var(--brand-2), var(--ink))" }} />
       )}
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(12,20,26,.12) 0%,rgba(12,20,26,.4) 48%,rgba(12,20,26,.92) 100%)", pointerEvents: "none" }} />
-      <div className={styles.heroPad}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#fff", opacity: 0.85 }}>
-          {show.season ?? "Show"}{show.show_year ? ` · ${show.show_year}` : ""}
-        </div>
-        <h1 className={styles.heroTitle} style={{ fontFamily: "var(--disp)", fontWeight: 800, lineHeight: ".86", letterSpacing: ".01em", textTransform: "uppercase", color: "#fff", margin: "12px 0 16px" }}>
-          {show.title}
-        </h1>
-        {(runtime || perfCount !== null) && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 22, alignItems: "center", fontSize: 13, fontWeight: 600, color: "#c9d4da" }}>
-            {runtime && <span>Runtime <span style={{ color: "#fff" }}>{runtime}</span></span>}
-            {runtime && perfCount !== null && <span style={{ opacity: 0.4 }}>·</span>}
-            {perfCount !== null && <span><span style={{ color: "#fff" }}>{perfCount}</span> performances</span>}
+      <div className={styles.heroInner}>
+        <div className={styles.heroPad}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#fff", opacity: 0.85 }}>
+            {show.season ?? "Show"}{show.show_year ? ` · ${show.show_year}` : ""}
           </div>
-        )}
+          <h1 className={styles.heroTitle} style={{ fontFamily: "var(--disp)", fontWeight: 800, letterSpacing: ".01em", textTransform: "uppercase", color: "#fff", margin: "12px 0 16px" }}>
+            {show.title}
+          </h1>
+          {(runtime || perfCount !== null) && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 22, alignItems: "center", fontSize: 13, fontWeight: 600, color: "#c9d4da" }}>
+              {runtime && <span>Runtime <span style={{ color: "#fff" }}>{runtime}</span></span>}
+              {runtime && perfCount !== null && <span style={{ opacity: 0.4 }}>·</span>}
+              {perfCount !== null && <span><span style={{ color: "#fff" }}>{perfCount}</span> performances</span>}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
