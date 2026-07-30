@@ -24,12 +24,20 @@ export default function BrandingForm({
   async function uploadImage(slot: "logo-colour" | "logo-white" | "sign-in", field: keyof FormT, file: File) {
     setMsg(null);
     setUploading(slot);
-    const fd = new FormData();
-    fd.set("file", file);
-    const res = await uploadBrandingImage(schoolId, slot, fd);
-    setUploading(null);
-    if ("url" in res) set(field, res.url as FormT[typeof field]);
-    else setMsg({ ok: false, text: res.error });
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      const res = await uploadBrandingImage(schoolId, slot, fd);
+      if ("url" in res) set(field, res.url as FormT[typeof field]);
+      else setMsg({ ok: false, text: res.error });
+    } catch {
+      // A thrown server action (e.g. a stale/expired session redirecting
+      // instead of returning a result) must not leave the button stuck on
+      // "Uploading…" forever — always clear the state below.
+      setMsg({ ok: false, text: "Upload failed. If this keeps happening, try signing out and back in." });
+    } finally {
+      setUploading(null);
+    }
   }
 
   function save() {

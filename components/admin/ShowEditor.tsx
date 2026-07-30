@@ -42,12 +42,20 @@ export default function ShowEditor({
   async function uploadArtwork(file: File) {
     setError(null);
     setUploading(true);
-    const fd = new FormData();
-    fd.set("file", file);
-    const res = await uploadShowArtwork(schoolId, fd);
-    setUploading(false);
-    if ("url" in res) set("artwork_url", res.url);
-    else setError(res.error);
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      const res = await uploadShowArtwork(schoolId, fd);
+      if ("url" in res) set("artwork_url", res.url);
+      else setError(res.error);
+    } catch {
+      // A thrown server action (e.g. a stale/expired session redirecting
+      // instead of returning a result) must not leave the button stuck on
+      // "Uploading…" forever — always clear the state below.
+      setError("Upload failed. If this keeps happening, try signing out and back in.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function save() {

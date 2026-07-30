@@ -65,6 +65,31 @@ export async function middleware(request: NextRequest) {
 
   await supabase.auth.getUser();
 
+  // Clear any pre-existing host-only cookie of the same name — set before
+  // cross-subdomain sharing existed — that would otherwise sit alongside the
+  // new Domain=.dancefilms.co.uk cookie and can get sent as a stale
+  // duplicate, breaking session recognition unpredictably (see DECISIONS.md:
+  // "Stale pre-shared-cookie sessions"). NextResponse.cookies/next/headers
+  // cookies() both de-dupe by name, so a second .set() for the same name
+  // can't coexist with the first — this appends a raw Set-Cookie header
+  // directly instead, which the Fetch spec special-cases to always add a new
+  // header line rather than overwrite. Harmless no-op if no stale cookie
+  // exists. Runs on every request (not just sign-in), so it self-heals
+  // regardless of which request happens to carry the stale cookie.
+  if (domain) {
+    const staleNames = new Set(
+      request.cookies.getAll()
+        .map((c) => c.name)
+        .filter((name) => name.startsWith("sb-")),
+    );
+    for (const name of staleNames) {
+      response.headers.append(
+        "Set-Cookie",
+        `${name}=; Path=/; Max-Age=0; SameSite=Lax; Secure; HttpOnly`,
+      );
+    }
+  }
+
   return response;
 }
 

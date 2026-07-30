@@ -48,27 +48,33 @@ cookie — see below), click through Master admin → **View site** → a show �
 play a performance, and confirm it doesn't ask for a magic link and the video
 actually plays.
 
-**Confirmed: stale pre-shared-cookie session causes a silent sign-in loop.**
-Symptom reported live: submitting the correct admin password on `/admin/login`
-"just refreshes" — no error message, just bounces back to the login page.
-Diagnosed and confirmed by testing a wrong password first (form/error display
-work correctly — "Incorrect email or password" shows properly), then
-reproducing success in a **private/incognito window**, which worked. Root
-cause: a cookie set *before* cross-subdomain sharing existed (host-only, no
-`Domain` attribute) sits alongside the new `Domain=.dancefilms.co.uk` cookie
-of the same name — the browser can send the stale one, which the new session
-logic doesn't recognise, so `requireAdmin()` bounces back to `/admin/login`
-with no error to show (it's a redirect, not a caught failure).
+**Fixed: stale pre-shared-cookie session caused a silent sign-in loop (and
+broke uploads too).** Symptom reported live: submitting the correct admin
+password on `/admin/login` "just refreshes" — no error, bounces back to the
+login page — and separately, uploading branding images got stuck on
+"Uploading…" forever. Same root cause both times: a cookie set *before*
+cross-subdomain sharing existed (host-only, no `Domain` attribute) sitting
+alongside the new `Domain=.dancefilms.co.uk` cookie of the same name; the
+browser can send the stale one, which the session logic doesn't recognise —
+`requireAdmin()` then redirects (no error to show for the login case; for
+uploads, the redirect happened *inside* the unguarded upload action, so the
+button never reset).
 
-**Not auto-fixed in code** — considered it, but Next.js's cookie APIs (both
-in Server Actions and in middleware) de-dupe by cookie name, so cleanly
-emitting "set the new cookie" and "clear the old one" in the same response
-isn't possible without hand-rolling raw `Set-Cookie` headers, which risks
-breaking auth entirely if malformed. Not worth that risk for a problem that
-only affects sessions that existed before the change and self-resolves as
-those get replaced. **The fix**: clear cookies for `dancefilms.co.uk` once
-(or keep using a private window for admin work) — every sign-in from now on
-only ever sets the shared cookie, with no stale counterpart to conflict with.
+First attempt asked the admin to use a private window as a one-time
+workaround. That wasn't good enough for daily use, so it's now properly
+fixed in code: `middleware.ts` clears the stale cookie via a raw
+`Set-Cookie` header appended directly to the response (bypassing Next's
+cookie APIs, which de-dupe by name and can't otherwise coexist a "set new" +
+"clear old" for the same cookie name — see `DECISIONS.md`). Both upload
+handlers (`BrandingForm`, `ShowEditor`) also now wrap their server-action
+call in `try/catch`/`finally`, so any thrown error resets the uploading
+state instead of hanging forever, regardless of cause.
+
+**Should now just work** on the next sign-in / next upload attempt in a
+normal (non-private) browser — worth confirming live, since the fix itself
+was verified with `curl` (a fake stale cookie gets a clearing header; no
+stale cookie or localhost both correctly no-op) but not against a real
+browser session end-to-end.
 
 **Bunny Stream switch + artwork upload** — verified by typecheck, production build, and visual checks of the admin UI (field labels, upload control) via a temporary preview route (removed before committing) — same auth limitation as above, no real admin session available. **Not verified**: an actual file upload writing to the new `artwork` bucket, and an actual video embed rendering (needs `BUNNY_LIBRARY_ID` set — see Immediate priorities — plus a real Bunny video ID pasted into a performance). Worth checking both once signed in: upload a show's cover artwork and confirm it appears on the shop card, and paste a real Bunny video ID into a performance and confirm it plays.
 
