@@ -94,6 +94,13 @@ Schools list, Add school, Configure, enable/disable.
 - New `access_codes` table, same security posture as `invited_emails` (RLS enabled, zero client policies, service-role only)
 - Managed per-school at `/admin/{slug}/access-codes` — create, regenerate, disable/enable, change show association
 
+## Invited parents: payment status & cash-grant access
+
+- Each parent now shows, per show, whether they've **Paid** (bought online by card) or **Cash** (access given manually) — read straight off `entitlements.source`
+- A **Give access** button grants a show to a parent who paid in cash (only once they've signed in — an entitlement needs their account to attach to; not-yet-registered parents show a note instead)
+- Reuses the existing grant/revoke actions from Users & access verbatim — no duplicated logic, no schema change
+- Card ("Paid") entitlements aren't removable from this screen (avoids accidentally revoking a real payment); cash grants are
+
 ## Repo hygiene
 
 - Connected the repository to GitHub (`AJDesign1/dance-films`)

@@ -13,7 +13,9 @@ export async function grantEntitlement(userId: string, showId: string, slug: str
     .from("entitlements")
     .upsert({ user_id: userId, show_id: showId, source: "granted" }, { onConflict: "user_id,show_id", ignoreDuplicates: true });
   if (error) return { error: "Couldn't grant access." };
+  // Both the Users & access page and the Invited parents page show this state.
   revalidatePath(`/admin/${slug}/users`);
+  revalidatePath(`/admin/${slug}/parents`);
   return { ok: true };
 }
 
@@ -25,5 +27,6 @@ export async function revokeEntitlement(userId: string, showId: string, slug: st
   const { error } = await admin.from("entitlements").delete().eq("user_id", userId).eq("show_id", showId);
   if (error) return { error: "Couldn't revoke access." };
   revalidatePath(`/admin/${slug}/users`);
+  revalidatePath(`/admin/${slug}/parents`);
   return { ok: true };
 }

@@ -2,6 +2,17 @@
 
 Key choices made during the build and the reasoning behind them. For the original product decisions (pricing model, invite-only, whole-show purchase, etc.), see `docs/Dance Show Platform - Master Brief.md` — this file covers decisions made *during implementation* that extend or reconcile that spec.
 
+## Payment visibility + cash-grant on the Invited parents page
+
+The school owner wanted, on the parents page, to see who's paid for what and to grant access to parents who paid cash. Built by reusing existing concepts rather than anything new:
+
+- **"Paid" vs "Cash" is read straight off `entitlements.source`** — `'purchase'` (written by the Stripe webhook) shows as **Paid**, `'granted'` (written by a manual admin grant) shows as **Cash**. No new "payment" table; the source column already carried this distinction.
+- **Grant/revoke reuses the existing `grantEntitlement`/`revokeEntitlement` actions** (from the Users & access page) verbatim — grant already writes `source: 'granted'`, which is exactly "cash/comp access". Those two actions just gained a second `revalidatePath` for the parents page so both screens stay fresh. No duplicated entitlement-write logic.
+- **Grant is only possible once a parent has signed in.** An entitlement's `user_id` FK points at a `profiles` row, which only exists after first sign-in — so a not-yet-registered invite literally has nothing to attach an entitlement to. Rather than build a parallel "pending grant keyed by email, reconciled on signup" mechanism (a real schema + trigger change — offered to the owner, declined), the UI shows "Access can be given once this parent signs in" for those rows. The realistic cash flow still works: add the parent → they sign in from the invite → then grant.
+- **Card-paid ("Paid") entitlements have no Remove button here; cash ones do.** Deliberate footgun-avoidance: revoking a real Stripe payment shouldn't be a stray click on a payment-overview screen. The full grant/revoke-anything control still lives on the Users & access page (and refunds go through Stripe regardless). Cash grants, being the thing you gave manually, are freely removable here.
+
+This overlaps the existing Users & access page (which lists registered users and toggles entitlements). Both were kept: Users & access is the per-user access matrix; the parents page is the invite-list-plus-payment view the owner actually asked to work from. Same underlying actions, two lenses.
+
 ## Stale pre-shared-cookie sessions: auto-cleared via a raw `Set-Cookie` header
 
 Introducing cross-subdomain cookie sharing (`lib/cookieDomain.ts`) created a real transitional bug: any session cookie set *before* that change (host-only, no `Domain` attribute) can sit alongside a new `Domain=.dancefilms.co.uk` cookie of the same name, and the browser may send the stale one — which the app doesn't recognise, silently bouncing an otherwise-correct sign-in back to the login page with no error shown (confirmed live: this is exactly what "admin login just refreshes" turned out to be — and, transitively, why branding image uploads got stuck on "Uploading…" forever too, since `uploadBrandingImage` hit the same broken-session `requireAdmin()` check mid-action).
