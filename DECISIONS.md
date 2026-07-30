@@ -8,16 +8,20 @@ The Claude Design handoff mocked an in-app card-entry modal. We kept its visual 
 
 ## Video: iframe-only embeds, resolved on demand
 
-Streaming uses the Vimeo iframe embed exclusively, never a direct file URL. Embed URLs are fetched by a server action **at play time**, re-checking the user's entitlement via RLS — the `vimeo_id` never appears in page markup or the initial client payload. Context menu and text selection are disabled over the player.
+Streaming uses a Bunny Stream iframe embed exclusively, never a direct file URL. Embed URLs are fetched by a server action **at play time**, re-checking the user's entitlement via RLS — the `bunny_video_id` never appears in page markup or the initial client payload. Context menu and text selection are disabled over the player.
 
-This is explicitly a **deterrent**, not DRM — screen recording can't be stopped by any of this. The real access control is Vimeo's **domain-restricted embed**, an account-level setting available on paid Vimeo plans. The code is structured so enabling that later requires zero changes — we already only use the iframe embed.
+This is explicitly a **deterrent**, not DRM — screen recording can't be stopped by any of this. Bunny's stronger options aren't wired up yet: Pull Zone referrer allowlisting (Bunny's rough equivalent of a domain lock — exact dashboard setting `Needs confirmation`), and **Token Authentication** (signed, time-limited embed URLs — a real feature to build, needing a shared signing key and server-side signing, not a setting to flip). See `lib/bunny.ts` for both. Originally built on Vimeo; switched to Bunny Stream (see "Switched from Vimeo to Bunny Stream" below) — the pattern itself (embed-only, resolved server-side, RLS-gated) carried over unchanged.
 
-## Download confirmation + tracking: full-show only, no live Vimeo API
+## Switched from Vimeo to Bunny Stream
+
+The app never called Vimeo's API — it only ever stored an admin-entered video identifier and built an iframe embed URL from it (`lib/vimeo.ts`). Moving to Bunny Stream was therefore a like-for-like swap, not a re-architecture: `lib/bunny.ts` replaces `lib/vimeo.ts` with the same single-function shape, `performances.vimeo_id` / `show_videos.full_show_vimeo_id` were renamed (not migrated to new columns) since no real content had been loaded onto Vimeo yet, and every "Vimeo ID" admin field/label became "Bunny video ID". `download_url` (the full-show download field) didn't need to change — it was already host-agnostic, an admin-pasted URL to any hosted file.
+
+## Download confirmation + tracking: full-show only, no live Bunny API
 
 Full-show downloads get a confirmation modal (personal/family-use terms) before the link opens, and a "Downloaded" badge afterward — informational only, it never blocks re-downloading. Two scope calls made deliberately narrow, both confirmed with the school owner rather than assumed:
 
 - **Full-show only, not per-performance.** Matches the existing V1 decision above ("Video: iframe-only embeds") that downloads are a DVD/USB replacement, not a per-dance feature. Adding per-performance downloads would mean a `download_url` on `performances` plus new admin UI — a real scope increase, not part of this change.
-- **No live Vimeo API integration.** Genuinely temporary, self-expiring download links require calling Vimeo's API at request time (`GET /videos/{id}` returns short-lived signed URLs), which needs a Vimeo plan with API access and a Personal Access Token — neither confirmed to exist. Rather than build toward Vimeo access that may not be there, the existing model stands: an admin-pasted `show_videos.download_url`, resolved server-side on demand and never placed in page markup (already the case pre-existing). The confirmation modal's stated terms are the actual deterrent here, not a technical wall — consistent with the brief's own framing ("discourage casual sharing... not fight legitimate customers").
+- **No live video-host API integration for temporary links.** Genuinely temporary, self-expiring download links need calling the video host's API at request time — this was written for Vimeo (`GET /videos/{id}` returns short-lived signed URLs, needing a Vimeo plan with API access) and the reasoning carries over unchanged now that the host is Bunny Stream, which has its own equivalent (Token Authentication, noted above) that isn't wired up either. Rather than build toward host API access that isn't confirmed to exist, the existing model stands: an admin-pasted `show_videos.download_url`, resolved server-side on demand and never placed in page markup. The confirmation modal's stated terms are the actual deterrent here, not a technical wall — consistent with the brief's own framing ("discourage casual sharing... not fight legitimate customers").
 
 Download tracking lives in its own `downloads` table (user_id, show_id, unique together) rather than extending `entitlements`, since entitlements mean *ownership* and this means *usage history* — different concepts that shouldn't share a row. RLS lets a user insert their own row only for a show they already hold an entitlement for (reuses the existing `has_entitlement()` helper), so it can't be used to fake a "downloaded" badge for an unowned show.
 
@@ -31,7 +35,7 @@ Because Data API auto-expose is off (a deliberate security choice), every table 
 
 ## Full-show download is a separate, owner-gated feature
 
-Parents can download the full show they own (replacing the old DVD/USB), independent of streaming. The download URL is admin-set (a Vimeo download link on a paid plan, or any hosted file) and resolved on demand the same way the streaming embed is — entitlement-checked, never in markup. Per-dance downloads were considered but are **not** implemented — full-show only.
+Parents can download the full show they own (replacing the old DVD/USB), independent of streaming. The download URL is admin-set (a Bunny Stream direct file URL, or any hosted file) and resolved on demand the same way the streaming embed is — entitlement-checked, never in markup. Per-dance downloads were considered but are **not** implemented — full-show only.
 
 ## Filters are dropdowns, not chip rows
 
@@ -40,6 +44,8 @@ The design's chip-row filters (group + style) got visually messy with real categ
 ## Branding images are Storage uploads, not URL fields
 
 Originally shipped as plain URL text fields (fastest to build). Replaced with real file uploads to a Supabase Storage `branding` bucket for logo (colour + white) and sign-in photo, matching how a non-technical school admin actually expects to set branding.
+
+Show cover artwork followed the same path, later: a plain URL field at first ("upload support coming later" was literally the placeholder text), then a real upload to its own `artwork` bucket — kept separate from `branding` because it's per-show content, not the school's identity. Unlike `branding`, no broad `SELECT` policy was added on `storage.objects` for it: a public bucket already serves `getPublicUrl()` reads without one, and that policy only matters for `list()`/authenticated-path access, which this app never uses — unnecessary to replicate an already-flagged advisory (`branding`'s policy trips the "public bucket allows listing" lint) for a second bucket.
 
 ## Admin signs in with a password; parents keep magic links
 

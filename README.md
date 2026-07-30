@@ -9,7 +9,7 @@ This repository is the **single source of truth** for the project — code, sche
 - **Next.js 15** (App Router, TypeScript) — no Tailwind; styling is a CSS-variable token system (see `app/globals.css`) so the whole UI is themeable per school
 - **Supabase** — Postgres, Auth (magic link), Storage (branding images), Row-Level Security
 - **Stripe** — hosted Checkout (not an in-app card form) → webhook → entitlement
-- **Vimeo** — iframe embeds only, with anti-copy deterrents (see `docs/`)
+- **Bunny Stream** — iframe embeds only, with anti-copy deterrents (see `docs/`)
 - **Netlify** — target host (`netlify.toml` present; not yet connected — see `SESSION_HANDOFF.md`)
 
 ## Repo layout
@@ -23,7 +23,7 @@ app/
 components/
   platform/           Customer UI components
   admin/              Admin UI components
-lib/                  Supabase clients (browser/server/admin), auth, tenant, theme, format, stripe, vimeo helpers
+lib/                  Supabase clients (browser/server/admin), auth, tenant, theme, format, stripe, bunny helpers
 supabase/migrations/  Version-controlled schema — the source of truth for the DB
 design/project/       Claude Design handoff (HTML/CSS/JS prototypes) — the UI spec; preserve, don't restyle
 brand/                Dance Films brand: DESIGN_GUIDE.md + source artwork (.ai, PDFs)

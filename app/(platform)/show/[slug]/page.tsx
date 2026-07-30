@@ -95,7 +95,7 @@ export default async function ShowPage({
   // ---- Owned: load gated content ----
   const { data: video } = await supabase
     .from("show_videos")
-    .select("full_show_vimeo_id, duration_seconds")
+    .select("full_show_bunny_video_id, duration_seconds")
     .eq("show_id", show.id)
     .maybeSingle();
 
@@ -165,7 +165,7 @@ export default async function ShowPage({
         showYear={show.show_year}
         showId={show.id}
         intro={show.intro_text}
-        fullShowAvailable={!!video?.full_show_vimeo_id}
+        fullShowAvailable={!!video?.full_show_bunny_video_id}
         fullShowDuration={formatRuntime(video?.duration_seconds)}
         alreadyDownloaded={!!downloadRow}
         performances={performances}

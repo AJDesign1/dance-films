@@ -20,7 +20,7 @@ function rev(slug: string) {
   revalidatePath(`/admin/${slug}/performances`);
 }
 
-export async function setFullShowVideo(showId: string, slug: string, vimeoId: string, duration: string, downloadUrl: string): Promise<ActionResult> {
+export async function setFullShowVideo(showId: string, slug: string, bunnyVideoId: string, duration: string, downloadUrl: string): Promise<ActionResult> {
   await requireAdmin();
   const admin = createAdminClient();
   const { error } = await admin
@@ -28,7 +28,7 @@ export async function setFullShowVideo(showId: string, slug: string, vimeoId: st
     .upsert(
       {
         show_id: showId,
-        full_show_vimeo_id: vimeoId.trim() || null,
+        full_show_bunny_video_id: bunnyVideoId.trim() || null,
         duration_seconds: parseDuration(duration),
         download_url: downloadUrl.trim() || null,
       },
@@ -44,13 +44,13 @@ export async function addPerformance(showId: string, slug: string): Promise<Acti
   const admin = createAdminClient();
   const { data: last } = await admin.from("performances").select("sort_order").eq("show_id", showId).order("sort_order", { ascending: false }).limit(1);
   const next = (last?.[0]?.sort_order ?? -1) + 1;
-  const { error } = await admin.from("performances").insert({ show_id: showId, title: "New performance", vimeo_id: "", sort_order: next });
+  const { error } = await admin.from("performances").insert({ show_id: showId, title: "New performance", bunny_video_id: "", sort_order: next });
   if (error) return { error: "Couldn't add performance." };
   rev(slug);
   return { ok: true };
 }
 
-export async function updatePerformanceField(id: string, slug: string, field: "title" | "vimeo_id" | "duration", value: string): Promise<ActionResult> {
+export async function updatePerformanceField(id: string, slug: string, field: "title" | "bunny_video_id" | "duration", value: string): Promise<ActionResult> {
   await requireAdmin();
   const admin = createAdminClient();
   const patch = field === "duration" ? { duration_seconds: parseDuration(value) } : { [field]: value.trim() };
@@ -97,7 +97,7 @@ export async function reorderPerformance(id: string, slug: string, dir: -1 | 1):
   return { ok: true };
 }
 
-/** One per line: "Title | Group | Vimeo | Duration" (group/vimeo/duration optional). */
+/** One per line: "Title | Group | Bunny video ID | Duration" (group/id/duration optional). */
 export async function bulkAddPerformances(showId: string, slug: string, text: string): Promise<ActionResult> {
   await requireAdmin();
   const admin = createAdminClient();
@@ -114,10 +114,10 @@ export async function bulkAddPerformances(showId: string, slug: string, text: st
 
   let added = 0;
   for (const line of lines) {
-    const [title, group, vimeo, dur] = line.split("|").map((x) => (x ?? "").trim());
+    const [title, group, bunnyVideoId, dur] = line.split("|").map((x) => (x ?? "").trim());
     const { data: perf, error } = await admin
       .from("performances")
-      .insert({ show_id: showId, title: title || "Untitled", vimeo_id: vimeo || "", duration_seconds: parseDuration(dur || ""), sort_order: order++ })
+      .insert({ show_id: showId, title: title || "Untitled", bunny_video_id: bunnyVideoId || "", duration_seconds: parseDuration(dur || ""), sort_order: order++ })
       .select("id")
       .single();
     if (error || !perf) continue;

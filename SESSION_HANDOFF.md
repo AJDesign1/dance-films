@@ -4,13 +4,14 @@ What to pick up next. Update this file at the end of each working session so the
 
 ## Immediate priorities
 
-1. **Set the admin password.** `/admin/login` (password sign-in) is built, but the
+1. **Set `BUNNY_LIBRARY_ID`** (local `.env.local` and Netlify env vars) — the video library ID from the Bunny Stream dashboard. Without it, every video click server-logs an error and gracefully shows "No video available" rather than crashing — but no video plays anywhere until it's set. This is new since the Vimeo → Bunny Stream switch (see `DECISIONS.md`).
+2. **Set the admin password.** `/admin/login` (password sign-in) is built, but the
    admin account has no password yet — set one in **Supabase Dashboard →
    Authentication → Users → [the admin user] → Reset/set password**. Until then,
    sign in via the magic-link fallback at `/login` on the apex domain.
-2. **Rotate the leaked Supabase credentials.** A personal access token and DB password were briefly committed to git history and have been scrubbed, but should be treated as compromised: revoke/regenerate the access token in the Supabase dashboard, and reset the database password. — `Needs confirmation`: whether this has been done yet.
-3. **Add Stripe keys** (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`) so the checkout → webhook → entitlement flow can be tested with real (test-mode) payments.
-4. **Load real Liberty content**: actual shows, performances (with real Vimeo IDs), categories, and the real parent email list, via the school admin (`/admin/liberty`). The current DB rows are demo seed data.
+3. **Rotate the leaked Supabase credentials.** A personal access token and DB password were briefly committed to git history and have been scrubbed, but should be treated as compromised: revoke/regenerate the access token in the Supabase dashboard, and reset the database password. — `Needs confirmation`: whether this has been done yet.
+4. **Add Stripe keys** (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`) so the checkout → webhook → entitlement flow can be tested with real (test-mode) payments.
+5. **Load real Liberty content**: actual shows, performances (with real Bunny video IDs), categories, and the real parent email list, via the school admin (`/admin/liberty`). The current DB rows are demo seed data.
 
 ## Live infrastructure (done — for reference)
 
@@ -21,7 +22,7 @@ What to pick up next. Update this file at the end of each working session so the
 ## Then
 
 - **Stage 9/10 — Harden & test**: a proper RLS test sweep (confirm a non-entitled user genuinely cannot read another show's video refs via direct API calls, not just through the UI), a full mobile/tablet pass, and a reduced-motion/focus accessibility check. The responsive pass done so far was spot-checked, not exhaustive.
-- Decide whether Vimeo's paid tier (for domain-restricted embeds) is being purchased, and when — the code needs no changes either way, but it's the actual security boundary for streaming.
+- Decide whether Bunny's Pull Zone referrer allowlisting and/or Token Authentication get set up — the code needs no further changes for referrer allowlisting, but Token Authentication (genuinely temporary signed URLs) would need a signing key + server-side signing logic, a real feature to build, not a setting to flip.
 
 ## Known non-blocking gaps
 
@@ -49,6 +50,8 @@ actually plays.
 before cross-subdomain sharing existed (host-only, apex-scoped). It won't
 retroactively become shared — sign out and back in once; every session after
 that will carry across every school subdomain automatically.
+
+**Bunny Stream switch + artwork upload** — verified by typecheck, production build, and visual checks of the admin UI (field labels, upload control) via a temporary preview route (removed before committing) — same auth limitation as above, no real admin session available. **Not verified**: an actual file upload writing to the new `artwork` bucket, and an actual video embed rendering (needs `BUNNY_LIBRARY_ID` set — see Immediate priorities — plus a real Bunny video ID pasted into a performance). Worth checking both once signed in: upload a show's cover artwork and confirm it appears on the shop card, and paste a real Bunny video ID into a performance and confirm it plays.
 
 ## Where things stand technically
 

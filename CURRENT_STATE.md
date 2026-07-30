@@ -6,15 +6,15 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 
 | Area | Status |
 |---|---|
-| Schema + RLS | ✅ 11 migrations applied (`supabase/migrations/`), RLS enabled on every table, `service_role` granted project-wide |
+| Schema + RLS | ✅ 13 migrations applied (`supabase/migrations/`), RLS enabled on every table, `service_role` granted project-wide |
 | Subdomain theming | ✅ Middleware resolves school by subdomain/`?school=`; DB `theme` jsonb → CSS variables at runtime |
 | Auth | ✅ Invite-only magic link (allowlist checked server-side before OTP send); name capture on first sign-in; admin flag auto-set for the configured admin email |
 | Shows shop | ✅ Unified shop, owned ("Watch") / not-owned ("Buy") from real entitlements |
 | Show page + video | ✅ Hero, gated full-show + performance library, group/style filter dropdowns, viewing overlay with prev/next |
-| Video anti-copy | ✅ Iframe-only embeds, embed URLs resolved on demand (never in page markup), context-menu/selection disabled. Real lock (domain-restricted embed) is a Vimeo account setting for later, no code change needed |
+| Video anti-copy | ✅ Bunny Stream iframe-only embeds, embed URLs resolved on demand (never in page markup), context-menu/selection disabled. Stronger locks (Pull Zone referrer allowlisting, Token Authentication) not wired up yet — see `DECISIONS.md` |
 | Stripe | ✅ Hosted Checkout → webhook → entitlement, wired end-to-end. **No live/test keys added yet** — needs `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` |
-| School admin | ✅ Branding (colours/font/theme + live preview), Shows (list+editor), Performances (Vimeo refs, bulk add, group/style tagging), Categories, Invited parents (add/CSV), Users & access (grant/revoke) |
-| Image uploads | ✅ Logo (colour + white) and sign-in photo upload to Supabase Storage (`branding` bucket) — no more URL-only fields |
+| School admin | ✅ Branding (colours/font/theme + live preview), Shows (list+editor, cover artwork upload), Performances (Bunny video IDs, bulk add, group/style tagging), Categories, Invited parents (add/CSV), Users & access (grant/revoke) |
+| Image uploads | ✅ Logo (colour + white) and sign-in photo upload to Supabase Storage (`branding` bucket); show cover artwork upload (`artwork` bucket) — no more URL-only fields |
 | Master admin | ✅ Schools list, Add school, Configure, enable/disable. Marketing/Blog/SEO deferred (by design — see Master Brief) |
 | Download button | ✅ Full-show download, owner-only, resolved on demand, admin-set URL. Confirmation modal (personal/family-use terms) before the link opens; "Downloaded" badge afterward, informational only — never blocks re-downloading. `downloads` table tracks this, separate from `entitlements` |
 | Responsive pass | ✅ Mobile/tablet checked with real screenshots; show-card and performance-title spacing tuned |
@@ -28,7 +28,7 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 ## Not done / deferred
 
 - **Stage 9/10 (harden & test)** — no formal RLS test sweep, mobile/tablet review was ad hoc (not exhaustive), no accessibility (reduced-motion/focus) audit yet
-- **Real content** — shows/performances/categories/parents in the DB are demo seed data; real Liberty content (shows, Vimeo IDs, parent list) hasn't been loaded
+- **Real content** — shows/performances/categories/parents in the DB are demo seed data; real Liberty content (shows, Bunny video IDs, parent list) hasn't been loaded
 - **Authenticated admin screens not visually re-checked** after the brand change — tokens and contrast were verified, but the individual admin pages weren't viewed (no local admin session at the time)
 - **Marketing site** (`dancefilms.co.uk`) — explicitly out of scope for V1, architecture allows it later
 - **Photo galleries, per-dance download, PayPal** — explicitly out of scope for V1
@@ -36,4 +36,5 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 ## Needs confirmation
 
 - Whether the leaked Supabase access token / DB password have actually been rotated yet
-- Real Vimeo account tier/timeline for enabling domain-restricted embeds, and separately, whether API access (Pro+, a Personal Access Token) is available — that would let full-show downloads use genuinely temporary, self-expiring links instead of the current admin-pasted static URL (see `DECISIONS.md`)
+- The `BUNNY_LIBRARY_ID` env var isn't set anywhere yet (local or Netlify) — streaming/embed URLs will 500 until it is
+- Whether Bunny's Pull Zone referrer allowlisting and/or Token Authentication will be set up (the actual security boundary for streaming and, potentially, for genuinely temporary download links — see `DECISIONS.md`)

@@ -73,6 +73,19 @@ Schools list, Add school, Configure, enable/disable.
 - New `downloads` table + RLS tracks this, separate from `entitlements` (ownership vs usage history)
 - Kept the existing admin-pasted, server-resolved download URL rather than building toward live Vimeo API downloads — that needs Vimeo API access (Pro+, a Personal Access Token) that isn't confirmed to exist yet (see `DECISIONS.md`)
 
+## Switched video host from Vimeo to Bunny Stream
+
+- `lib/bunny.ts` replaces `lib/vimeo.ts` — same shape, different host, since the app never called Vimeo's API in the first place
+- `performances.vimeo_id` → `bunny_video_id`, `show_videos.full_show_vimeo_id` → `full_show_bunny_video_id` (renamed, not migrated — no real content had been loaded onto Vimeo yet)
+- Every "Vimeo ID" admin field, label and placeholder became "Bunny video ID"
+- `next.config.ts`'s image allowlist swapped `i.vimeocdn.com` for `*.b-cdn.net`
+- Missing `BUNNY_LIBRARY_ID` now degrades gracefully (logs an error, shows "No video available") instead of a hard 500 on every video click
+
+## Show cover artwork upload
+
+- Replaced the plain URL field on the show editor with a real file upload, matching the pattern already used for branding logos/photos
+- New `artwork` Storage bucket, public, for cover images — kept separate from `branding` since it's per-show content, not the school's identity
+
 ## Repo hygiene
 
 - Connected the repository to GitHub (`AJDesign1/dance-films`)

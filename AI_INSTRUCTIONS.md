@@ -9,7 +9,7 @@ Read this before making changes. It supplements — doesn't replace — the orig
 3. **Two brands, kept separate.** The parent portal (`[data-app]`) wears the *school's* brand. The admin area (`[data-admin]`) and marketing/holding pages (`[data-brand]`) wear *Dance Films'* own brand — read `brand/DESIGN_GUIDE.md` before touching either. A school theme must never restyle Dance Films' chrome, and don't put Dance Films pages inside the `(platform)` route group (they'd inherit the school theming layer).
 4. **Never expose the Supabase service-role key or Stripe secret to the browser.** Privileged operations (webhooks, allowlist checks, admin writes) run server-side only, via `lib/supabase/admin.ts` (marked `server-only`).
 5. **Access is enforced by RLS, not the UI.** Every table has RLS enabled. If you add a table, add RLS policies in the same migration — don't rely on the app hiding a button.
-6. **Video/photos are never served by the app.** Vimeo hosts video (iframe embed only, never a file URL); images go through Supabase Storage.
+6. **Video/photos are never served by the app.** Bunny Stream hosts video (iframe embed only, never a file URL); images go through Supabase Storage.
 
 ## Schema changes
 
@@ -21,8 +21,8 @@ Read this before making changes. It supplements — doesn't replace — the orig
 ## Video anti-copy pattern
 
 When adding any new video-adjacent feature (new player surface, another download type, etc.), follow the existing pattern in `app/(platform)/show/[slug]/embed-actions.ts`:
-- Resolve the Vimeo id / file URL via a **server action**, gated by the same entitlement check RLS already enforces.
-- Never put a `vimeo_id` or file URL in page markup, props passed at initial render, or client-side state before the user actively requests playback/download.
+- Resolve the Bunny video id / file URL via a **server action**, gated by the same entitlement check RLS already enforces.
+- Never put a `bunny_video_id` or file URL in page markup, props passed at initial render, or client-side state before the user actively requests playback/download.
 - Don't add features that require a direct video-file URL — iframe embed only.
 
 ## Local dev

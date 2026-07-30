@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
-import { createShow, updateShow, type ShowForm } from "@/app/(admin)/admin/[slug]/shows/actions";
+import { createShow, updateShow, uploadShowArtwork, type ShowForm } from "@/app/(admin)/admin/[slug]/shows/actions";
 
 export type EditableShow = {
   id: string;
@@ -36,7 +36,19 @@ export default function ShowEditor({
   });
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [uploading, setUploading] = useState(false);
   const set = (k: keyof ShowForm, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  async function uploadArtwork(file: File) {
+    setError(null);
+    setUploading(true);
+    const fd = new FormData();
+    fd.set("file", file);
+    const res = await uploadShowArtwork(schoolId, fd);
+    setUploading(false);
+    if ("url" in res) set("artwork_url", res.url);
+    else setError(res.error);
+  }
 
   function save() {
     setError(null);
@@ -57,12 +69,24 @@ export default function ShowEditor({
         </div>
         <label className={styles.fieldLabel}>Intro text</label>
         <textarea className={styles.textarea} rows={4} value={form.intro_text} onChange={(e) => set("intro_text", e.target.value)} />
-        <label className={styles.fieldLabel}>Cover artwork URL</label>
-        <input className={styles.input} value={form.artwork_url} onChange={(e) => set("artwork_url", e.target.value)} placeholder="https://…  (upload support coming later)" style={{ fontFamily: "ui-monospace, monospace", fontSize: 13 }} />
-        {form.artwork_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={form.artwork_url} alt="" style={{ marginTop: 12, width: 150, aspectRatio: "3/4", objectFit: "cover", borderRadius: "var(--r-md)", border: "1px solid var(--border)" }} />
-        )}
+        <label className={styles.fieldLabel}>Cover artwork</label>
+        <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+          <div style={{ flex: "0 0 auto", width: 110, aspectRatio: "3/4", borderRadius: "var(--r-md)", border: "1px solid var(--border)", background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            {form.artwork_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={form.artwork_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <span style={{ fontSize: 11, color: "var(--text-3)", textAlign: "center", padding: "0 8px" }}>No artwork yet</span>
+            )}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <label className={styles.secondaryBtn} style={{ display: "inline-block", cursor: uploading ? "default" : "pointer" }}>
+              {uploading ? "Uploading…" : form.artwork_url ? "Replace artwork" : "Upload artwork"}
+              <input type="file" accept="image/*" style={{ display: "none" }} disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadArtwork(f); e.target.value = ""; }} />
+            </label>
+            <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 8 }}>JPG or PNG, up to 5MB. Portrait (3:4) works best — it&apos;s used as the show card in the shop.</div>
+          </div>
+        </div>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>

@@ -11,7 +11,7 @@ import {
 export type PerfRow = {
   id: string;
   title: string;
-  vimeoId: string;
+  bunnyVideoId: string;
   duration: string; // formatted
   groupId: string;
   styleId: string;
@@ -19,9 +19,9 @@ export type PerfRow = {
 type Cat = { id: string; name: string };
 
 export default function PerformancesManager({
-  slug, showId, fullVimeo, fullDuration, fullDownload, performances, groups, styles: styleCats,
+  slug, showId, fullBunnyVideoId, fullDuration, fullDownload, performances, groups, styles: styleCats,
 }: {
-  slug: string; showId: string; fullVimeo: string; fullDuration: string; fullDownload: string;
+  slug: string; showId: string; fullBunnyVideoId: string; fullDuration: string; fullDownload: string;
   performances: PerfRow[]; groups: Cat[]; styles: Cat[];
 }) {
   const router = useRouter();
@@ -54,20 +54,20 @@ export default function PerformancesManager({
         </p>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 220 }}>
-            <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Vimeo ID or URL</label>
-            <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace" }} defaultValue={fullVimeo} placeholder="e.g. 903371840"
+            <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Bunny video ID</label>
+            <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace" }} defaultValue={fullBunnyVideoId} placeholder="e.g. 3a1f9c2e-…-guid"
               onBlur={(e) => run(() => setFullShowVideo(showId, slug, e.target.value, fullDuration, fullDownload))} />
           </div>
           <div style={{ width: 150 }}>
             <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Total length</label>
             <input className={styles.input} style={{ textAlign: "center" }} defaultValue={fullDuration} placeholder="1:12:40"
-              onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullVimeo, e.target.value, fullDownload))} />
+              onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullBunnyVideoId, e.target.value, fullDownload))} />
           </div>
         </div>
         <label className={styles.fieldLabel}>Download URL (full-show file — parents download their purchased show)</label>
         <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace", fontSize: 12.5 }} defaultValue={fullDownload}
-          placeholder="https://…  (Vimeo download link on the paid plan, or any hosted file)"
-          onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullVimeo, fullDuration, e.target.value))} />
+          placeholder="https://…  (a Bunny Stream direct file URL, or any hosted file)"
+          onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullBunnyVideoId, fullDuration, e.target.value))} />
         <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 6 }}>Leave blank to hide the download button. The link is entitlement-gated — only owners can fetch it.</div>
       </div>
 
@@ -80,10 +80,10 @@ export default function PerformancesManager({
         <div className={`${styles.card} ${styles.cardPad}`} style={{ marginBottom: 18, borderColor: "var(--accent)" }}>
           <div className={styles.cardTitle} style={{ marginBottom: 6 }}>Bulk add performances</div>
           <p style={{ fontSize: 12.5, color: "var(--text-2)", margin: "0 0 12px" }}>
-            One per line: <code style={{ background: "var(--surface-2)", padding: "1px 6px", borderRadius: 4 }}>Title | Group | Vimeo ID | Duration</code>. Group/Vimeo/Duration optional.
+            One per line: <code style={{ background: "var(--surface-2)", padding: "1px 6px", borderRadius: 4 }}>Title | Group | Bunny video ID | Duration</code>. Group/ID/Duration optional.
           </p>
           <textarea className={styles.textarea} rows={5} style={{ fontFamily: "ui-monospace, monospace", fontSize: 13 }} value={bulk} onChange={(e) => setBulk(e.target.value)}
-            placeholder={"Twinkle | Minis (3–5) | 903371840 | 2:05\nPlayground | Midis (5–7) | | 2:48"} />
+            placeholder={"Twinkle | Minis (3–5) | 3a1f9c2e-guid | 2:05\nPlayground | Midis (5–7) | | 2:48"} />
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
             <button className={styles.primaryBtn} disabled={pending || !bulk.trim()} onClick={() => run(async () => { const r = await bulkAddPerformances(showId, slug, bulk); setMsg("error" in r ? r.error : (r.message ?? "Added.")); }, () => { setBulk(""); setBulkOpen(false); })}>Add all</button>
             <button className={styles.secondaryBtn} onClick={() => setBulkOpen(false)}>Cancel</button>
@@ -95,7 +95,7 @@ export default function PerformancesManager({
       <div className={styles.card} style={{ overflowX: "auto" }}>
         <div style={{ minWidth: 900 }}>
           <div style={{ display: "grid", gridTemplateColumns: "34px minmax(150px,1fr) 150px 150px 130px 84px 60px", gap: 10, padding: "11px 16px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--text-3)" }}>
-            <span></span><span>Title</span><span>Group</span><span>Style</span><span>Vimeo</span><span>Length</span><span></span>
+            <span></span><span>Title</span><span>Group</span><span>Style</span><span>Bunny ID</span><span>Length</span><span></span>
           </div>
           {performances.length === 0 ? (
             <div style={{ padding: "40px 20px", textAlign: "center" }}>
@@ -117,7 +117,7 @@ export default function PerformancesManager({
                 <option value="">—</option>
                 {styleCats.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
-              <input style={mono} defaultValue={p.vimeoId} placeholder="ID or URL" onBlur={(e) => { if (e.target.value !== p.vimeoId) run(() => updatePerformanceField(p.id, slug, "vimeo_id", e.target.value)); }} />
+              <input style={mono} defaultValue={p.bunnyVideoId} placeholder="Video ID" onBlur={(e) => { if (e.target.value !== p.bunnyVideoId) run(() => updatePerformanceField(p.id, slug, "bunny_video_id", e.target.value)); }} />
               <input style={{ ...cell, textAlign: "center" }} defaultValue={p.duration} placeholder="—" onBlur={(e) => { if (e.target.value !== p.duration) run(() => updatePerformanceField(p.id, slug, "duration", e.target.value)); }} />
               <button className={styles.dangerBtn} disabled={pending} onClick={() => run(() => removePerformance(p.id, slug))}>Del</button>
             </div>

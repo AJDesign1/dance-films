@@ -33,6 +33,31 @@ function slugify(title: string) {
   return title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "show";
 }
 
+export type UploadResult = { url: string } | { error: string };
+
+/**
+ * Upload a show's cover artwork to the public `artwork` bucket via the
+ * service role and return its public URL — same pattern as
+ * uploadBrandingImage. The URL is saved with the rest of the show form.
+ */
+export async function uploadShowArtwork(schoolId: string, formData: FormData): Promise<UploadResult> {
+  await requireAdmin();
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { error: "No file selected." };
+  if (!file.type.startsWith("image/")) return { error: "Please choose an image file." };
+  if (file.size > 5 * 1024 * 1024) return { error: "Image must be under 5MB." };
+
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const path = `${schoolId}/${crypto.randomUUID()}.${ext}`;
+
+  const admin = createAdminClient();
+  const { error } = await admin.storage.from("artwork").upload(path, file, { contentType: file.type, upsert: true });
+  if (error) return { error: "Upload failed. Please try again." };
+
+  const { data } = admin.storage.from("artwork").getPublicUrl(path);
+  return { url: data.publicUrl };
+}
+
 export async function createShow(schoolId: string, slug: string, form: ShowForm): Promise<{ error: string } | never> {
   await requireAdmin();
   const data = parseForm(form);

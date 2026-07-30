@@ -6,7 +6,7 @@ import { getEmbedUrl, getFullShowDownloadUrl } from "@/app/(platform)/show/[slug
 import DownloadConfirmModal from "@/components/platform/DownloadConfirmModal";
 
 export type PerfItem = {
-  id: string; // DB uuid — safe to expose; vimeo_id is NOT sent to the client
+  id: string; // DB uuid — safe to expose; bunny_video_id is NOT sent to the client
   title: string;
   thumbnailUrl: string | null;
   duration: string;

@@ -236,6 +236,7 @@ export type Database = {
       }
       performances: {
         Row: {
+          bunny_video_id: string
           created_at: string
           duration_seconds: number | null
           id: string
@@ -243,9 +244,9 @@ export type Database = {
           sort_order: number
           thumbnail_url: string | null
           title: string
-          vimeo_id: string
         }
         Insert: {
+          bunny_video_id: string
           created_at?: string
           duration_seconds?: number | null
           id?: string
@@ -253,9 +254,9 @@ export type Database = {
           sort_order?: number
           thumbnail_url?: string | null
           title: string
-          vimeo_id: string
         }
         Update: {
+          bunny_video_id?: string
           created_at?: string
           duration_seconds?: number | null
           id?: string
@@ -263,7 +264,6 @@ export type Database = {
           sort_order?: number
           thumbnail_url?: string | null
           title?: string
-          vimeo_id?: string
         }
         Relationships: [
           {
@@ -342,19 +342,19 @@ export type Database = {
         Row: {
           download_url: string | null
           duration_seconds: number | null
-          full_show_vimeo_id: string | null
+          full_show_bunny_video_id: string | null
           show_id: string
         }
         Insert: {
           download_url?: string | null
           duration_seconds?: number | null
-          full_show_vimeo_id?: string | null
+          full_show_bunny_video_id?: string | null
           show_id: string
         }
         Update: {
           download_url?: string | null
           duration_seconds?: number | null
-          full_show_vimeo_id?: string | null
+          full_show_bunny_video_id?: string | null
           show_id?: string
         }
         Relationships: [

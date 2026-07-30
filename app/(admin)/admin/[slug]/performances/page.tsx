@@ -48,8 +48,8 @@ export default async function PerformancesPage({
   const activeShow = showList.find((s) => s.id === show) ?? showList[0];
 
   const [{ data: video }, { data: perfs }, { data: cats }] = await Promise.all([
-    admin.from("show_videos").select("full_show_vimeo_id, duration_seconds, download_url").eq("show_id", activeShow.id).maybeSingle(),
-    admin.from("performances").select("id, title, vimeo_id, duration_seconds, sort_order").eq("show_id", activeShow.id).order("sort_order", { ascending: true }),
+    admin.from("show_videos").select("full_show_bunny_video_id, duration_seconds, download_url").eq("show_id", activeShow.id).maybeSingle(),
+    admin.from("performances").select("id, title, bunny_video_id, duration_seconds, sort_order").eq("show_id", activeShow.id).order("sort_order", { ascending: true }),
     admin.from("categories").select("id, name, kind, sort_order").eq("show_id", activeShow.id).order("sort_order", { ascending: true }),
   ]);
 
@@ -70,7 +70,7 @@ export default async function PerformancesPage({
   const performances: PerfRow[] = (perfs ?? []).map((p) => ({
     id: p.id,
     title: p.title,
-    vimeoId: p.vimeo_id,
+    bunnyVideoId: p.bunny_video_id,
     duration: formatDuration(p.duration_seconds),
     groupId: groupByPerf.get(p.id) ?? "",
     styleId: styleByPerf.get(p.id) ?? "",
@@ -89,7 +89,7 @@ export default async function PerformancesPage({
         <PerformancesManager
           slug={slug}
           showId={activeShow.id}
-          fullVimeo={video?.full_show_vimeo_id ?? ""}
+          fullBunnyVideoId={video?.full_show_bunny_video_id ?? ""}
           fullDuration={clock(video?.duration_seconds ?? null)}
           fullDownload={video?.download_url ?? ""}
           performances={performances}
