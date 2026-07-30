@@ -14,7 +14,7 @@ export default async function ShowEditorPage({ params }: { params: Promise<{ slu
     const admin = createAdminClient();
     const { data } = await admin
       .from("shows")
-      .select("id, title, season, show_year, price_pence, intro_text, artwork_url, status")
+      .select("id, title, slug, season, show_year, price_pence, intro_text, artwork_url, status")
       .eq("id", showId)
       .eq("school_id", school.id)
       .maybeSingle();

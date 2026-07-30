@@ -2,6 +2,15 @@
 
 Key choices made during the build and the reasoning behind them. For the original product decisions (pricing model, invite-only, whole-show purchase, etc.), see `docs/Dance Show Platform - Master Brief.md` — this file covers decisions made *during implementation* that extend or reconcile that spec.
 
+## Show URL is now editable, not fixed at creation
+
+`shows.slug` was set once at creation (auto-derived from the title, silently de-duped with a `-2` suffix if taken) and never editable — a problem once a show gets renamed and the URL no longer matches. Now exposed as a "Show URL" field in `ShowEditor`:
+
+- **Leave it blank → same as before**: auto-derived from the title, quietly de-duped.
+- **Type a specific URL → respected exactly**, or rejected with a clear error naming the conflict if another show in the school already has it. Silent auto-suffixing only happens for the blank/auto-derive path — once an admin is deliberately choosing a URL, changing it behind their back would be confusing.
+- **Client-side sanitisation matches the server's `slugify()` exactly** (same regex, collapsing any run of non-alphanumeric characters to a single hyphen) so what's shown while typing matches what actually saves — the first version only *stripped* invalid characters instead of hyphenating them, which silently glued words together (`"New Show"` → `"newshow"` instead of `"new-show"`) until caught in testing.
+- **No redirect/alias for the old URL** — changing it breaks any existing link to the show (shared, bookmarked, printed). Flagged in the UI ("any link to the old one will stop working") rather than built around, since tracking old slugs would need a new table for a scenario that's rare in practice (rename shows, not swap them repeatedly).
+
 ## Payment visibility + cash-grant on the Invited parents page
 
 The school owner wanted, on the parents page, to see who's paid for what and to grant access to parents who paid cash. Built by reusing existing concepts rather than anything new:

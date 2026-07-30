@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export type ShowForm = {
   title: string;
+  slug: string; // the show's URL segment — /show/{slug}
   season: string;
   show_year: string; // raw input
   price: string; // pounds, raw input
@@ -29,8 +30,10 @@ function parseForm(f: ShowForm) {
   };
 }
 
-function slugify(title: string) {
-  return title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "show";
+// Same sanitisation whether deriving a slug from the title (auto, on create)
+// or cleaning up what an admin typed directly into the URL field.
+function slugify(input: string) {
+  return input.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "show";
 }
 
 export type UploadResult = { url: string } | { error: string };
@@ -64,11 +67,20 @@ export async function createShow(schoolId: string, slug: string, form: ShowForm)
   if (!data.title) return { error: "Enter a show title." };
   const admin = createAdminClient();
 
-  // unique slug within school
-  let showSlug = slugify(data.title);
-  const { data: existing } = await admin.from("shows").select("slug").eq("school_id", schoolId).like("slug", `${showSlug}%`);
-  const taken = new Set((existing ?? []).map((r) => r.slug));
-  if (taken.has(showSlug)) { let i = 2; while (taken.has(`${showSlug}-${i}`)) i++; showSlug = `${showSlug}-${i}`; }
+  const explicit = slugify(form.slug.trim());
+  let showSlug: string;
+  if (form.slug.trim()) {
+    // Admin typed a specific URL — respect it exactly, or say why not.
+    const { data: clash } = await admin.from("shows").select("id").eq("school_id", schoolId).eq("slug", explicit).maybeSingle();
+    if (clash) return { error: `The URL "/show/${explicit}" is already used by another show.` };
+    showSlug = explicit;
+  } else {
+    // No URL given — auto-derive from the title, de-duping quietly like before.
+    showSlug = slugify(data.title);
+    const { data: existing } = await admin.from("shows").select("slug").eq("school_id", schoolId).like("slug", `${showSlug}%`);
+    const taken = new Set((existing ?? []).map((r) => r.slug));
+    if (taken.has(showSlug)) { let i = 2; while (taken.has(`${showSlug}-${i}`)) i++; showSlug = `${showSlug}-${i}`; }
+  }
 
   const { data: last } = await admin.from("shows").select("sort_order").eq("school_id", schoolId).order("sort_order", { ascending: false }).limit(1);
   const next = (last?.[0]?.sort_order ?? -1) + 1;
@@ -80,12 +92,28 @@ export async function createShow(schoolId: string, slug: string, form: ShowForm)
   redirect(`/admin/${slug}/shows`);
 }
 
-export async function updateShow(showId: string, slug: string, form: ShowForm): Promise<{ error: string } | never> {
+export async function updateShow(showId: string, schoolId: string, slug: string, form: ShowForm): Promise<{ error: string } | never> {
   await requireAdmin();
   const data = parseForm(form);
   if (!data.title) return { error: "Enter a show title." };
   const admin = createAdminClient();
-  const { error } = await admin.from("shows").update(data).eq("id", showId);
+
+  // Fall back to deriving from the (possibly just-changed) title if the URL
+  // field was cleared, rather than erroring on an empty slug.
+  const showSlug = slugify(form.slug.trim() || data.title);
+  const { data: clash } = await admin
+    .from("shows")
+    .select("id")
+    .eq("school_id", schoolId)
+    .eq("slug", showSlug)
+    .neq("id", showId)
+    .maybeSingle();
+  if (clash) return { error: `The URL "/show/${showSlug}" is already used by another show.` };
+
+  const { error } = await admin
+    .from("shows")
+    .update({ slug: showSlug, ...data })
+    .eq("id", showId);
   if (error) return { error: "Couldn't save the show." };
   revalidatePath(`/admin/${slug}/shows`);
   redirect(`/admin/${slug}/shows`);

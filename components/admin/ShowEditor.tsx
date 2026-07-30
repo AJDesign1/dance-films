@@ -8,6 +8,7 @@ import { createShow, updateShow, uploadShowArtwork, type ShowForm } from "@/app/
 export type EditableShow = {
   id: string;
   title: string;
+  slug: string;
   season: string | null;
   show_year: number | null;
   price_pence: number;
@@ -27,6 +28,7 @@ export default function ShowEditor({
 }) {
   const [form, setForm] = useState<ShowForm>({
     title: show?.title ?? "",
+    slug: show?.slug ?? "",
     season: show?.season ?? "",
     show_year: show?.show_year ? String(show.show_year) : "",
     price: show ? String(show.price_pence / 100) : "",
@@ -61,7 +63,7 @@ export default function ShowEditor({
   function save() {
     setError(null);
     startTransition(async () => {
-      const res = show ? await updateShow(show.id, slug, form) : await createShow(schoolId, slug, form);
+      const res = show ? await updateShow(show.id, schoolId, slug, form) : await createShow(schoolId, slug, form);
       if (res && "error" in res) setError(res.error); // success redirects server-side
     });
   }
@@ -74,6 +76,19 @@ export default function ShowEditor({
           <div><label className={styles.fieldLabel} style={{ marginTop: 0 }}>Season / tag</label><input className={styles.input} value={form.season} onChange={(e) => set("season", e.target.value)} placeholder="e.g. Summer Showcase" /></div>
           <div><label className={styles.fieldLabel} style={{ marginTop: 0 }}>Year</label><input className={styles.input} value={form.show_year} onChange={(e) => set("show_year", e.target.value)} placeholder="2025" inputMode="numeric" /></div>
           <div><label className={styles.fieldLabel} style={{ marginTop: 0 }}>Full-show price (£)</label><input className={styles.input} value={form.price} onChange={(e) => set("price", e.target.value)} placeholder="24" inputMode="decimal" /></div>
+        </div>
+        <label className={styles.fieldLabel}>Show URL</label>
+        <div style={{ display: "flex", alignItems: "center", border: "1.5px solid var(--border)", borderRadius: "var(--r-md)", overflow: "hidden", background: "var(--surface-2)" }}>
+          <span style={{ padding: "0 2px 0 12px", fontSize: 13.5, color: "var(--text-3)", whiteSpace: "nowrap" }}>/show/</span>
+          <input
+            value={form.slug}
+            onChange={(e) => set("slug", e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-"))}
+            placeholder="leave blank to auto-generate from the title"
+            style={{ flex: 1, padding: "12px 12px 12px 4px", border: "none", background: "transparent", fontSize: 14, color: "var(--text)", outline: "none", fontFamily: "var(--body)" }}
+          />
+        </div>
+        <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 6 }}>
+          Changing this changes the show&apos;s web address — any link to the old one (shared, bookmarked, printed) will stop working.
         </div>
         <label className={styles.fieldLabel}>Intro text</label>
         <textarea className={styles.textarea} rows={4} value={form.intro_text} onChange={(e) => set("intro_text", e.target.value)} />

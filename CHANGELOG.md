@@ -94,6 +94,12 @@ Schools list, Add school, Configure, enable/disable.
 - New `access_codes` table, same security posture as `invited_emails` (RLS enabled, zero client policies, service-role only)
 - Managed per-school at `/admin/{slug}/access-codes` — create, regenerate, disable/enable, change show association
 
+## Show URL is now editable
+
+- New "Show URL" field on the show editor (`/show/{slug}`) — previously fixed forever at creation, auto-derived from the title at the time
+- Leave it blank and it still auto-derives from the title (same as before); type a specific one and it's validated as unique within the school, with a clear error if taken
+- Warns that changing it breaks any existing link to the show
+
 ## Invited parents: payment status & cash-grant access
 
 - Each parent now shows, per show, whether they've **Paid** (bought online by card) or **Cash** (access given manually) — read straight off `entitlements.source`
