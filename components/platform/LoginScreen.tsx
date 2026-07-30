@@ -359,7 +359,14 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
               <button onClick={reset} style={primaryBtn}>
                 Try another email
               </button>
-              {accessCodeLink}
+              <div style={{ marginTop: 18, padding: "16px 18px", borderRadius: 10, background: "var(--surface-2)", textAlign: "center" }}>
+                <p style={{ margin: "0 0 10px", fontSize: 14, fontWeight: 600, color: "var(--text)" }}>
+                  Do you have an access code?
+                </p>
+                <button onClick={useAccessCode} style={secondaryBtn}>
+                  Use my access code
+                </button>
+              </div>
             </>
           )}
 
