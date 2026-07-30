@@ -2,6 +2,12 @@
 
 Key choices made during the build and the reasoning behind them. For the original product decisions (pricing model, invite-only, whole-show purchase, etc.), see `docs/Dance Show Platform - Master Brief.md` — this file covers decisions made *during implementation* that extend or reconcile that spec.
 
+## Stale pre-shared-cookie sessions: left to self-resolve, not auto-cleared
+
+Introducing cross-subdomain cookie sharing (`lib/cookieDomain.ts`) created a real transitional bug: any session cookie set *before* that change (host-only, no `Domain` attribute) can sit alongside a new `Domain=.dancefilms.co.uk` cookie of the same name, and the browser may send the stale one — which the app doesn't recognise, silently bouncing an otherwise-correct sign-in back to the login page with no error shown (confirmed live: this is exactly what "admin login just refreshes" turned out to be).
+
+Considered auto-clearing the stale cookie in code, but both Next.js cookie APIs that matter here (Server Actions' `cookies()`, middleware's `NextResponse.cookies`) de-dupe by cookie name — cleanly emitting both "set the new one" and "clear the old one" in the same response isn't possible through them, only by hand-rolling raw `Set-Cookie` headers, which risks breaking auth entirely if malformed. Not worth that risk for a problem that only affects sessions that existed before the change and disappears on its own as those get replaced. The fix is one-time and manual: clear cookies for the domain (or use a private window) once.
+
 ## Stripe: hosted Checkout, not the design's in-app card form
 
 The Claude Design handoff mocked an in-app card-entry modal. We kept its visual shell (order summary) but the actual card entry happens on **Stripe's hosted Checkout page**, not a form we control. This is what the handoff's security rules require and keeps the app out of PCI scope — we never see raw card data.

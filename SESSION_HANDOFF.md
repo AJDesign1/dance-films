@@ -48,10 +48,27 @@ cookie — see below), click through Master admin → **View site** → a show �
 play a performance, and confirm it doesn't ask for a magic link and the video
 actually plays.
 
-**One-time re-login required**: the admin's current session cookie was set
-before cross-subdomain sharing existed (host-only, apex-scoped). It won't
-retroactively become shared — sign out and back in once; every session after
-that will carry across every school subdomain automatically.
+**Confirmed: stale pre-shared-cookie session causes a silent sign-in loop.**
+Symptom reported live: submitting the correct admin password on `/admin/login`
+"just refreshes" — no error message, just bounces back to the login page.
+Diagnosed and confirmed by testing a wrong password first (form/error display
+work correctly — "Incorrect email or password" shows properly), then
+reproducing success in a **private/incognito window**, which worked. Root
+cause: a cookie set *before* cross-subdomain sharing existed (host-only, no
+`Domain` attribute) sits alongside the new `Domain=.dancefilms.co.uk` cookie
+of the same name — the browser can send the stale one, which the new session
+logic doesn't recognise, so `requireAdmin()` bounces back to `/admin/login`
+with no error to show (it's a redirect, not a caught failure).
+
+**Not auto-fixed in code** — considered it, but Next.js's cookie APIs (both
+in Server Actions and in middleware) de-dupe by cookie name, so cleanly
+emitting "set the new cookie" and "clear the old one" in the same response
+isn't possible without hand-rolling raw `Set-Cookie` headers, which risks
+breaking auth entirely if malformed. Not worth that risk for a problem that
+only affects sessions that existed before the change and self-resolves as
+those get replaced. **The fix**: clear cookies for `dancefilms.co.uk` once
+(or keep using a private window for admin work) — every sign-in from now on
+only ever sets the shared cookie, with no stale counterpart to conflict with.
 
 **Bunny Stream switch + artwork upload** — verified by typecheck, production build, and visual checks of the admin UI (field labels, upload control) via a temporary preview route (removed before committing) — same auth limitation as above, no real admin session available. **Not verified**: an actual file upload writing to the new `artwork` bucket, and an actual video embed rendering (needs `BUNNY_LIBRARY_ID` set — see Immediate priorities — plus a real Bunny video ID pasted into a performance). Worth checking both once signed in: upload a show's cover artwork and confirm it appears on the shop card, and paste a real Bunny video ID into a performance and confirm it plays.
 
