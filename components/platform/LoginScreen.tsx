@@ -2,6 +2,7 @@
 
 import { useState, useTransition, type CSSProperties } from "react";
 import { requestMagicLink } from "@/app/(platform)/login/actions";
+import { checkAccessCode, redeemAccessCode } from "@/app/(platform)/login/access-code-actions";
 
 type Props = {
   schoolName: string;
@@ -9,7 +10,7 @@ type Props = {
   heroImageUrl: string | null;
 };
 
-type View = "idle" | "sent" | "not_invited";
+type View = "idle" | "sent" | "not_invited" | "code" | "code_email";
 
 const primaryBtn: CSSProperties = {
   width: "100%",
@@ -57,10 +58,50 @@ const h1Style: CSSProperties = {
   margin: "18px 0 10px",
 };
 
+const inputStyle: CSSProperties = {
+  width: "100%",
+  padding: "15px 16px",
+  borderRadius: 10,
+  border: "1.5px solid var(--border)",
+  background: "var(--surface-2)",
+  fontSize: 16,
+  fontWeight: 500,
+  color: "var(--text)",
+  outline: "none",
+};
+
+const labelStyle: CSSProperties = {
+  display: "block",
+  fontSize: 11,
+  fontWeight: 700,
+  letterSpacing: ".12em",
+  textTransform: "uppercase",
+  color: "var(--text-2)",
+  marginBottom: 9,
+};
+
+const linkBtn: CSSProperties = {
+  display: "block",
+  width: "100%",
+  textAlign: "center",
+  marginTop: 18,
+  background: "none",
+  border: "none",
+  padding: 0,
+  fontSize: 13,
+  fontWeight: 600,
+  color: "var(--text-2)",
+  cursor: "pointer",
+  textDecoration: "underline",
+  textUnderlineOffset: 3,
+};
+
 export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: Props) {
   const [view, setView] = useState<View>("idle");
   const [email, setEmail] = useState("");
   const [sentEmail, setSentEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -80,11 +121,50 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
     });
   }
 
+  function submitCode() {
+    setCodeError(null);
+    startTransition(async () => {
+      const res = await checkAccessCode(code);
+      if (res.status === "valid") setView("code_email");
+      else setCodeError("That code isn't valid. Check with your school and try again.");
+    });
+  }
+
+  function submitRedeem() {
+    setError(null);
+    startTransition(async () => {
+      const res = await redeemAccessCode(code, email);
+      if (res.status === "sent") {
+        setSentEmail(res.email);
+        setView("sent");
+      } else if (res.status === "invalid_code") {
+        setCodeError("That code isn't valid anymore.");
+        setView("code");
+      } else {
+        setError(res.message);
+      }
+    });
+  }
+
   function reset() {
     setView("idle");
     setEmail("");
+    setCode("");
     setError(null);
+    setCodeError(null);
   }
+
+  function useAccessCode() {
+    setError(null);
+    setCodeError(null);
+    setView("code");
+  }
+
+  const accessCodeLink = (
+    <button type="button" onClick={useAccessCode} style={linkBtn}>
+      Having trouble? Use an access code
+    </button>
+  );
 
   return (
     <div
@@ -200,7 +280,7 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
                 {schoolName} is invite-only. Enter your email and we&apos;ll send you a secure link to
                 sign in — no password to remember.
               </p>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--text-2)", marginBottom: 9 }}>
+              <label style={labelStyle}>
                 Email address
               </label>
               <input
@@ -215,17 +295,7 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
                 }}
                 placeholder="you@example.com"
                 autoComplete="email"
-                style={{
-                  width: "100%",
-                  padding: "15px 16px",
-                  borderRadius: 10,
-                  border: "1.5px solid var(--border)",
-                  background: "var(--surface-2)",
-                  fontSize: 16,
-                  fontWeight: 500,
-                  color: "var(--text)",
-                  outline: "none",
-                }}
+                style={inputStyle}
               />
               <div style={{ minHeight: 16, marginTop: error ? 9 : 0, fontSize: 12.5, color: "var(--danger)", fontWeight: 600 }}>
                 {error ?? ""}
@@ -245,6 +315,7 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
                 </svg>
                 No passwords, ever. The link signs you in on this device — we&apos;ll never share your email.
               </p>
+              {accessCodeLink}
             </>
           )}
 
@@ -267,6 +338,7 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
               <p style={{ margin: "18px 0 0", textAlign: "center", fontSize: 12.5, color: "var(--text-2)" }}>
                 Didn&apos;t get it? Check your spam folder.
               </p>
+              {accessCodeLink}
             </>
           )}
 
@@ -286,6 +358,74 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
               </p>
               <button onClick={reset} style={primaryBtn}>
                 Try another email
+              </button>
+              {accessCodeLink}
+            </>
+          )}
+
+          {view === "code" && (
+            <>
+              <h1 style={h1Style}>Use an access code</h1>
+              <p style={{ margin: "0 0 26px", color: "var(--text-2)", fontSize: 15.5, lineHeight: 1.55 }}>
+                If {schoolName} gave you an access code, enter it here to get set up.
+              </p>
+              <label style={labelStyle}>Access code</label>
+              <input
+                value={code}
+                onChange={(e) => {
+                  setCode(e.target.value);
+                  setCodeError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") submitCode();
+                }}
+                placeholder="e.g. ABCD1234"
+                autoCapitalize="characters"
+                autoComplete="off"
+                style={{ ...inputStyle, fontFamily: "ui-monospace, monospace", letterSpacing: ".08em" }}
+              />
+              <div style={{ minHeight: 16, marginTop: codeError ? 9 : 0, fontSize: 12.5, color: "var(--danger)", fontWeight: 600 }}>
+                {codeError ?? ""}
+              </div>
+              <button onClick={submitCode} disabled={pending} style={{ ...primaryBtn, marginTop: 14, opacity: pending ? 0.7 : 1 }}>
+                {pending ? "Checking…" : "Continue"}
+              </button>
+              <button onClick={reset} style={secondaryBtn}>
+                Back to login
+              </button>
+            </>
+          )}
+
+          {view === "code_email" && (
+            <>
+              <h1 style={h1Style}>Almost there</h1>
+              <p style={{ margin: "0 0 26px", color: "var(--text-2)", fontSize: 15.5, lineHeight: 1.55 }}>
+                Enter your email and we&apos;ll get your account set up and send you a secure sign-in link.
+              </p>
+              <label style={labelStyle}>Email address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") submitRedeem();
+                }}
+                placeholder="you@example.com"
+                autoComplete="email"
+                autoFocus
+                style={inputStyle}
+              />
+              <div style={{ minHeight: 16, marginTop: error ? 9 : 0, fontSize: 12.5, color: "var(--danger)", fontWeight: 600 }}>
+                {error ?? ""}
+              </div>
+              <button onClick={submitRedeem} disabled={pending} style={{ ...primaryBtn, marginTop: 14, opacity: pending ? 0.7 : 1 }}>
+                {pending ? "Sending…" : "Send me a login link"}
+              </button>
+              <button onClick={() => setView("code")} style={secondaryBtn}>
+                Back
               </button>
             </>
           )}

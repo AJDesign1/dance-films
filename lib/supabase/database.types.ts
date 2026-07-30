@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          school_id: string
+          show_id: string | null
+          status: Database["public"]["Enums"]["access_code_status"]
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          school_id: string
+          show_id?: string | null
+          status?: Database["public"]["Enums"]["access_code_status"]
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          school_id?: string
+          show_id?: string | null
+          status?: Database["public"]["Enums"]["access_code_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_codes_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_codes_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           id: string
@@ -433,6 +475,7 @@ export type Database = {
       is_invited: { Args: { p_school: string }; Returns: boolean }
     }
     Enums: {
+      access_code_status: "active" | "disabled"
       category_kind: "group" | "style"
       entitlement_source: "purchase" | "granted"
       invite_status: "invited" | "registered"
@@ -566,6 +609,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      access_code_status: ["active", "disabled"],
       category_kind: ["group", "style"],
       entitlement_source: ["purchase", "granted"],
       invite_status: ["invited", "registered"],

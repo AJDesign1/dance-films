@@ -25,6 +25,16 @@ Full-show downloads get a confirmation modal (personal/family-use terms) before 
 
 Download tracking lives in its own `downloads` table (user_id, show_id, unique together) rather than extending `entitlements`, since entitlements mean *ownership* and this means *usage history* — different concepts that shouldn't share a row. RLS lets a user insert their own row only for a show they already hold an entitlement for (reuses the existing `has_entitlement()` helper), so it can't be used to fake a "downloaded" badge for an unowned show.
 
+## Access codes: an onboarding route, not a second auth system
+
+A parent can now get in two ways: the normal invite-only magic link, or an "access code" for someone who isn't invited yet or can't get the magic-link email. Deliberately built as a thin layer over the *existing* invite/auth machinery rather than anything parallel:
+
+- **Redemption ends exactly where a normal invite does.** Entering a valid code + email inserts a row into `invited_emails` (same table, same shape the admin's "Invited parents" screen already writes to) if one doesn't already exist, then calls the same `supabase.auth.signInWithOtp` the normal flow uses. From the next sign-in onward the account is indistinguishable from one invited the usual way — there's no separate "code user" state, no parallel session mechanism.
+- **`access_codes` mirrors `invited_emails`'s security posture exactly**: RLS enabled, zero client policies, service-role only. A code is at least as sensitive as an email invite (it's a way *around* needing one), so the same "never RLS-scoped, always service role" rule applies.
+- **Scoped to a school, optionally to a show.** `show_id` is nullable — a code can be school-wide or tied to one production. When set, it's used only to redirect the user to that show's page after sign-in (a nice-to-have); it does **not** grant an entitlement. Buying the show still goes through the normal checkout flow — the brief was explicit that the show should "appear in their account/library once they have completed the normal purchase flow," not before.
+- **Codes are short and human-typeable** (8 chars, an alphabet excluding 0/O/1/I/L), generated with `crypto.randomInt` (not `Math.random()`) since this is the one thing standing in for an invite check. No rate-limiting was added on redemption attempts — a reasonable V1 gap, not addressed because it wasn't asked for.
+- **One first-time-signup nuance**: if a code is tied to a specific show and the redeeming parent is brand new, the standard `/welcome` name-capture step still fires first (via the same `requireOnboardedProfile()` every page already uses) and redirects to `/shows` afterward, not the specific show. The "land on this show" nicety only applies cleanly to already-registered parents. Not worth extra plumbing to fix for a first-run-only edge case.
+
 ## Categories have a `kind` (group vs style)
 
 The show page has two independent filter rows: class/age group (e.g. "Minis (3–5)") and dance style (e.g. "Ballet"). Rather than a second table, `categories` has a `kind` enum (`'group' | 'style'`). The admin's Performances screen has a select for each kind per dance.

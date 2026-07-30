@@ -6,7 +6,7 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 
 | Area | Status |
 |---|---|
-| Schema + RLS | ✅ 13 migrations applied (`supabase/migrations/`), RLS enabled on every table, `service_role` granted project-wide |
+| Schema + RLS | ✅ 14 migrations applied (`supabase/migrations/`), RLS enabled on every table, `service_role` granted project-wide |
 | Subdomain theming | ✅ Middleware resolves school by subdomain/`?school=`; DB `theme` jsonb → CSS variables at runtime |
 | Auth | ✅ Invite-only magic link (allowlist checked server-side before OTP send); name capture on first sign-in; admin flag auto-set for the configured admin email |
 | Shows shop | ✅ Unified shop, owned ("Watch") / not-owned ("Buy") from real entitlements |
@@ -24,6 +24,7 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 | Tenant routing | ✅ Apex/unknown hosts serve a Dance Films holding page instead of defaulting to Liberty; school resolution is subdomain-only (`?school=` still works as a preview override) |
 | Dance Films brand | ✅ Assets + design guide in-repo; Montserrat, Blue `#232835` / Pink `#E5007E` applied to the admin area, admin sign-in and holding page. Contrast checked against WCAG AA (pink needed a lighter tint on dark — see `DECISIONS.md`) |
 | Admin sign-in | ✅ Password login at `/admin/login`, `is_admin`-gated, reachable at `dancefilms.co.uk/admin`. **No password set on the admin account yet** — see `SESSION_HANDOFF.md` |
+| Access codes | ✅ Alternative onboarding route on the login screen ("Having trouble? Use an access code") — redeeming adds the parent to `invited_emails` and sends a normal magic link, no separate auth system. Managed per-school (create/regenerate/disable/school-or-show-scope) at `/admin/{slug}/access-codes` |
 
 ## Not done / deferred
 
@@ -36,5 +37,5 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 ## Needs confirmation
 
 - Whether the leaked Supabase access token / DB password have actually been rotated yet
-- The `BUNNY_LIBRARY_ID` env var isn't set anywhere yet (local or Netlify) — streaming/embed URLs will 500 until it is
+- The `BUNNY_LIBRARY_ID` env var isn't set anywhere yet (local or Netlify) — no video plays until it is (fails gracefully: logs an error, shows "No video available" rather than a 500)
 - Whether Bunny's Pull Zone referrer allowlisting and/or Token Authentication will be set up (the actual security boundary for streaming and, potentially, for genuinely temporary download links — see `DECISIONS.md`)

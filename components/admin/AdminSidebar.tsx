@@ -24,6 +24,7 @@ export default function AdminSidebar({
     { key: "shows", label: "Shows", href: `${base}/shows` },
     { key: "categories", label: "Categories", href: `${base}/categories` },
     { key: "parents", label: "Invited parents", href: `${base}/parents`, badge: invitedPending || undefined },
+    { key: "access-codes", label: "Access codes", href: `${base}/access-codes` },
     { key: "users", label: "Users & access", href: `${base}/users` },
   ];
 

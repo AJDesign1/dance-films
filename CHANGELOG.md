@@ -86,6 +86,14 @@ Schools list, Add school, Configure, enable/disable.
 - Replaced the plain URL field on the show editor with a real file upload, matching the pattern already used for branding logos/photos
 - New `artwork` Storage bucket, public, for cover images — kept separate from `branding` since it's per-show content, not the school's identity
 
+## Access codes — alternative onboarding route
+
+- New "Having trouble? Use an access code" link on the login screen (idle, sent, and not-invited states) opens a code → email flow
+- Redeeming a valid code adds the parent to `invited_emails` (even if they weren't invited before) and sends the same magic link the normal flow uses — no parallel auth system, no new session mechanism
+- A code can optionally be tied to a specific show, redirecting there after sign-in; it never grants an entitlement — purchasing still goes through the normal checkout
+- New `access_codes` table, same security posture as `invited_emails` (RLS enabled, zero client policies, service-role only)
+- Managed per-school at `/admin/{slug}/access-codes` — create, regenerate, disable/enable, change show association
+
 ## Repo hygiene
 
 - Connected the repository to GitHub (`AJDesign1/dance-films`)
