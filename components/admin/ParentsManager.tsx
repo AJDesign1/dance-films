@@ -32,8 +32,16 @@ export default function ParentsManager({
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [bulk, setBulk] = useState("");
+  const [search, setSearch] = useState("");
   const [msg, setMsg] = useState<{ ok?: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const query = search.trim().toLowerCase();
+  const filtered = query
+    ? parents.filter(
+        (p) => (p.name ?? "").toLowerCase().includes(query) || p.email.toLowerCase().includes(query),
+      )
+    : parents;
 
   function run(fn: () => Promise<{ ok?: boolean; error?: string; message?: string }>, onOk?: () => void) {
     setMsg(null);
@@ -62,13 +70,41 @@ export default function ParentsManager({
     <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 22, alignItems: "start" }}>
       {/* List */}
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {parents.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ position: "relative", flex: 1 }}>
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="var(--text-3)" strokeWidth="1.6" style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                <circle cx="7" cy="7" r="5.2" />
+                <path d="M11 11l3.5 3.5" strokeLinecap="round" />
+              </svg>
+              <input
+                className={styles.input}
+                style={{ paddingLeft: 36 }}
+                placeholder="Search by name or email…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            {query && (
+              <span style={{ fontSize: 12.5, color: "var(--text-3)", whiteSpace: "nowrap" }}>
+                {filtered.length} of {parents.length}
+              </span>
+            )}
+          </div>
+        )}
+
         {parents.length === 0 ? (
           <div className={styles.card} style={{ padding: "50px 20px", textAlign: "center" }}>
             <div style={{ fontFamily: "var(--disp)", fontWeight: 700, fontSize: 20, textTransform: "uppercase" }}>No parents invited</div>
             <p style={{ color: "var(--text-2)", fontSize: 14, margin: "8px 0 0" }}>Add emails on the right to open access.</p>
           </div>
+        ) : filtered.length === 0 ? (
+          <div className={styles.card} style={{ padding: "50px 20px", textAlign: "center" }}>
+            <div style={{ fontFamily: "var(--disp)", fontWeight: 700, fontSize: 20, textTransform: "uppercase" }}>No matches</div>
+            <p style={{ color: "var(--text-2)", fontSize: 14, margin: "8px 0 0" }}>No parent matches &ldquo;{search.trim()}&rdquo;.</p>
+          </div>
         ) : (
-          parents.map((p) => {
+          filtered.map((p) => {
             const paidCount = p.shows.filter((s) => s.source !== null).length;
             return (
               <div key={p.id} className={`${styles.card} ${styles.cardPad}`}>
