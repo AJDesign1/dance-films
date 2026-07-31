@@ -1,0 +1,67 @@
+/* Hero panel sizing — the panel is only as tall as minHeight on mobile (it
+   stacks above the form panel instead of stretching to viewport height), so
+   the bottom-anchored title needs room or it collides with the top logo. */
+
+.hero {
+  position: relative;
+  flex: 1 1 380px;
+  min-height: 280px;
+  background: var(--surface-2);
+}
+
+.heroLogoImg {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  height: 104px;
+  filter: brightness(0) invert(1);
+}
+
+.heroLogoText {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  font-family: var(--disp);
+  font-weight: 800;
+  font-size: 30px;
+  line-height: .9;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  color: #fff;
+  max-width: 8ch;
+}
+
+.heroContent {
+  position: absolute;
+  left: 30px;
+  right: 30px;
+  bottom: 36px;
+  pointer-events: none;
+}
+
+.heroTitle {
+  font-family: var(--disp);
+  font-weight: 800;
+  font-size: 56px;
+  line-height: .92;
+  letter-spacing: .01em;
+  text-transform: uppercase;
+  color: #fff;
+  max-width: 16ch;
+}
+
+.heroSubtitle {
+  margin: 18px 0 0;
+  color: rgba(255, 255, 255, .9);
+  font-size: 17px;
+  line-height: 1.5;
+  max-width: 42ch;
+}
+
+@media (max-width: 640px) {
+  .hero { min-height: 420px; }
+  .heroLogoImg { height: 64px; }
+  .heroLogoText { font-size: 22px; }
+  .heroTitle { font-size: 32px; }
+  .heroSubtitle { margin-top: 10px; font-size: 14px; }
+}

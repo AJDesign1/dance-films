@@ -3,6 +3,7 @@
 import { useState, useTransition, type CSSProperties } from "react";
 import { requestMagicLink } from "@/app/(platform)/login/actions";
 import { checkAccessCode, redeemAccessCode } from "@/app/(platform)/login/access-code-actions";
+import styles from "./LoginScreen.module.css";
 
 type Props = {
   schoolName: string;
@@ -176,14 +177,7 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
       }}
     >
       {/* Hero panel */}
-      <div
-        style={{
-          position: "relative",
-          flex: "1 1 380px",
-          minHeight: 280,
-          background: "var(--surface-2)",
-        }}
-      >
+      <div className={styles.hero}>
         {heroImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -212,46 +206,13 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
         />
         {logoWhiteUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={logoWhiteUrl}
-            alt={schoolName}
-            style={{ position: "absolute", top: 30, left: 30, height: 104, filter: "brightness(0) invert(1)" }}
-          />
+          <img src={logoWhiteUrl} alt={schoolName} className={styles.heroLogoImg} />
         ) : (
-          <div
-            style={{
-              position: "absolute",
-              top: 30,
-              left: 30,
-              fontFamily: "var(--disp)",
-              fontWeight: 800,
-              fontSize: 30,
-              lineHeight: ".9",
-              letterSpacing: ".02em",
-              textTransform: "uppercase",
-              color: "#fff",
-              maxWidth: "8ch",
-            }}
-          >
-            {schoolName}
-          </div>
+          <div className={styles.heroLogoText}>{schoolName}</div>
         )}
-        <div style={{ position: "absolute", left: 30, right: 30, bottom: 36, pointerEvents: "none" }}>
-          <div
-            style={{
-              fontFamily: "var(--disp)",
-              fontWeight: 800,
-              fontSize: 56,
-              lineHeight: ".92",
-              letterSpacing: ".01em",
-              textTransform: "uppercase",
-              color: "#fff",
-              maxWidth: "16ch",
-            }}
-          >
-            Relive the show, whenever you like.
-          </div>
-          <p style={{ margin: "18px 0 0", color: "rgba(255,255,255,.9)", fontSize: 17, lineHeight: 1.5, maxWidth: "42ch" }}>
+        <div className={styles.heroContent}>
+          <div className={styles.heroTitle}>Relive the show, whenever you like.</div>
+          <p className={styles.heroSubtitle}>
             Sign in to watch your dance school&apos;s professionally filmed performances — the full show and every dance.
           </p>
         </div>

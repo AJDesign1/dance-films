@@ -107,6 +107,11 @@ Schools list, Add school, Configure, enable/disable.
 - Reuses the existing grant/revoke actions from Users & access verbatim — no duplicated logic, no schema change
 - Card ("Paid") entitlements aren't removable from this screen (avoids accidentally revoking a real payment); cash grants are
 
+## Mobile fixes
+
+- Login screen: the hero panel's logo and headline (both absolutely positioned) were sized for the full-height desktop panel; on mobile the panel shrinks to just its `min-height`, so the bottom-anchored headline overflowed upward past the top-left logo and off the page. Moved the hero styling into a CSS module (`LoginScreen.module.css`) and added a `max-width: 640px` breakpoint — taller `min-height`, smaller logo/headline/subtext — mirroring the pattern already used on the show page hero.
+- Sign-out (`app/auth/signout/route.ts`) redirected to `new URL(request.url).origin` + `/login`, which on Netlify doesn't reliably preserve the subdomain — signing out of `liberty.dancefilms.co.uk` could land on the apex holding page instead of Liberty's own login. Same root cause as the earlier magic-link redirect bug; fixed the same way, by switching to the header-based `getOrigin()` helper.
+
 ## Repo hygiene
 
 - Connected the repository to GitHub (`AJDesign1/dance-films`)
