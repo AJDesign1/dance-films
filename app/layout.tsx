@@ -34,6 +34,10 @@ export const metadata: Metadata = {
   title: "Dance Films",
   description:
     "Relive the show, whenever you like — professionally filmed dance shows to watch online.",
+  icons: {
+    icon: "/favicon.jpg",
+    apple: "/favicon.jpg",
+  },
 };
 
 export default function RootLayout({

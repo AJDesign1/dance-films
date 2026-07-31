@@ -112,6 +112,11 @@ Schools list, Add school, Configure, enable/disable.
 - Login screen: the hero panel's logo and headline (both absolutely positioned) were sized for the full-height desktop panel; on mobile the panel shrinks to just its `min-height`, so the bottom-anchored headline overflowed upward past the top-left logo and off the page. Moved the hero styling into a CSS module (`LoginScreen.module.css`) and added a `max-width: 640px` breakpoint — taller `min-height`, smaller logo/headline/subtext — mirroring the pattern already used on the show page hero.
 - Sign-out (`app/auth/signout/route.ts`) redirected to `new URL(request.url).origin` + `/login`, which on Netlify doesn't reliably preserve the subdomain — signing out of `liberty.dancefilms.co.uk` could land on the apex holding page instead of Liberty's own login. Same root cause as the earlier magic-link redirect bug; fixed the same way, by switching to the header-based `getOrigin()` helper.
 
+## Site favicon
+
+- Added the Dance Films icon (dark navy, pink gradient blob, wordmark) as the favicon across every page — parent portal, admin, and marketing alike
+- Served as a static asset (`public/favicon.jpg`, referenced via `metadata.icons` in the root layout) rather than Next's `app/icon.*` file convention — that convention runs a build-time codegen step which embeds the project's absolute file path as a string, and this machine's folder name (`Alex's Projects`) has an apostrophe that broke it (`Unexpected token` on the unescaped `'`). The static-asset approach sidesteps that codegen entirely.
+
 ## Repo hygiene
 
 - Connected the repository to GitHub (`AJDesign1/dance-films`)
