@@ -27,6 +27,9 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 
 export type UploadResult = { url: string } | { error: string };
 
+/** Image slots on a school — logos and photos, all in the `branding` bucket. */
+export type BrandingSlot = "logo-colour" | "logo-white" | "sign-in" | "about" | "team";
+
 /**
  * Upload a branding image (logo/photo) to the public `branding` bucket via the
  * service role and return its public URL. The URL is then saved with the rest
@@ -34,7 +37,7 @@ export type UploadResult = { url: string } | { error: string };
  */
 export async function uploadBrandingImage(
   schoolId: string,
-  slot: "logo-colour" | "logo-white" | "sign-in",
+  slot: BrandingSlot,
   formData: FormData,
 ): Promise<UploadResult> {
   await requireAdmin();

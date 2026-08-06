@@ -343,6 +343,8 @@ export type Database = {
       }
       schools: {
         Row: {
+          about_image_url: string | null
+          about_text: string | null
           created_at: string
           hero_image_url: string | null
           id: string
@@ -352,9 +354,16 @@ export type Database = {
           platform_name: string | null
           slug: string
           status: Database["public"]["Enums"]["school_status"]
+          team_bio: string | null
+          team_image_url: string | null
+          team_name: string | null
+          team_role: string | null
+          team_tagline: string | null
           theme: Json
         }
         Insert: {
+          about_image_url?: string | null
+          about_text?: string | null
           created_at?: string
           hero_image_url?: string | null
           id?: string
@@ -364,9 +373,16 @@ export type Database = {
           platform_name?: string | null
           slug: string
           status?: Database["public"]["Enums"]["school_status"]
+          team_bio?: string | null
+          team_image_url?: string | null
+          team_name?: string | null
+          team_role?: string | null
+          team_tagline?: string | null
           theme?: Json
         }
         Update: {
+          about_image_url?: string | null
+          about_text?: string | null
           created_at?: string
           hero_image_url?: string | null
           id?: string
@@ -376,6 +392,11 @@ export type Database = {
           platform_name?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["school_status"]
+          team_bio?: string | null
+          team_image_url?: string | null
+          team_name?: string | null
+          team_role?: string | null
+          team_tagline?: string | null
           theme?: Json
         }
         Relationships: []

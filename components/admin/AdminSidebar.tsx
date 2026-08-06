@@ -20,6 +20,7 @@ export default function AdminSidebar({
 
   const items: Item[] = [
     { key: "branding", label: "Branding & config", href: `${base}/branding` },
+    { key: "school-page", label: "School page", href: `${base}/school-page` },
     { key: "dashboard", label: "Dashboard", href: base },
     { key: "shows", label: "Shows", href: `${base}/shows` },
     { key: "categories", label: "Categories", href: `${base}/categories` },

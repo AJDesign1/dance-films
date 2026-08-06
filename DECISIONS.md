@@ -134,3 +134,37 @@ where it measures 4.53:1.
 ## Local git history was rewritten once to remove a leaked secret
 
 A Supabase personal access token and DB password were briefly committed inside `.claude/settings.local.json` (an AI-tool local config file that should never be tracked). GitHub's push protection caught it before it reached the remote. History was rewritten (`git filter-branch`) to remove the file from every commit, `.gitignore` was updated, and the push succeeded clean. **The exposed credentials should be rotated** regardless (see `SESSION_HANDOFF.md`).
+
+## School page content lives on `schools`, not a new table
+
+The "About &lt;school&gt;" and "Meet the media team" bands are one row's worth of
+copy plus two image URLs per school — exactly the shape of the `logo_*_url` /
+`hero_image_url` columns already on `schools`. Seven nullable columns there beat
+a `school_page_content` table with a 1:1 FK: no join on the hot shop-page read,
+and no new RLS policies or grants, since the existing row-level policies and
+table-level grants on `schools` already cover every column.
+
+Null means "hide the band" rather than "show an empty box". That keeps a brand
+new school looking finished before its owner has written anything, and means
+clearing a field is how you remove a section — no separate visibility toggle to
+keep in sync with the content.
+
+The About heading is derived (`About {school.name}`) rather than stored, so it
+can't drift out of sync after a school is renamed. The trade-off is that a
+school can't title that section anything else; if one ever needs to, it becomes
+an optional override column rather than a rewrite.
+
+## The media-team band overrides its inherited text tokens
+
+That band is the one place in the parent portal that sits on the light `--paper`
+ground regardless of the school's chosen theme. Under a dark theme it inherited
+near-white text tokens onto cream — `#EAF0F4` on `#F5F1E8` is 1.05:1, i.e.
+genuinely invisible, which is how it shipped until the content became editable
+and the highlight line stopped rendering visibly.
+
+Rather than hard-coding colours on each element, `.team` re-points `--text`,
+`--text-2` and `--border` at `--ink`-derived values, so every descendant —
+including the pre-existing inline styles — inherits something legible under
+either theme. The accent-coloured eyebrow label was left alone: teal-on-cream is
+low contrast too, but changing how a school's accent renders is a brand decision
+rather than a bug fix.

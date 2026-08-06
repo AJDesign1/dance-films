@@ -112,6 +112,16 @@ Schools list, Add school, Configure, enable/disable.
 - Login screen: the hero panel's logo and headline (both absolutely positioned) were sized for the full-height desktop panel; on mobile the panel shrinks to just its `min-height`, so the bottom-anchored headline overflowed upward past the top-left logo and off the page. Moved the hero styling into a CSS module (`LoginScreen.module.css`) and added a `max-width: 640px` breakpoint — taller `min-height`, smaller logo/headline/subtext — mirroring the pattern already used on the show page hero.
 - Sign-out (`app/auth/signout/route.ts`) redirected to `new URL(request.url).origin` + `/login`, which on Netlify doesn't reliably preserve the subdomain — signing out of `liberty.dancefilms.co.uk` could land on the apex holding page instead of Liberty's own login. Same root cause as the earlier magic-link redirect bug; fixed the same way, by switching to the header-based `getOrigin()` helper.
 
+## Editable school page content
+
+- New **School page** admin screen (`/admin/{slug}/school-page`) — per-school copy and photos for the two content bands under the shows
+- **About &lt;school&gt;**: new two-column band between the shows and the media team — copy left, photo right, heading auto-derived from the school name so it follows a rename
+- **Meet the media team**: was hardcoded in the page component (and shipped a visible `[Placeholder — final copy to follow.]` to real customers) — now name, role, bio, highlight line and photo are all per-school
+- Either band hides itself entirely when its fields are empty, so a new school never shows an empty section
+- Seven new columns on `schools` rather than a new table — same shape as the logo/hero URLs already there, so no new RLS policies or grants were needed. Liberty's previously-hardcoded team copy is carried over by the migration (minus the placeholder marker) so its live page reads the same
+- Reuses the existing `branding` bucket and `uploadBrandingImage` action with two new slots, rather than a parallel upload path
+- Fixed a pre-existing contrast bug found while verifying this: the media-team band sits on the light `--paper` ground but inherited the dark theme's near-white text tokens — the highlight line was `#EAF0F4` on `#F5F1E8`, a 1.05:1 ratio (invisible), and the bio was ~2.4:1. The band now re-points its text tokens at ink-based values (16.2:1 and ~5.1:1, both passing AA)
+
 ## Site favicon
 
 - Added the Dance Films icon (dark navy, pink gradient blob, wordmark) as the favicon across every page — parent portal, admin, and marketing alike

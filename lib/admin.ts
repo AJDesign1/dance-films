@@ -2,6 +2,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PAGE_CONTENT_COLUMNS, type SchoolPageContent } from "@/lib/school";
 import type { SchoolTheme } from "@/lib/theme";
 
 export type ManagedSchool = {
@@ -14,7 +15,7 @@ export type ManagedSchool = {
   logo_white_url: string | null;
   hero_image_url: string | null;
   theme: SchoolTheme;
-};
+} & SchoolPageContent;
 
 /**
  * Gate for all admin pages/actions: must be signed in AND is_admin.
@@ -36,7 +37,7 @@ export async function getManagedSchool(slug: string): Promise<ManagedSchool | nu
   const admin = createAdminClient();
   const { data } = await admin
     .from("schools")
-    .select("id, slug, name, status, platform_name, logo_colour_url, logo_white_url, hero_image_url, theme")
+    .select(`id, slug, name, status, platform_name, logo_colour_url, logo_white_url, hero_image_url, theme, ${PAGE_CONTENT_COLUMNS}`)
     .eq("slug", slug)
     .maybeSingle();
   return (data as ManagedSchool | null) ?? null;

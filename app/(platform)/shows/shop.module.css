@@ -59,9 +59,63 @@
 .cardLink:hover { transform: translateY(-4px); }
 .featuredCard { transition: transform .18s ease; }
 .featuredCard:hover { transform: translateY(-2px); }
-.team { display: flex; flex-wrap: wrap; background: var(--paper); border-top: 1px solid var(--border); }
+/* About the school — copy left, photo right. Sits inside .body (so it lines up
+   with the shows grid above it) and ahead of the full-bleed media-team band. */
+.about {
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 46px;
+  align-items: center;
+  margin-top: 58px;
+  padding-top: 48px;
+  border-top: 1px solid var(--border);
+}
+.aboutTitle {
+  font-family: var(--disp);
+  font-weight: 800;
+  font-size: 40px;
+  line-height: .96;
+  letter-spacing: .01em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 12px 0 0;
+  text-wrap: balance;
+}
+.aboutText {
+  margin: 18px 0 0;
+  color: var(--text-2);
+  font-size: 15.5px;
+  line-height: 1.65;
+  white-space: pre-line; /* keep the paragraph breaks the school typed in admin */
+}
+.aboutPhoto {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.aboutPhoto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Copy-only: don't leave a lone column hugging the left edge. */
+.aboutNoPhoto { grid-template-columns: minmax(0, 72ch); }
+
+.team {
+  display: flex;
+  flex-wrap: wrap;
+  background: var(--paper);
+  border-top: 1px solid var(--border);
+  /* This band always sits on the light --paper ground, even under a dark theme,
+     where the inherited text tokens are near-white — #EAF0F4 on #F5F1E8 is a
+     1.05:1 ratio, i.e. invisible. Re-point them at ink-based values for
+     everything inside, so the band stays readable under either theme. */
+  --text: var(--ink);
+  --text-2: color-mix(in srgb, var(--ink) 68%, var(--paper));
+  --border: color-mix(in srgb, var(--ink) 16%, var(--paper));
+}
 .teamPhoto { position: relative; flex: 1 1 300px; min-height: 260px; background: var(--surface); }
+.teamPhoto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .teamBody { flex: 1 1 360px; display: flex; flex-direction: column; justify-content: center; padding: 40px 36px; }
+.teamBio { margin: 16px 0 0; color: var(--text-2); font-size: 15px; line-height: 1.6; max-width: 52ch; white-space: pre-line; }
 /* Matches the grid card height at each column count (aspect-ratio 3:4,
    minus the grid's own gap) so the hero reads as one consistent row height
    with the cards below it, not a shorter banner. */
@@ -74,11 +128,20 @@
   .featMinH { min-height: 535px; }
 }
 
+/* Stack About before the columns get too narrow to read. Photo is second in the
+   DOM, so it naturally lands under the copy — no order juggling needed. */
+@media (max-width: 820px) {
+  .about { grid-template-columns: 1fr; gap: 24px; }
+}
+
 @media (max-width: 640px) {
   .featMinH { min-height: 236px; }
   .featPad { padding: 26px 22px; }
   .featTitle { font-size: 44px; }
   .teamPhoto { min-height: 160px; flex-basis: 100%; }
+  .about { margin-top: 40px; padding-top: 34px; }
+  .aboutTitle { font-size: 30px; }
+  .aboutText { font-size: 15px; }
 }
 
 @media (max-width: 640px) {

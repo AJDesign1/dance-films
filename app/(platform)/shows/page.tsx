@@ -84,36 +84,102 @@ export default async function ShowsPage() {
           </>
         )}
 
+        <AboutSchool schoolName={schoolName} text={school?.about_text ?? null} imageUrl={school?.about_image_url ?? null} />
       </div>
 
-      {/* Meet the media team — full-width band (placeholder copy; see Stage 4 notes) */}
-      <div className={styles.team}>
-        <div className={styles.teamPhoto}>
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, var(--surface-2), var(--brand-2))" }} />
-        </div>
-        <div className={styles.teamBody}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--accent)" }}>
-            Meet the media team
-          </div>
-          <h2 style={{ fontFamily: "var(--disp)", fontWeight: 800, fontSize: 34, letterSpacing: ".01em", textTransform: "uppercase", color: "var(--brand-2)", margin: "12px 0 4px" }}>
-            Alex Jarvis
-          </h2>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)" }}>Founder, Dance Films</div>
-          <p style={{ margin: "16px 0 0", color: "var(--text-2)", fontSize: 15, lineHeight: 1.6, maxWidth: "52ch" }}>
-            Alex is the videographer behind Dance Films, capturing dance shows with a
-            cinematic eye for the moments that matter. [Placeholder — final copy to follow.]
-          </p>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-            <span style={{ flex: "0 0 auto", width: 7, height: 7, borderRadius: "var(--r-pill)", background: "var(--accent)", marginTop: 7 }} />
-            <span style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.5 }}>
-              Multi-camera capture, colour-graded for a cinematic finish.
-            </span>
-          </div>
-        </div>
-      </div>
+      <MediaTeam
+        name={school?.team_name ?? null}
+        role={school?.team_role ?? null}
+        bio={school?.team_bio ?? null}
+        tagline={school?.team_tagline ?? null}
+        imageUrl={school?.team_image_url ?? null}
+      />
 
       <Footer schoolName={schoolName} logoWhiteUrl={school?.logo_white_url ?? null} />
     </div>
+  );
+}
+
+/**
+ * "About <school>" — copy left, photo right. Editable per school at
+ * /admin/{slug}/school-page; hidden entirely until the school adds something,
+ * so a new school never shows an empty band.
+ */
+function AboutSchool({
+  schoolName,
+  text,
+  imageUrl,
+}: {
+  schoolName: string;
+  text: string | null;
+  imageUrl: string | null;
+}) {
+  if (!text && !imageUrl) return null;
+
+  return (
+    <section className={`${styles.about} ${imageUrl ? "" : styles.aboutNoPhoto}`}>
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--accent)" }}>
+          Our school
+        </div>
+        <h2 className={styles.aboutTitle}>About {schoolName}</h2>
+        {text && <p className={styles.aboutText}>{text}</p>}
+      </div>
+      {imageUrl && (
+        <div className={styles.aboutPhoto}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageUrl} alt="" />
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Media-team band — full-width. Same per-school editing/hiding rules as above. */
+function MediaTeam({
+  name,
+  role,
+  bio,
+  tagline,
+  imageUrl,
+}: {
+  name: string | null;
+  role: string | null;
+  bio: string | null;
+  tagline: string | null;
+  imageUrl: string | null;
+}) {
+  if (!name && !bio && !imageUrl) return null;
+
+  return (
+    <section className={styles.team}>
+      <div className={styles.teamPhoto}>
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imageUrl} alt={name ?? ""} />
+        ) : (
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, var(--surface-2), var(--brand-2))" }} />
+        )}
+      </div>
+      <div className={styles.teamBody}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--accent)" }}>
+          Meet the media team
+        </div>
+        {name && (
+          <h2 style={{ fontFamily: "var(--disp)", fontWeight: 800, fontSize: 34, letterSpacing: ".01em", textTransform: "uppercase", color: "var(--brand-2)", margin: "12px 0 4px" }}>
+            {name}
+          </h2>
+        )}
+        {role && <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)" }}>{role}</div>}
+        {bio && <p className={styles.teamBio}>{bio}</p>}
+        {tagline && (
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+            <span style={{ flex: "0 0 auto", width: 7, height: 7, borderRadius: "var(--r-pill)", background: "var(--accent)", marginTop: 7 }} />
+            <span style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.5 }}>{tagline}</span>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
