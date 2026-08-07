@@ -2,6 +2,7 @@ import { requireAdmin } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { initials } from "@/lib/format";
 import AdminHeader from "@/components/admin/AdminHeader";
+import SignOutButton from "@/components/admin/SignOutButton";
 import SchoolsManager, { type SchoolRow } from "@/components/admin/SchoolsManager";
 import styles from "./[slug]/admin.module.css";
 
@@ -39,11 +40,16 @@ export default async function MasterAdmin() {
             <span key={d} className={styles.navItem} style={{ opacity: 0.5, cursor: "default" }}><span>{d}</span></span>
           ))}
         </nav>
-        <div className={styles.sidebarFoot} style={{ display: "flex", alignItems: "center", gap: 11 }}>
-          <div style={{ flex: "0 0 auto", width: 36, height: 36, borderRadius: "var(--r-pill)", background: "var(--accent)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14 }}>{initials(profile.name ?? profile.email)}</div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile.name ?? "Admin"}</div>
-            <div style={{ fontSize: 11, color: "var(--text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile.email}</div>
+        <div className={styles.sidebarFoot}>
+          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+            <div style={{ flex: "0 0 auto", width: 36, height: 36, borderRadius: "var(--r-pill)", background: "var(--accent)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14 }}>{initials(profile.name ?? profile.email)}</div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile.name ?? "Admin"}</div>
+              <div style={{ fontSize: 11, color: "var(--text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile.email}</div>
+            </div>
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <SignOutButton />
           </div>
         </div>
       </aside>

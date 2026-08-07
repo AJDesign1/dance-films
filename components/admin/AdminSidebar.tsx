@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import SignOutButton from "@/components/admin/SignOutButton";
 import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
 
 type Item = { key: string; label: string; href: string; badge?: number };
@@ -54,11 +55,12 @@ export default function AdminSidebar({
           </Link>
         ))}
       </nav>
-      <div className={styles.sidebarFoot}>
+      <div className={styles.sidebarFoot} style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" }}>
         <a href={`/?school=${slug}`} target="_blank" rel="noreferrer" className={styles.backLink}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M15 3h6v6M21 3l-9 9M14 4H4v16h16V10" strokeLinecap="round" strokeLinejoin="round" /></svg>
           <span>View live site</span>
         </a>
+        <SignOutButton />
       </div>
     </aside>
   );

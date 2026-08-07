@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { MAX_IMAGE_BYTES, tooLargeMessage } from "@/lib/uploads";
 
 export type BrandingForm = {
   name: string;
@@ -44,7 +45,7 @@ export async function uploadBrandingImage(
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { error: "No file selected." };
   if (!file.type.startsWith("image/")) return { error: "Please choose an image file." };
-  if (file.size > 2 * 1024 * 1024) return { error: "Image must be under 2MB." };
+  if (file.size > MAX_IMAGE_BYTES) return { error: tooLargeMessage(MAX_IMAGE_BYTES) };
 
   const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
   const path = `${schoolId}/${slot}-${crypto.randomUUID()}.${ext}`;

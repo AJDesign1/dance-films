@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
 import { uploadBrandingImage, type BrandingSlot } from "@/app/(admin)/admin/[slug]/branding/actions";
+import { MAX_IMAGE_BYTES, isRedirectError, tooLargeMessage, uploadFailedMessage } from "@/lib/uploads";
 import { updateSchoolPage, type SchoolPageForm as FormT } from "@/app/(admin)/admin/[slug]/school-page/actions";
 
 export default function SchoolPageForm({
@@ -24,6 +25,12 @@ export default function SchoolPageForm({
 
   async function uploadImage(slot: BrandingSlot, field: keyof FormT, file: File) {
     setMsg(null);
+    // Checked here too so an oversized file fails instantly and accurately,
+    // rather than being rejected by the request-body cap mid-flight.
+    if (file.size > MAX_IMAGE_BYTES) {
+      setMsg({ ok: false, text: tooLargeMessage(MAX_IMAGE_BYTES) });
+      return;
+    }
     setUploading(slot);
     try {
       const fd = new FormData();
@@ -31,10 +38,11 @@ export default function SchoolPageForm({
       const res = await uploadBrandingImage(schoolId, slot, fd);
       if ("url" in res) set(field, res.url as FormT[typeof field]);
       else setMsg({ ok: false, text: res.error });
-    } catch {
-      // A thrown server action (e.g. a stale session redirecting instead of
-      // returning) must not leave the button stuck on "Uploading…" forever.
-      setMsg({ ok: false, text: "Upload failed. If this keeps happening, try signing out and back in." });
+    } catch (e) {
+      // An expired session redirects to sign-in — let that through rather than
+      // swallowing the navigation and looking like a failed upload.
+      if (isRedirectError(e)) throw e;
+      setMsg({ ok: false, text: uploadFailedMessage(MAX_IMAGE_BYTES) });
     } finally {
       setUploading(null);
     }

@@ -112,6 +112,15 @@ Schools list, Add school, Configure, enable/disable.
 - Login screen: the hero panel's logo and headline (both absolutely positioned) were sized for the full-height desktop panel; on mobile the panel shrinks to just its `min-height`, so the bottom-anchored headline overflowed upward past the top-left logo and off the page. Moved the hero styling into a CSS module (`LoginScreen.module.css`) and added a `max-width: 640px` breakpoint — taller `min-height`, smaller logo/headline/subtext — mirroring the pattern already used on the show page hero.
 - Sign-out (`app/auth/signout/route.ts`) redirected to `new URL(request.url).origin` + `/login`, which on Netlify doesn't reliably preserve the subdomain — signing out of `liberty.dancefilms.co.uk` could land on the apex holding page instead of Liberty's own login. Same root cause as the earlier magic-link redirect bug; fixed the same way, by switching to the header-based `getOrigin()` helper.
 
+## Admin sign-out, and the real cause of failing image uploads
+
+- **Sign out** added to the admin — school admin sidebar and master admin sidebar. There was previously no way to sign out of the admin at all; only the parent portal had one
+- `/auth/signout` now takes a return target so the admin lands on its own password sign-in rather than a school's parent magic-link screen. Matched against a fixed allowlist, since a redirect target read from a request body is an open redirect otherwise
+- **Fixed image uploads failing for anything over 1MB.** Server Actions cap their request body at 1MB by default, but the upload actions advertised 2MB (branding/photos) and 5MB (show artwork). Files in between were rejected by the framework *before* the action ran, so the action threw instead of returning an error. Raised `experimental.serverActions.bodySizeLimit` to 8mb. Verified causally: with the setting removed a 1.5MB upload throws `Body exceeded 1 MB limit.`; with it, 1.5/3/5MB all reach the action
+- This is the true root cause of the earlier "says uploading but doesn't" report. The try/catch added then stopped the button hanging forever, but the upload still failed for larger files — and the catch-all message ("try signing out and back in") pointed at the session, which sent debugging in the wrong direction. That message now names the size limit instead
+- The same catch was also swallowing `redirect()` — so a genuinely expired session did nothing visible instead of returning to sign-in. Redirect errors are now re-thrown (`lib/uploads.ts`)
+- Size limits moved into `lib/uploads.ts` and shared, so the client can reject an oversized file instantly rather than after a failed round-trip, and the client and server can't drift apart
+
 ## Editable school page content
 
 - New **School page** admin screen (`/admin/{slug}/school-page`) — per-school copy and photos for the two content bands under the shows

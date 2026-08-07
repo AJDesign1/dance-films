@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
 import { createShow, updateShow, uploadShowArtwork, type ShowForm } from "@/app/(admin)/admin/[slug]/shows/actions";
+import { MAX_ARTWORK_BYTES, isRedirectError, tooLargeMessage, uploadFailedMessage } from "@/lib/uploads";
 
 export type EditableShow = {
   id: string;
@@ -43,6 +44,12 @@ export default function ShowEditor({
 
   async function uploadArtwork(file: File) {
     setError(null);
+    // Checked here too so an oversized file fails instantly and accurately,
+    // rather than being rejected by the request-body cap mid-flight.
+    if (file.size > MAX_ARTWORK_BYTES) {
+      setError(tooLargeMessage(MAX_ARTWORK_BYTES));
+      return;
+    }
     setUploading(true);
     try {
       const fd = new FormData();
@@ -50,11 +57,12 @@ export default function ShowEditor({
       const res = await uploadShowArtwork(schoolId, fd);
       if ("url" in res) set("artwork_url", res.url);
       else setError(res.error);
-    } catch {
-      // A thrown server action (e.g. a stale/expired session redirecting
-      // instead of returning a result) must not leave the button stuck on
-      // "Uploading…" forever — always clear the state below.
-      setError("Upload failed. If this keeps happening, try signing out and back in.");
+    } catch (e) {
+      // An expired session redirects to sign-in — let that through rather than
+      // swallowing the navigation and looking like a failed upload. Anything
+      // else must still clear "Uploading…" via the finally below.
+      if (isRedirectError(e)) throw e;
+      setError(uploadFailedMessage(MAX_ARTWORK_BYTES));
     } finally {
       setUploading(false);
     }

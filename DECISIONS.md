@@ -168,3 +168,37 @@ including the pre-existing inline styles — inherits something legible under
 either theme. The accent-coloured eyebrow label was left alone: teal-on-cream is
 low contrast too, but changing how a school's accent renders is a brand decision
 rather than a bug fix.
+
+## Upload limits live in one place, above the Server Action body cap
+
+Server Actions cap their request body at 1MB by default. The upload actions
+advertised 2MB and 5MB, so files between the two were rejected by the framework
+before the action ran — the action *threw* rather than returning `{ error }`,
+which is a different failure path than the size check inside it.
+
+Two lessons baked into the code:
+
+1. `experimental.serverActions.bodySizeLimit` must stay above the largest limit
+   any upload action advertises. `lib/uploads.ts` says so next to the constants,
+   because the two numbers are only correct relative to each other.
+2. A blanket `catch` around a server action is a trap. It swallowed both the
+   body-size rejection *and* `redirect()`, so an expired session silently did
+   nothing, and the generic "try signing out and back in" message actively
+   misdirected diagnosis for weeks. Redirect errors are re-thrown, and the
+   fallback message names the likeliest real cause (file size) instead of
+   guessing at the session.
+
+The client forms check the same shared constants before sending. That's a
+courtesy for fast, accurate feedback — the server still enforces them, since a
+client check gates nothing.
+
+## Signing out needs to know which sign-in to return to
+
+Parents and the admin have deliberately different sign-in screens (invite-only
+magic link vs email + password). One sign-out route serves both, so it takes the
+return target from the form — matched against a two-entry allowlist rather than
+trusted, because a redirect target read from a request body is an open redirect.
+
+It also resolves the origin from headers rather than `request.url`, the same fix
+the magic-link callbacks needed: Netlify's runtime doesn't reliably preserve the
+hostname, which would bounce a school subdomain to the apex on sign-out.
