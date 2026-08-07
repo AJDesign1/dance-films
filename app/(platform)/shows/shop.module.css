@@ -66,8 +66,12 @@
   grid-template-columns: 1.05fr .95fr;
   gap: 46px;
   align-items: center;
-  margin-top: 58px;
-  padding-top: 48px;
+  /* Generous breathing room on both sides: the shows grid above and the
+     full-bleed media-team band below are both visually busy, so this block
+     needs room to read as its own section rather than a squeezed footnote. */
+  margin-top: 76px;
+  padding-top: 66px;
+  padding-bottom: 72px;
   border-top: 1px solid var(--border);
 }
 .aboutTitle {
@@ -139,7 +143,7 @@
   .featPad { padding: 26px 22px; }
   .featTitle { font-size: 44px; }
   .teamPhoto { min-height: 160px; flex-basis: 100%; }
-  .about { margin-top: 40px; padding-top: 34px; }
+  .about { margin-top: 52px; padding-top: 46px; padding-bottom: 50px; }
   .aboutTitle { font-size: 30px; }
   .aboutText { font-size: 15px; }
 }
