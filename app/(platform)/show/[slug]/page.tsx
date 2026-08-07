@@ -7,6 +7,7 @@ import { formatPrice, formatDuration, formatRuntime } from "@/lib/format";
 import Footer from "@/components/platform/Footer";
 import BuyButton from "@/components/platform/BuyButton";
 import ShowExperience, { type PerfItem } from "@/components/platform/ShowExperience";
+import CoverImage from "@/components/platform/CoverImage";
 import styles from "./show.module.css";
 
 export default async function ShowPage({
@@ -93,33 +94,35 @@ export default async function ShowPage({
   }
 
   // ---- Owned: load gated content ----
-  const { data: video } = await supabase
-    .from("show_videos")
-    .select("full_show_bunny_video_id, duration_seconds")
-    .eq("show_id", show.id)
-    .maybeSingle();
-
-  // Informational "Downloaded" badge — explicitly scoped to this user (not
-  // just RLS's default) so an admin previewing doesn't see another
-  // customer's download show up as their own.
-  const { data: downloadRow } = await supabase
-    .from("downloads")
-    .select("id")
-    .eq("show_id", show.id)
-    .eq("user_id", profile.id)
-    .maybeSingle();
-
-  const { data: perfRows } = await supabase
-    .from("performances")
-    .select("id, title, thumbnail_url, duration_seconds, sort_order")
-    .eq("show_id", show.id)
-    .order("sort_order", { ascending: true });
-
-  const { data: catRows } = await supabase
-    .from("categories")
-    .select("id, name, kind, sort_order")
-    .eq("show_id", show.id)
-    .order("sort_order", { ascending: true });
+  // Four independent reads for the same show — run concurrently, since as
+  // sequential awaits they were four separate round trips to the database
+  // before anything could render.
+  const [{ data: video }, { data: downloadRow }, { data: perfRows }, { data: catRows }] = await Promise.all([
+    supabase
+      .from("show_videos")
+      .select("full_show_bunny_video_id, duration_seconds")
+      .eq("show_id", show.id)
+      .maybeSingle(),
+    // Informational "Downloaded" badge — explicitly scoped to this user (not
+    // just RLS's default) so an admin previewing doesn't see another
+    // customer's download show up as their own.
+    supabase
+      .from("downloads")
+      .select("id")
+      .eq("show_id", show.id)
+      .eq("user_id", profile.id)
+      .maybeSingle(),
+    supabase
+      .from("performances")
+      .select("id, title, thumbnail_url, duration_seconds, sort_order")
+      .eq("show_id", show.id)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("categories")
+      .select("id, name, kind, sort_order")
+      .eq("show_id", show.id)
+      .order("sort_order", { ascending: true }),
+  ]);
 
   const perfIds = (perfRows ?? []).map((p) => p.id);
   const { data: linkRows } = perfIds.length
@@ -189,8 +192,8 @@ function Hero({
   return (
     <div className={styles.hero}>
       {show.artwork_url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={show.artwork_url} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+        // Full-bleed hero, above the fold — prioritised, not lazy-loaded.
+        <CoverImage src={show.artwork_url} sizes="100vw" priority />
       ) : (
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(120deg, var(--brand-2), var(--ink))" }} />
       )}

@@ -112,6 +112,26 @@ Schools list, Add school, Configure, enable/disable.
 - Login screen: the hero panel's logo and headline (both absolutely positioned) were sized for the full-height desktop panel; on mobile the panel shrinks to just its `min-height`, so the bottom-anchored headline overflowed upward past the top-left logo and off the page. Moved the hero styling into a CSS module (`LoginScreen.module.css`) and added a `max-width: 640px` breakpoint — taller `min-height`, smaller logo/headline/subtext — mirroring the pattern already used on the show page hero.
 - Sign-out (`app/auth/signout/route.ts`) redirected to `new URL(request.url).origin` + `/login`, which on Netlify doesn't reliably preserve the subdomain — signing out of `liberty.dancefilms.co.uk` could land on the apex holding page instead of Liberty's own login. Same root cause as the earlier magic-link redirect bug; fixed the same way, by switching to the header-based `getOrigin()` helper.
 
+## Performance pass — images and query round trips
+
+Measured first, on the live site. The customer-facing pages were shipping ~4.4MB
+of images, none of it cacheable:
+
+| Asset | Was | Now | Saved |
+|---|---|---|---|
+| About photo | 1787 KB (2048px wide, shown at ~550px) | 105 KB | 95% |
+| Media-team photo | 1822 KB (a PNG of a photograph) | 46 KB | 98% |
+| Show artwork | 808 KB | 121 KB | 86% |
+| Sign-in hero | 688 KB | 75 KB | 90% |
+
+- **All raster images now go through `next/image`** (new `CoverImage` component) — resized to what's actually displayed, re-encoded to WebP, lazy-loaded below the fold, `priority` on the login hero / featured show / show hero. Shows page image weight drops from ~4.4MB to ~290KB. SVG logos stay as plain `<img>` (7KB each; `next/image` would need `dangerouslyAllowSVG`)
+- **Supabase Storage was serving every image with `Cache-Control: no-cache`**, so browsers re-downloaded all of it on every page view and every navigation. Uploads now set a one-year cache; safe because the paths are UUID-based, so replacing an image yields a new URL. Existing files keep their old header, but end users no longer hit them directly — Next's optimizer fetches once and serves cached, resized copies
+- **Fewer database round trips.** `/shows` made three sequential queries where two sufficed — it re-read the whole `shows` table purely to map entitlement IDs back to slugs; selecting `id` in the first query removed it, and the remaining two now run concurrently. `/show/[slug]` ran four independent reads (video, download flag, performances, categories) as four sequential awaits; they now run as one `Promise.all`
+
+Not addressed, and worth knowing: every page is server-rendered on demand, so a
+first hit after idle pays a Netlify cold start — measured at 9.3s once, then
+0.8s warm. That's a hosting/caching question rather than a code one.
+
 ## Admin sign-out, and the real cause of failing image uploads
 
 - **Sign out** added to the admin — school admin sidebar and master admin sidebar. There was previously no way to sign out of the admin at all; only the parent portal had one

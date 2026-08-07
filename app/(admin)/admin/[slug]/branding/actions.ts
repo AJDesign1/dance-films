@@ -51,7 +51,12 @@ export async function uploadBrandingImage(
   const path = `${schoolId}/${slot}-${crypto.randomUUID()}.${ext}`;
 
   const admin = createAdminClient();
-  const { error } = await admin.storage.from("branding").upload(path, file, { contentType: file.type, upsert: true });
+  // Storage defaults to `Cache-Control: no-cache`, which made every browser
+  // re-download these on every page view. The path carries a UUID, so a new
+  // upload is a new URL and can be cached hard.
+  const { error } = await admin.storage
+    .from("branding")
+    .upload(path, file, { contentType: file.type, upsert: true, cacheControl: "31536000" });
   if (error) return { error: "Upload failed. Please try again." };
 
   const { data } = admin.storage.from("branding").getPublicUrl(path);

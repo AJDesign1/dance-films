@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import styles from "@/app/(platform)/shows/shop.module.css";
 import { formatPrice } from "@/lib/format";
 import CheckoutModal from "@/components/platform/CheckoutModal";
+import CoverImage from "@/components/platform/CoverImage";
 import type { ShopShow } from "@/components/platform/ShowCard";
 
 /** "Latest production" hero card. Owned → open show; not owned → open checkout. */
@@ -34,8 +35,8 @@ export default function FeaturedShow({ show, email }: { show: ShopShow; email: s
       >
         <div className={styles.featMinH} style={{ position: "relative", borderRadius: 16, overflow: "hidden", display: "flex", background: "var(--surface-2)", boxShadow: "var(--card-shadow)" }}>
           {show.artwork_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={show.artwork_url} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+            // Above the fold on /shows — worth prioritising over lazy-loading.
+            <CoverImage src={show.artwork_url} sizes="(max-width: 1360px) 100vw, 1280px" priority />
           ) : (
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(120deg, var(--brand-2), var(--ink))" }} />
           )}

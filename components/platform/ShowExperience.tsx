@@ -4,6 +4,7 @@ import { useMemo, useState, type CSSProperties } from "react";
 import styles from "@/app/(platform)/show/[slug]/show.module.css";
 import { getEmbedUrl, getFullShowDownloadUrl } from "@/app/(platform)/show/[slug]/embed-actions";
 import DownloadConfirmModal from "@/components/platform/DownloadConfirmModal";
+import CoverImage from "@/components/platform/CoverImage";
 
 export type PerfItem = {
   id: string; // DB uuid — safe to expose; bunny_video_id is NOT sent to the client
@@ -203,8 +204,7 @@ export default function ShowExperience({
             <div className={styles.progNum}>{pad2(performances.indexOf(p) + 1)}</div>
             <div className={styles.progThumb}>
               {p.thumbnailUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={p.thumbnailUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                <CoverImage src={p.thumbnailUrl} sizes="(max-width: 640px) 96px, 150px" />
               ) : (
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, var(--brand-2), var(--ink))" }} />
               )}

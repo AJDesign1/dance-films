@@ -5,6 +5,7 @@ import { firstName } from "@/lib/format";
 import PlatformHeader from "@/components/platform/PlatformHeader";
 import Footer from "@/components/platform/Footer";
 import FeaturedShow from "@/components/platform/FeaturedShow";
+import CoverImage from "@/components/platform/CoverImage";
 import ShowCard, { type ShopShow } from "@/components/platform/ShowCard";
 import styles from "./shop.module.css";
 
@@ -13,19 +14,22 @@ export default async function ShowsPage() {
   const school = await getCurrentSchool();
   const supabase = await createClient();
 
-  // Published shows for this school (RLS: invited + published). Ordered for display.
-  const { data: showRows } = await supabase
-    .from("shows")
-    .select("slug, title, show_year, season, price_pence, artwork_url")
-    .eq("school_id", school!.id)
-    .eq("status", "published")
-    .order("sort_order", { ascending: true });
+  // Published shows for this school (RLS: invited + published), and the user's
+  // own entitlements (RLS: own rows only). Independent of each other, so they
+  // run concurrently rather than as two sequential round trips.
+  const [{ data: showRows }, { data: entRows }] = await Promise.all([
+    supabase
+      .from("shows")
+      .select("id, slug, title, show_year, season, price_pence, artwork_url")
+      .eq("school_id", school!.id)
+      .eq("status", "published")
+      .order("sort_order", { ascending: true }),
+    supabase.from("entitlements").select("show_id"),
+  ]);
 
-  // The user's entitlements (RLS: own rows only) → owned lookup.
-  const { data: entRows } = await supabase.from("entitlements").select("show_id");
-  const { data: idRows } = await supabase.from("shows").select("id, slug").eq("school_id", school!.id);
-  const slugById = new Map((idRows ?? []).map((r) => [r.id, r.slug]));
-  const ownedSlugs = new Set((entRows ?? []).map((e) => slugById.get(e.show_id)).filter(Boolean) as string[]);
+  // Selecting `id` above removed a third query that re-read `shows` purely to
+  // map entitlement show_ids back to slugs.
+  const ownedIds = new Set((entRows ?? []).map((e) => e.show_id));
 
   const shows: ShopShow[] = (showRows ?? []).map((s) => ({
     slug: s.slug,
@@ -36,7 +40,7 @@ export default async function ShowsPage() {
     artwork_url: s.artwork_url,
     // Admin previews every show fully unlocked, regardless of entitlement —
     // RLS already allows admin to read the gated tables either way.
-    owned: ownedSlugs.has(s.slug) || profile.is_admin,
+    owned: ownedIds.has(s.id) || profile.is_admin,
   }));
 
   const featured = shows[0];
@@ -127,8 +131,7 @@ function AboutSchool({
       </div>
       {imageUrl && (
         <div className={styles.aboutPhoto}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt="" />
+          <CoverImage src={imageUrl} sizes="(max-width: 820px) 100vw, 560px" />
         </div>
       )}
     </section>
@@ -155,8 +158,7 @@ function MediaTeam({
     <section className={styles.team}>
       <div className={styles.teamPhoto}>
         {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={name ?? ""} />
+          <CoverImage src={imageUrl} alt={name ?? ""} sizes="(max-width: 640px) 100vw, 50vw" />
         ) : (
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, var(--surface-2), var(--brand-2))" }} />
         )}

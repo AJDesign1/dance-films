@@ -55,7 +55,11 @@ export async function uploadShowArtwork(schoolId: string, formData: FormData): P
   const path = `${schoolId}/${crypto.randomUUID()}.${ext}`;
 
   const admin = createAdminClient();
-  const { error } = await admin.storage.from("artwork").upload(path, file, { contentType: file.type, upsert: true });
+  // Cached hard for the same reason as branding uploads (see that action): the
+  // path is UUID-based, so replacing artwork produces a fresh URL anyway.
+  const { error } = await admin.storage
+    .from("artwork")
+    .upload(path, file, { contentType: file.type, upsert: true, cacheControl: "31536000" });
   if (error) return { error: "Upload failed. Please try again." };
 
   const { data } = admin.storage.from("artwork").getPublicUrl(path);

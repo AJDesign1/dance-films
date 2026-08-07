@@ -3,6 +3,7 @@
 import { useState, useTransition, type CSSProperties } from "react";
 import { requestMagicLink } from "@/app/(platform)/login/actions";
 import { checkAccessCode, redeemAccessCode } from "@/app/(platform)/login/access-code-actions";
+import CoverImage from "@/components/platform/CoverImage";
 import styles from "./LoginScreen.module.css";
 
 type Props = {
@@ -179,12 +180,8 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
       {/* Hero panel */}
       <div className={styles.hero}>
         {heroImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={heroImageUrl}
-            alt=""
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-          />
+          // The first thing a parent sees — prioritised, not lazy-loaded.
+          <CoverImage src={heroImageUrl} sizes="(max-width: 760px) 100vw, 50vw" priority />
         ) : (
           <div
             style={{

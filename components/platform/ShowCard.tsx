@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import styles from "@/app/(platform)/shows/shop.module.css";
 import { formatPrice } from "@/lib/format";
 import CheckoutModal from "@/components/platform/CheckoutModal";
+import CoverImage from "@/components/platform/CoverImage";
 
 export type ShopShow = {
   slug: string;
@@ -42,8 +43,7 @@ export default function ShowCard({ show, email }: { show: ShopShow; email: strin
       >
         <div style={{ position: "relative", aspectRatio: "3 / 4", borderRadius: 12, overflow: "hidden", background: "var(--surface-2)", boxShadow: "var(--card-shadow)" }}>
           {show.artwork_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={show.artwork_url} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+            <CoverImage src={show.artwork_url} sizes="(max-width: 900px) 50vw, 400px" />
           ) : (
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, var(--brand-2), var(--ink))" }} />
           )}

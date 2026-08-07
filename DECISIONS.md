@@ -202,3 +202,44 @@ trusted, because a redirect target read from a request body is an open redirect.
 It also resolves the origin from headers rather than `request.url`, the same fix
 the magic-link callbacks needed: Netlify's runtime doesn't reliably preserve the
 hostname, which would bounce a school subdomain to the apex on sign-out.
+
+## Images go through next/image, and uploads set their own cache header
+
+Two separate problems, measured on the live site rather than guessed at:
+
+1. The originals are full-resolution camera files. The About and media-team
+   photos were 1.8MB each — 2048px wide, displayed at about 550px — and the
+   media-team one was a PNG of a photograph, the worst possible format for it.
+2. Supabase Storage serves objects with `Cache-Control: no-cache` unless the
+   upload says otherwise. Every image was therefore re-downloaded on every page
+   view and every client-side navigation.
+
+`next/image` fixes both at once: the optimizer fetches each original once,
+resizes it to the size actually rendered, re-encodes to WebP, and serves the
+result from the CDN with a long-lived cache. That's why converting the markup
+mattered more than re-encoding the stored files — end users stop touching the
+originals at all. Uploads also now set a one-year `cacheControl`, which is safe
+because upload paths carry a UUID, so replacing an image produces a new URL
+rather than needing the old one invalidated.
+
+`sizes` is a required prop on the `CoverImage` wrapper rather than optional.
+Without it Next assumes `100vw`, which quietly defeats the point for a grid card
+or a 150px thumbnail — the failure is invisible in review and only shows up as
+bytes on the wire.
+
+SVG logos stay as plain `<img>`. They're 7KB, there's nothing to optimise, and
+routing them through the optimizer would mean enabling `dangerouslyAllowSVG` —
+a real security trade-off for zero gain.
+
+## Independent reads on a page run concurrently
+
+Page loads were making avoidable sequential round trips: `/show/[slug]` awaited
+the video row, the download flag, performances and categories one after another
+even though none depends on the others, and `/shows` re-read the entire `shows`
+table a second time purely to map entitlement IDs back to slugs. Selecting `id`
+in the first query deleted that second read outright; the rest became a single
+`Promise.all`.
+
+Worth stating because it's the easy thing to get wrong when adding a feature:
+a new `await` on a page is a new serial round trip unless it's deliberately
+grouped with the others.
