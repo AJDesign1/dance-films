@@ -162,7 +162,7 @@ export default function ShowExperience({
 
       {intro && <p className={styles.summary}>{intro}</p>}
 
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, margin: "52px 0 6px" }}>
+      <div className={styles.perfHead}>
         <h2 style={{ fontFamily: "var(--disp)", fontWeight: 800, fontSize: 32, letterSpacing: ".01em", textTransform: "uppercase", color: "var(--text)", margin: 0 }}>
           Performances
         </h2>

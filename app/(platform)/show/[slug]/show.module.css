@@ -39,8 +39,21 @@
 .heroPad { position: relative; padding: 50px 0; max-width: 720px; }
 .heroTitle { font-size: 96px; line-height: 0.94; }
 
-.body { max-width: 1280px; margin: 0 auto; padding: 48px 40px 48px; }
+/* Bottom padding is the space below the performance list — it's the last block
+   in here, with only the footer after it. */
+.body { max-width: 1280px; margin: 0 auto; padding: 48px 40px 92px; }
 .fullTitle { font-size: 22px; }
+
+/* "Performances" heading row. The margin lives here rather than inline so the
+   gap above the section can scale down on mobile instead of being a fixed
+   desktop-sized jump. */
+.perfHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 88px 0 6px;
+}
 
 /* Show summary — half the content width on desktop, full on mobile */
 .summary {
@@ -89,7 +102,8 @@
   .heroInner { padding: 0 18px; }
   .heroPad { padding: 26px 0; }
   .heroTitle { font-size: 52px; }
-  .body { padding: 30px 18px 40px; }
+  .body { padding: 30px 18px 60px; }
+  .perfHead { margin: 58px 0 6px; }
   .progRow { gap: 14px; padding: 16px 0; }
   .progNum { width: 38px; font-size: 30px; }
   .progThumb { width: 96px; }
