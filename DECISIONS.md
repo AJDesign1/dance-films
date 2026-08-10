@@ -243,3 +243,46 @@ in the first query deleted that second read outright; the rest became a single
 Worth stating because it's the easy thing to get wrong when adding a feature:
 a new `await` on a page is a new serial round trip unless it's deliberately
 grouped with the others.
+
+## The school pages are deliberately not CDN-cached
+
+Tempting, since every page is server-rendered on demand, but rejected:
+
+`/shows` and `/show/[slug]` render per-user state — owned vs buy, the signed-in
+name, the "Downloaded" badge. Netlify's cache key covers query and a few Next
+headers, **not** the Supabase session cookie, so a cached copy would be shared
+across users and hand one parent another's entitlement state. That's a data leak,
+not a stale-content annoyance, and no TTL makes it acceptable.
+
+`/login` is the one page with no user data in it, so caching it would be safe
+content-wise. It's still not cached, for two weaker reasons: it reads cookies to
+bounce already-signed-in visitors to `/shows`, and that redirect would stop
+working once the response is shared; and the runtime bundles routes into one
+function, so a cached `/login` defers the cold start to `/shows` rather than
+removing it.
+
+The measurement is what settled it. With DNS excluded, a request after ~25
+minutes idle was 1.2s and warm requests ~0.5s — not the 9.3s first recorded,
+which was inflated by a 3.1s local DNS lookup. If cold starts ever do become the
+dominant cost, the honest fix is keeping the function warm or moving hosting
+tier, not caching authenticated HTML.
+
+## `auth.getUser()` is a network call, so it gets cached per request
+
+Supabase's `getUser()` validates the token against the Auth server rather than
+decoding the cookie locally — that's exactly why it's the trustworthy choice over
+`getSession()`, and also why it costs a round trip. It was being paid twice per
+signed-in page load: once in middleware refreshing the session, once in the page
+via `getProfile()`.
+
+Two changes, both preserving the same trust model:
+
+1. `getUser`/`getProfile` are wrapped in React `cache()`, and `getProfile` calls
+   `getUser()` instead of re-validating the token itself. Nothing is trusted that
+   wasn't before; the same validated result is just reused within one request.
+2. Middleware skips the refresh when no `sb-*` cookie exists. Sessions live
+   entirely in cookies, so with none present there is nothing to refresh and the
+   call could only ever return null.
+
+The second one matters most for signed-out traffic — the login page every parent
+loads first now reaches Supabase for the school row only, not for auth as well.

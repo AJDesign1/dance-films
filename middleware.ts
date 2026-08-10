@@ -41,29 +41,40 @@ export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: requestHeaders } });
   const domain = sharedCookieDomain(request.headers.get("host"));
 
-  // Keep the Supabase session fresh (writes refreshed auth cookies onto the response).
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet: CookieToSet[]) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
-          response = NextResponse.next({ request: { headers: requestHeaders } });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, { ...options, domain }),
-          );
+  // Only refresh the session when there is one to refresh. Sessions live
+  // entirely in `sb-*` cookies, so a signed-out visitor has nothing to validate
+  // and auth.getUser() would be a guaranteed-null network round trip to
+  // Supabase — paid on every request, including /login, which is the first page
+  // most parents ever load.
+  const hasAuthCookie = request.cookies
+    .getAll()
+    .some((c) => c.name.startsWith("sb-"));
+
+  if (hasAuthCookie) {
+    // Keep the Supabase session fresh (writes refreshed auth cookies onto the response).
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet: CookieToSet[]) {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value),
+            );
+            response = NextResponse.next({ request: { headers: requestHeaders } });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, { ...options, domain }),
+            );
+          },
         },
       },
-    },
-  );
+    );
 
-  await supabase.auth.getUser();
+    await supabase.auth.getUser();
+  }
 
   // Clear any pre-existing host-only cookie of the same name — set before
   // cross-subdomain sharing existed — that would otherwise sit alongside the

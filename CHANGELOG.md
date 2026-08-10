@@ -128,9 +128,38 @@ of images, none of it cacheable:
 - **Supabase Storage was serving every image with `Cache-Control: no-cache`**, so browsers re-downloaded all of it on every page view and every navigation. Uploads now set a one-year cache; safe because the paths are UUID-based, so replacing an image yields a new URL. Existing files keep their old header, but end users no longer hit them directly — Next's optimizer fetches once and serves cached, resized copies
 - **Fewer database round trips.** `/shows` made three sequential queries where two sufficed — it re-read the whole `shows` table purely to map entitlement IDs back to slugs; selecting `id` in the first query removed it, and the remaining two now run concurrently. `/show/[slug]` ran four independent reads (video, download flag, performances, categories) as four sequential awaits; they now run as one `Promise.all`
 
-Not addressed, and worth knowing: every page is server-rendered on demand, so a
-first hit after idle pays a Netlify cold start — measured at 9.3s once, then
-0.8s warm. That's a hosting/caching question rather than a code one.
+### Follow-up: auth round trips, and why CDN caching was rejected
+
+Re-measured the cold start properly (DNS resolved out of the timing, after ~25
+minutes idle): **1.2s, settling to ~0.5s** — not the 9.3s recorded earlier, which
+was an outlier inflated by a 3.1s local DNS lookup. Cold starts are occasional,
+not the everyday cost, which changed what was worth doing.
+
+**Decided against CDN-caching the school pages.** `/shows` and `/show/[slug]`
+embed per-user state (owned vs buy, the signed-in name, the download badge), and
+Netlify's cache key doesn't include the session cookie — a shared cached copy
+would serve one parent's entitlement state to another. `/login` holds no user
+data and could be cached, but it reads cookies to bounce signed-in visitors to
+`/shows`, and that redirect would break. The payoff didn't justify either: the
+runtime bundles routes together, so a cached `/login` only defers the cold start
+to `/shows` rather than avoiding it.
+
+**Did cut two Supabase Auth round trips per page instead.** `auth.getUser()`
+validates the token over the network, and it was being called twice on every
+signed-in page load — once in middleware, once in the page via `getProfile()`:
+
+- `getUser`/`getProfile` are now wrapped in React `cache()`, and `getProfile`
+  goes through `getUser()` rather than re-validating the token itself, so a
+  layout and the page inside it share one call per request
+- Middleware now skips the session refresh entirely when no `sb-*` cookie is
+  present. Sessions live only in cookies, so for a signed-out visitor that call
+  was a guaranteed-null network round trip — paid on every request, including
+  `/login`, the first page most parents load
+
+Verified the security-sensitive paths still hold: magic-link sign-in still
+establishes a session, a non-owner still sees "Buy" with the performance list and
+download button absent, and the stale-cookie clearing from the earlier sign-in
+fix still fires (and still only when a stale `sb-` cookie is actually present).
 
 ## Admin sign-out, and the real cause of failing image uploads
 

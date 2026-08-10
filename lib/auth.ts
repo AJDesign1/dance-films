@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -9,23 +10,32 @@ export type Profile = {
   is_admin: boolean;
 };
 
-/** The current auth user, or null. Always use this (not getSession) for trust. */
-export async function getUser() {
+/**
+ * The current auth user, or null. Always use this (not getSession) for trust —
+ * it validates the token with Supabase rather than trusting the cookie.
+ *
+ * That validation is a network round trip, so it's wrapped in `cache()`: a
+ * layout and the page inside it (or a page and a helper) asking for the user
+ * now share one call per request instead of paying for it each time.
+ */
+export const getUser = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-}
+});
 
-/** The current user's profile row (name, is_admin, …), or null if signed out. */
-export async function getProfile(): Promise<Profile | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+/**
+ * The current user's profile row (name, is_admin, …), or null if signed out.
+ * Also request-cached, and goes through getUser() rather than re-validating the
+ * token itself, so callers that need both don't trigger two auth round trips.
+ */
+export const getProfile = cache(async (): Promise<Profile | null> => {
+  const user = await getUser();
   if (!user) return null;
 
+  const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
     .select("id, email, name, is_admin")
@@ -33,7 +43,7 @@ export async function getProfile(): Promise<Profile | null> {
     .maybeSingle();
 
   return (data as Profile | null) ?? null;
-}
+});
 
 /**
  * Gate for customer pages: must be signed in AND onboarded (name captured).
