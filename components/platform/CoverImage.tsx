@@ -20,11 +20,20 @@ export default function CoverImage({
   alt = "",
   sizes,
   priority = false,
+  position = "center",
 }: {
   src: string;
   alt?: string;
   sizes: string;
   priority?: boolean;
+  /**
+   * Which part of the image survives the crop, as a CSS object-position.
+   * Defaults to centre — only set it where the artwork has a subject that
+   * centring cuts badly. The show hero uses "left center": it's a tall box on
+   * a phone (420px high against a landscape image), so `cover` trims a lot off
+   * both sides, and show artwork tends to put its title graphic on one side.
+   */
+  position?: string;
 }) {
   return (
     <Image
@@ -33,7 +42,7 @@ export default function CoverImage({
       fill
       sizes={sizes}
       priority={priority}
-      style={{ objectFit: "cover" }}
+      style={{ objectFit: "cover", objectPosition: position }}
     />
   );
 }

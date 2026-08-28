@@ -196,7 +196,7 @@ function Hero({
     <div className={styles.hero}>
       {show.artwork_url ? (
         // Full-bleed hero, above the fold — prioritised, not lazy-loaded.
-        <CoverImage src={show.artwork_url} sizes="100vw" priority />
+        <CoverImage src={show.artwork_url} sizes="100vw" priority position="left center" />
       ) : (
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(120deg, var(--brand-2), var(--ink))" }} />
       )}
