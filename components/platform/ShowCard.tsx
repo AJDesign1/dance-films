@@ -43,7 +43,7 @@ export default function ShowCard({ show, email }: { show: ShopShow; email: strin
       >
         <div style={{ position: "relative", aspectRatio: "3 / 4", borderRadius: 12, overflow: "hidden", background: "var(--surface-2)", boxShadow: "var(--card-shadow)" }}>
           {show.artwork_url ? (
-            <CoverImage src={show.artwork_url} sizes="(max-width: 900px) 50vw, 400px" />
+            <CoverImage src={show.artwork_url} sizes="(max-width: 900px) 50vw, 400px" position="left center" />
           ) : (
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, var(--brand-2), var(--ink))" }} />
           )}

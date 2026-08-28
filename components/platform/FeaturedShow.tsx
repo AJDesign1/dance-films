@@ -36,7 +36,7 @@ export default function FeaturedShow({ show, email }: { show: ShopShow; email: s
         <div className={styles.featMinH} style={{ position: "relative", borderRadius: 16, overflow: "hidden", display: "flex", background: "var(--surface-2)", boxShadow: "var(--card-shadow)" }}>
           {show.artwork_url ? (
             // Above the fold on /shows — worth prioritising over lazy-loading.
-            <CoverImage src={show.artwork_url} sizes="(max-width: 1360px) 100vw, 1280px" priority />
+            <CoverImage src={show.artwork_url} sizes="(max-width: 1360px) 100vw, 1280px" priority position="left center" />
           ) : (
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(120deg, var(--brand-2), var(--ink))" }} />
           )}
