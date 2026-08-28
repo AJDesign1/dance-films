@@ -100,7 +100,7 @@ export default async function ShowPage({
   const [{ data: video }, { data: downloadRow }, { data: perfRows }, { data: catRows }] = await Promise.all([
     supabase
       .from("show_videos")
-      .select("full_show_bunny_video_id, duration_seconds")
+      .select("full_show_bunny_video_id, duration_seconds, full_show_thumbnail_url")
       .eq("show_id", show.id)
       .maybeSingle(),
     // Informational "Downloaded" badge — explicitly scoped to this user (not
@@ -144,7 +144,9 @@ export default async function ShowPage({
     return {
       id: p.id,
       title: p.title,
-      thumbnailUrl: p.thumbnail_url,
+      // Only whether there's a poster — the Bunny URL itself carries the
+      // video id, so it stays server-side (see /api/thumbnail).
+      hasThumbnail: !!p.thumbnail_url,
       duration: formatDuration(p.duration_seconds),
       group,
       style,
@@ -170,6 +172,7 @@ export default async function ShowPage({
         intro={show.intro_text}
         fullShowAvailable={!!video?.full_show_bunny_video_id}
         fullShowDuration={formatRuntime(video?.duration_seconds)}
+        fullShowHasThumbnail={!!video?.full_show_thumbnail_url}
         alreadyDownloaded={!!downloadRow}
         performances={performances}
         groups={groups}

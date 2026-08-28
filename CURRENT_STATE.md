@@ -11,7 +11,8 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 | Auth | ✅ Invite-only magic link (allowlist checked server-side before OTP send); name capture on first sign-in; admin flag auto-set for the configured admin email |
 | Shows shop | ✅ Unified shop, owned ("Watch") / not-owned ("Buy") from real entitlements |
 | Show page + video | ✅ Hero, gated full-show + performance library, group/style filter dropdowns, viewing overlay with prev/next |
-| Video anti-copy | ✅ Bunny Stream iframe-only embeds, embed URLs resolved on demand (never in page markup), context-menu/selection disabled. Stronger locks (Pull Zone referrer allowlisting, Token Authentication) not wired up yet — see `DECISIONS.md` |
+| Video anti-copy | ✅ Bunny Stream iframe-only embeds, embed URLs resolved on demand (never in page markup), context-menu/selection disabled. Pull Zone referrer allowlisting now on (`dancefilms.co.uk` + wildcard). Token Authentication still not wired up — see `DECISIONS.md` |
+| Video thumbnails | ✅ Poster frames on the performance grid and the full-show button. Admin pastes the Bunny thumbnail URL (Performances screen, per-dance + full-show); served via `/api/thumbnail/{kind}/{id}`, which is entitlement-gated and resizes with `sharp` — the Bunny URL contains the video id, so it never reaches the client |
 | Stripe | ✅ Hosted Checkout → webhook → entitlement, wired end-to-end. **No live/test keys added yet** — needs `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` |
 | School admin | ✅ Branding (colours/font/theme + live preview), Shows (list+editor, cover artwork upload), Performances (Bunny video IDs, bulk add, group/style tagging), Categories, Invited parents (add/CSV + per-show payment status & cash-grant access), Access codes, Users & access (grant/revoke) |
 | Image uploads | ✅ Logo (colour + white) and sign-in photo upload to Supabase Storage (`branding` bucket); show cover artwork upload (`artwork` bucket) — no more URL-only fields |
@@ -36,6 +37,6 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 
 ## Needs confirmation
 
-- Whether the leaked Supabase access token / DB password have actually been rotated yet
-- The `BUNNY_LIBRARY_ID` env var isn't set anywhere yet (local or Netlify) — no video plays until it is (fails gracefully: logs an error, shows "No video available" rather than a 500)
-- Whether Bunny's Pull Zone referrer allowlisting and/or Token Authentication will be set up (the actual security boundary for streaming and, potentially, for genuinely temporary download links — see `DECISIONS.md`)
+- Whether Bunny's Token Authentication will be set up (signed, time-limited URLs — the only option that would genuinely stop a direct file fetch; referrer allowlisting, now on, is deterrence only — see `DECISIONS.md`)
+
+Resolved since last update: `BUNNY_LIBRARY_ID` is set (local + Netlify) and video streams; Stripe keys are in Netlify (still commented out in local `.env.local`, so local checkout shows "Payments aren't configured yet"); the admin password is set; the leaked Supabase token/DB password have been rotated.

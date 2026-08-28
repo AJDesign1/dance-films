@@ -12,6 +12,7 @@ export type PerfRow = {
   id: string;
   title: string;
   bunnyVideoId: string;
+  thumbnailUrl: string;
   duration: string; // formatted
   groupId: string;
   styleId: string;
@@ -19,9 +20,9 @@ export type PerfRow = {
 type Cat = { id: string; name: string };
 
 export default function PerformancesManager({
-  slug, showId, fullBunnyVideoId, fullDuration, fullDownload, performances, groups, styles: styleCats,
+  slug, showId, fullBunnyVideoId, fullDuration, fullDownload, fullThumbnailUrl, performances, groups, styles: styleCats,
 }: {
-  slug: string; showId: string; fullBunnyVideoId: string; fullDuration: string; fullDownload: string;
+  slug: string; showId: string; fullBunnyVideoId: string; fullDuration: string; fullDownload: string; fullThumbnailUrl: string;
   performances: PerfRow[]; groups: Cat[]; styles: Cat[];
 }) {
   const router = useRouter();
@@ -56,19 +57,24 @@ export default function PerformancesManager({
           <div style={{ flex: 1, minWidth: 220 }}>
             <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Bunny video ID</label>
             <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace" }} defaultValue={fullBunnyVideoId} placeholder="e.g. 3a1f9c2e-…-guid"
-              onBlur={(e) => run(() => setFullShowVideo(showId, slug, e.target.value, fullDuration, fullDownload))} />
+              onBlur={(e) => run(() => setFullShowVideo(showId, slug, e.target.value, fullDuration, fullDownload, fullThumbnailUrl))} />
           </div>
           <div style={{ width: 150 }}>
             <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Total length</label>
             <input className={styles.input} style={{ textAlign: "center" }} defaultValue={fullDuration} placeholder="1:12:40"
-              onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullBunnyVideoId, e.target.value, fullDownload))} />
+              onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullBunnyVideoId, e.target.value, fullDownload, fullThumbnailUrl))} />
           </div>
         </div>
         <label className={styles.fieldLabel}>Download URL (full-show file — parents download their purchased show)</label>
         <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace", fontSize: 12.5 }} defaultValue={fullDownload}
           placeholder="https://…  (a Bunny Stream direct file URL, or any hosted file)"
-          onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullBunnyVideoId, fullDuration, e.target.value))} />
+          onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullBunnyVideoId, fullDuration, e.target.value, fullThumbnailUrl))} />
         <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 6 }}>Leave blank to hide the download button. The link is entitlement-gated — only owners can fetch it.</div>
+        <label className={styles.fieldLabel}>Thumbnail URL (poster shown before playback)</label>
+        <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace", fontSize: 12.5 }} defaultValue={fullThumbnailUrl}
+          placeholder="https://vz-….b-cdn.net/{video id}/thumbnail_….jpg — copy from Bunny's dashboard for this video"
+          onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullBunnyVideoId, fullDuration, fullDownload, e.target.value))} />
+        <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 6 }}>Leave blank to show a plain background instead.</div>
       </div>
 
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 11 }}>
@@ -93,9 +99,9 @@ export default function PerformancesManager({
       {msg && <div className={`${styles.msg} ${styles.msgOk}`} style={{ marginBottom: 12 }}>{msg}</div>}
 
       <div className={styles.card} style={{ overflowX: "auto" }}>
-        <div style={{ minWidth: 900 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "34px minmax(150px,1fr) 150px 150px 130px 84px 60px", gap: 10, padding: "11px 16px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--text-3)" }}>
-            <span></span><span>Title</span><span>Group</span><span>Style</span><span>Bunny ID</span><span>Length</span><span></span>
+        <div style={{ minWidth: 1050 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "34px minmax(150px,1fr) 150px 150px 130px 170px 84px 60px", gap: 10, padding: "11px 16px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--text-3)" }}>
+            <span></span><span>Title</span><span>Group</span><span>Style</span><span>Bunny ID</span><span>Thumbnail URL</span><span>Length</span><span></span>
           </div>
           {performances.length === 0 ? (
             <div style={{ padding: "40px 20px", textAlign: "center" }}>
@@ -103,7 +109,7 @@ export default function PerformancesManager({
               <p style={{ color: "var(--text-2)", fontSize: 14, margin: "8px 0 0" }}>Add them one by one, or paste a list to add several.</p>
             </div>
           ) : performances.map((p, i) => (
-            <div key={p.id} style={{ display: "grid", gridTemplateColumns: "34px minmax(150px,1fr) 150px 150px 130px 84px 60px", gap: 10, alignItems: "center", padding: "9px 16px", borderBottom: "1px solid var(--border)" }}>
+            <div key={p.id} style={{ display: "grid", gridTemplateColumns: "34px minmax(150px,1fr) 150px 150px 130px 170px 84px 60px", gap: 10, alignItems: "center", padding: "9px 16px", borderBottom: "1px solid var(--border)" }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <button className={styles.quietBtn} style={{ padding: 1, border: "none" }} disabled={pending || i === 0} onClick={() => run(() => reorderPerformance(p.id, slug, -1))}>▲</button>
                 <button className={styles.quietBtn} style={{ padding: 1, border: "none" }} disabled={pending || i === performances.length - 1} onClick={() => run(() => reorderPerformance(p.id, slug, 1))}>▼</button>
@@ -118,6 +124,7 @@ export default function PerformancesManager({
                 {styleCats.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
               <input style={mono} defaultValue={p.bunnyVideoId} placeholder="Video ID" onBlur={(e) => { if (e.target.value !== p.bunnyVideoId) run(() => updatePerformanceField(p.id, slug, "bunny_video_id", e.target.value)); }} />
+              <input style={mono} defaultValue={p.thumbnailUrl} placeholder="https://…thumbnail.jpg" onBlur={(e) => { if (e.target.value !== p.thumbnailUrl) run(() => updatePerformanceField(p.id, slug, "thumbnail_url", e.target.value)); }} />
               <input style={{ ...cell, textAlign: "center" }} defaultValue={p.duration} placeholder="—" onBlur={(e) => { if (e.target.value !== p.duration) run(() => updatePerformanceField(p.id, slug, "duration", e.target.value)); }} />
               <button className={styles.dangerBtn} disabled={pending} onClick={() => run(() => removePerformance(p.id, slug))}>Del</button>
             </div>

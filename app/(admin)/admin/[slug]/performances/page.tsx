@@ -48,8 +48,8 @@ export default async function PerformancesPage({
   const activeShow = showList.find((s) => s.id === show) ?? showList[0];
 
   const [{ data: video }, { data: perfs }, { data: cats }] = await Promise.all([
-    admin.from("show_videos").select("full_show_bunny_video_id, duration_seconds, download_url").eq("show_id", activeShow.id).maybeSingle(),
-    admin.from("performances").select("id, title, bunny_video_id, duration_seconds, sort_order").eq("show_id", activeShow.id).order("sort_order", { ascending: true }),
+    admin.from("show_videos").select("full_show_bunny_video_id, duration_seconds, download_url, full_show_thumbnail_url").eq("show_id", activeShow.id).maybeSingle(),
+    admin.from("performances").select("id, title, bunny_video_id, thumbnail_url, duration_seconds, sort_order").eq("show_id", activeShow.id).order("sort_order", { ascending: true }),
     admin.from("categories").select("id, name, kind, sort_order").eq("show_id", activeShow.id).order("sort_order", { ascending: true }),
   ]);
 
@@ -71,6 +71,7 @@ export default async function PerformancesPage({
     id: p.id,
     title: p.title,
     bunnyVideoId: p.bunny_video_id,
+    thumbnailUrl: p.thumbnail_url ?? "",
     duration: formatDuration(p.duration_seconds),
     groupId: groupByPerf.get(p.id) ?? "",
     styleId: styleByPerf.get(p.id) ?? "",
@@ -92,6 +93,7 @@ export default async function PerformancesPage({
           fullBunnyVideoId={video?.full_show_bunny_video_id ?? ""}
           fullDuration={clock(video?.duration_seconds ?? null)}
           fullDownload={video?.download_url ?? ""}
+          fullThumbnailUrl={video?.full_show_thumbnail_url ?? ""}
           performances={performances}
           groups={groups}
           styles={styleCats}

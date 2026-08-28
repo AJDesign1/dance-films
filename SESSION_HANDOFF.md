@@ -4,14 +4,16 @@ What to pick up next. Update this file at the end of each working session so the
 
 ## Immediate priorities
 
-1. **Set `BUNNY_LIBRARY_ID`** (local `.env.local` and Netlify env vars) — the video library ID from the Bunny Stream dashboard. Without it, every video click server-logs an error and gracefully shows "No video available" rather than crashing — but no video plays anywhere until it's set. This is new since the Vimeo → Bunny Stream switch (see `DECISIONS.md`).
-2. **Set the admin password.** `/admin/login` (password sign-in) is built, but the
-   admin account has no password yet — set one in **Supabase Dashboard →
-   Authentication → Users → [the admin user] → Reset/set password**. Until then,
-   sign in via the magic-link fallback at `/login` on the apex domain.
-3. **Rotate the leaked Supabase credentials.** A personal access token and DB password were briefly committed to git history and have been scrubbed, but should be treated as compromised: revoke/regenerate the access token in the Supabase dashboard, and reset the database password. — `Needs confirmation`: whether this has been done yet.
-4. **Add Stripe keys** (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`) so the checkout → webhook → entitlement flow can be tested with real (test-mode) payments.
-5. **Load real Liberty content**: actual shows, performances (with real Bunny video IDs), categories, and the real parent email list, via the school admin (`/admin/liberty`). The current DB rows are demo seed data.
+**Done since the last session** (all five previous priorities): `BUNNY_LIBRARY_ID`
+is set locally and on Netlify and video streams; the admin password is set;
+the leaked Supabase credentials have been rotated; Stripe keys are in Netlify.
+Note Stripe is *not* in local `.env.local` (still commented out), so local
+checkout shows "Payments aren't configured yet" — add test-mode keys there if
+you want to exercise checkout on localhost.
+
+1. **Load real Liberty content**: actual shows, performances (with real Bunny video IDs), categories, and the real parent email list, via the school admin (`/admin/liberty`). The current DB rows are demo seed data. Now also worth pasting each video's **thumbnail URL** while you're in there — the poster frames are a per-video copy/paste from Bunny's dashboard (see below).
+2. **Paste thumbnail URLs as content is loaded.** Each performance and the full-show video has a "Thumbnail URL" field on `/admin/{slug}/performances`. Get it from Bunny → the video → its thumbnail; the shape is `https://vz-….b-cdn.net/{video id}/thumbnail_….jpg`. Blank is fine — the tile falls back to the old gradient. There's no way to derive these automatically: the filename is per-video and the pull-zone hostname isn't derivable from the library id.
+3. **Decide on Bunny Token Authentication.** Referrer allowlisting is now on, but it's deterrence only — a spoofed `Referer` still fetches the MP4, and always could (Bunny accepts its own player domain). Token Authentication is the only setting that would actually close that, and it's a real feature to build (signing key + server-side signing), not a toggle. See `DECISIONS.md`.
 
 **Heads up on email sending**: while testing the access-code flow today, a `signInWithOtp` call failed with `AuthRetryableFetchError` (HTTP 500) after several magic-link sends in quick succession — almost certainly a rate limit (either Resend's or Supabase Auth's own OTP-request throttle), not a code defect; an identical call had just succeeded moments before. Worth keeping in mind if testing hits an unexplained "Something went wrong" on the login screen — try again after a short pause before assuming it's a bug.
 
@@ -79,6 +81,22 @@ browser session end-to-end.
 **Bunny Stream switch + artwork upload** — verified by typecheck, production build, and visual checks of the admin UI (field labels, upload control) via a temporary preview route (removed before committing) — same auth limitation as above, no real admin session available. **Not verified**: an actual file upload writing to the new `artwork` bucket, and an actual video embed rendering (needs `BUNNY_LIBRARY_ID` set — see Immediate priorities — plus a real Bunny video ID pasted into a performance). Worth checking both once signed in: upload a show's cover artwork and confirm it appears on the shop card, and paste a real Bunny video ID into a performance and confirm it plays.
 
 **Access codes** — the customer-facing redemption flow *was* verified live end-to-end against the real dev database: an invalid code is correctly rejected, a valid code (`TESTCODE`, inserted directly and removed afterward) correctly advances to the email step, and submitting an email correctly inserts an `invited_emails` row **even for an email with no prior invite** — the core requirement. The magic-link send itself hit the rate limit mentioned above partway through testing; the call is otherwise identical to the already-proven `requestMagicLink` path. **Not verified**: the admin CRUD actions (create/regenerate/disable/change show) against a real DB with a real admin session — checked visually only via a temporary preview with dummy data — and the "code tied to a specific show redirects there after sign-in" behaviour, which was reasoned through but never actually observed end-to-end.
+
+## Video thumbnails — what was verified
+
+Verified live against the real dev DB, signed in as admin: the admin field
+saves, the proxy route returns the image (200, WebP, ~79KB from a 6MB source),
+the rendered `<img>` decodes to real content at 1600×897, an unauthenticated
+request gets 404, and the `bunny_video_id` appears nowhere in the page markup.
+Typecheck and production build both clean.
+
+**Not verified**: the per-performance thumbnails (only the full-show one had a
+URL to test with — the code path is identical, but no dance had a real
+thumbnail URL pasted yet), and anything on the deployed site. Netlify needs no
+new env var for this, but the first real check should be that `sharp` resolves
+in the Netlify build — it's now an explicit dependency rather than the
+transitive one Next was providing, which is the safer arrangement but a change
+worth watching on the first deploy.
 
 ## Where things stand technically
 

@@ -20,7 +20,7 @@ function rev(slug: string) {
   revalidatePath(`/admin/${slug}/performances`);
 }
 
-export async function setFullShowVideo(showId: string, slug: string, bunnyVideoId: string, duration: string, downloadUrl: string): Promise<ActionResult> {
+export async function setFullShowVideo(showId: string, slug: string, bunnyVideoId: string, duration: string, downloadUrl: string, thumbnailUrl: string): Promise<ActionResult> {
   await requireAdmin();
   const admin = createAdminClient();
   const { error } = await admin
@@ -31,6 +31,7 @@ export async function setFullShowVideo(showId: string, slug: string, bunnyVideoI
         full_show_bunny_video_id: bunnyVideoId.trim() || null,
         duration_seconds: parseDuration(duration),
         download_url: downloadUrl.trim() || null,
+        full_show_thumbnail_url: thumbnailUrl.trim() || null,
       },
       { onConflict: "show_id" },
     );
@@ -50,7 +51,7 @@ export async function addPerformance(showId: string, slug: string): Promise<Acti
   return { ok: true };
 }
 
-export async function updatePerformanceField(id: string, slug: string, field: "title" | "bunny_video_id" | "duration", value: string): Promise<ActionResult> {
+export async function updatePerformanceField(id: string, slug: string, field: "title" | "bunny_video_id" | "duration" | "thumbnail_url", value: string): Promise<ActionResult> {
   await requireAdmin();
   const admin = createAdminClient();
   const patch = field === "duration" ? { duration_seconds: parseDuration(value) } : { [field]: value.trim() };

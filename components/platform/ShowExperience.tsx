@@ -4,12 +4,11 @@ import { useMemo, useState, type CSSProperties } from "react";
 import styles from "@/app/(platform)/show/[slug]/show.module.css";
 import { getEmbedUrl, getFullShowDownloadUrl } from "@/app/(platform)/show/[slug]/embed-actions";
 import DownloadConfirmModal from "@/components/platform/DownloadConfirmModal";
-import CoverImage from "@/components/platform/CoverImage";
 
 export type PerfItem = {
   id: string; // DB uuid — safe to expose; bunny_video_id is NOT sent to the client
   title: string;
-  thumbnailUrl: string | null;
+  hasThumbnail: boolean;
   duration: string;
   group: string | null;
   style: string | null;
@@ -22,6 +21,7 @@ type Props = {
   intro: string | null;
   fullShowAvailable: boolean;
   fullShowDuration: string;
+  fullShowHasThumbnail: boolean;
   alreadyDownloaded: boolean;
   performances: PerfItem[];
   groups: string[];
@@ -40,6 +40,7 @@ export default function ShowExperience({
   intro,
   fullShowAvailable,
   fullShowDuration,
+  fullShowHasThumbnail,
   alreadyDownloaded,
   performances,
   groups,
@@ -117,7 +118,11 @@ export default function ShowExperience({
         onClick={() => fullShowAvailable && play({ type: "full" })}
         style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", borderRadius: "var(--r-lg)", overflow: "hidden", background: "#0a1119", boxShadow: "var(--card-shadow)", border: "none", cursor: fullShowAvailable ? "pointer" : "default", padding: 0 }}
       >
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, var(--brand-2), var(--ink))" }} />
+        {fullShowHasThumbnail ? (
+          <Poster src={`/api/thumbnail/show/${showId}`} />
+        ) : (
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, var(--brand-2), var(--ink))" }} />
+        )}
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(10,17,25,.2),rgba(10,17,25,.6))", pointerEvents: "none" }} />
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
           <div style={{ width: 74, height: 74, borderRadius: "var(--r-pill)", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 12px 30px rgba(0,0,0,.35)" }}>
@@ -203,8 +208,8 @@ export default function ShowExperience({
           <button key={p.id} className={styles.progRow} onClick={() => play({ type: "perf", id: p.id })}>
             <div className={styles.progNum}>{pad2(performances.indexOf(p) + 1)}</div>
             <div className={styles.progThumb}>
-              {p.thumbnailUrl ? (
-                <CoverImage src={p.thumbnailUrl} sizes="(max-width: 640px) 96px, 150px" />
+              {p.hasThumbnail ? (
+                <Poster src={`/api/thumbnail/perf/${p.id}`} />
               ) : (
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, var(--brand-2), var(--ink))" }} />
               )}
@@ -301,6 +306,26 @@ export default function ShowExperience({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * A video poster frame, served by our own entitlement-gated proxy rather than
+ * fetched from Bunny by the browser (see /api/thumbnail). Deliberately a plain
+ * <img>, not the `CoverImage`/next-image wrapper the school's own photos use:
+ * the optimiser fetches server-side without the caller's session cookie, so it
+ * can't read a gated route. Bunny's poster frames are modest JPEGs, so this
+ * costs bytes on the small grid thumbnails but nothing that shows.
+ */
+function Poster({ src }: { src: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+    />
   );
 }
 

@@ -24,6 +24,37 @@ import "server-only";
  *  - preload=true     → start buffering as soon as the iframe mounts
  *  - responsive=true  → player fills its container (we size the container)
  */
+/**
+ * Fetch a Bunny-hosted still image (a video's poster frame) server-side.
+ *
+ * Two reasons this goes through us rather than the browser hitting Bunny
+ * directly:
+ *  - Bunny's Pull Zone has "Block direct url file access" on with an allowed-
+ *    referrer list, so a request with no `Referer` (which is what any
+ *    server-side fetch sends, including next/image's optimiser) gets a 403.
+ *    We set the header explicitly here.
+ *  - A Bunny thumbnail URL contains the `bunny_video_id`. Proxying keeps it
+ *    off the page entirely, per the anti-copy rule in AI_INSTRUCTIONS.md.
+ *
+ * The URL is admin-pasted, and this fetch runs on our server, so the host is
+ * checked rather than trusted — an arbitrary pasted URL must not become a
+ * server-side request to somewhere else.
+ */
+export async function fetchBunnyImage(rawUrl: string): Promise<Response | null> {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:") return null;
+  if (url.hostname !== "b-cdn.net" && !url.hostname.endsWith(".b-cdn.net")) return null;
+
+  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "dancefilms.co.uk";
+  const res = await fetch(url, { headers: { Referer: `https://${root}/` } });
+  return res.ok ? res : null;
+}
+
 export function bunnyEmbedUrl(videoId: string, opts?: { autoplay?: boolean }): string | null {
   const libraryId = process.env.BUNNY_LIBRARY_ID;
   if (!libraryId) {

@@ -244,6 +244,60 @@ Worth stating because it's the easy thing to get wrong when adding a feature:
 a new `await` on a page is a new serial round trip unless it's deliberately
 grouped with the others.
 
+## Video poster frames are proxied, not linked
+
+Performances and the full-show button now show the video's own still frame
+instead of a flat gradient. Bunny generates one per video automatically; the
+work was all on our side, and it landed as a route (`/api/thumbnail/{kind}/{id}`)
+rather than an `<img src="…b-cdn.net…">` for one reason that only became
+obvious on inspection: **a Bunny thumbnail URL contains the `bunny_video_id`**.
+Rendering it directly would have published that id into the markup of every
+show page — precisely what the anti-copy rule in `AI_INSTRUCTIONS.md` forbids,
+and not fixed by `next/image` either, since that puts the same URL in a query
+parameter. The proxy keeps the id server-side; the client only ever sees a row
+id it already has.
+
+The route re-checks entitlement the same way `getEmbedUrl` does (the select
+runs as the caller under RLS, so a guessed id returns nothing), and its
+`Cache-Control` is `private` — these responses are per-user gated, so a shared
+CDN must never hold one and hand it to somebody who doesn't own the show.
+
+Two things had to be true for this to work at all:
+
+- **The URL is admin-pasted, not derived.** `https://{pull-zone}.b-cdn.net/{videoId}/{file}.jpg`
+  needs a pull-zone hostname and a per-video thumbnail filename, neither of
+  which follows from the library id. So it's a field on the Performances screen
+  (and a new `show_videos.full_show_thumbnail_url` column), copied from Bunny's
+  dashboard — same shape as `download_url`. `performances.thumbnail_url` already
+  existed from the pre-Bunny schema and had simply never been reachable: it was
+  read and rendered, but no admin UI ever set it.
+- **Bunny's Pull Zone had to allow us as a referrer.** "Block direct url file
+  access" was on with an empty allowed-domains list, which 403s everything
+  including thumbnails. `dancefilms.co.uk` and `*.dancefilms.co.uk` are now on
+  the allowed list, and the route sends a matching `Referer` header — necessary
+  because *any* server-side fetch sends none, which is exactly why `next/image`
+  could not have loaded these even setting the id leak aside.
+
+**What that allowlist does and does not buy.** Measured, not assumed: with no
+referrer the MP4 is 403; with `dancefilms.co.uk` it is downloadable; and with
+`iframe.mediadelivery.net` it was *already* downloadable before any of this,
+because Bunny accepts its own player domain. So referrer allowlisting is
+hotlink deterrence, not access control, and adding our domain opened nothing
+that a spoofed header couldn't already reach. The real boundary remains the one
+that was always doing the work: a non-entitled user never obtains the video id,
+so there is nothing for them to request. Consistent with "a deterrent, not DRM"
+above — Token Authentication is still the only thing that would change that,
+and is still not wired up.
+
+Sizing is done in the route with `sharp`, which is why it's now an explicit
+dependency rather than the transitive one Next was already pulling in. Bunny
+returns the frame at capture resolution — the first real upload was 3818px wide
+and **6MB** — and Bunny Optimizer (edge `?width=`) is not enabled on this
+account, so the params are ignored. Resizing to the width each surface actually
+renders, as WebP, takes that to ~79KB. Without it this feature would have
+re-introduced, on the one page parents spend their time, exactly the problem
+"Images go through next/image" above was written to solve.
+
 ## The school pages are deliberately not CDN-cached
 
 Tempting, since every page is server-rendered on demand, but rejected:
