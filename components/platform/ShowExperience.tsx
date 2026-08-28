@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import styles from "@/app/(platform)/show/[slug]/show.module.css";
-import { getEmbedUrl, getFullShowDownloadUrl } from "@/app/(platform)/show/[slug]/embed-actions";
+import { getEmbedUrl, getFullShowDownloadUrl, type PlaybackSource } from "@/app/(platform)/show/[slug]/embed-actions";
 import DownloadConfirmModal from "@/components/platform/DownloadConfirmModal";
 
 export type PerfItem = {
@@ -33,6 +33,51 @@ type Viewing = { type: "full" } | { type: "perf"; id: string } | null;
 const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
 const noContextMenu = (e: React.MouseEvent) => e.preventDefault();
 
+/* ---------------------------------------------------------------------------
+ * Bunny playback control (player.js)
+ *
+ * Most dances are a section of the show's single recording rather than their
+ * own upload, so the player has to seek to the dance and stop at its end.
+ * Bunny's embed speaks the player.js protocol over postMessage; the library is
+ * loaded from Bunny's own CDN, and only when a dance that actually needs it is
+ * played — a standalone video never fetches it.
+ * ------------------------------------------------------------------------ */
+
+type PlayerJsPlayer = {
+  on: (event: string, cb: (data?: { seconds?: number; duration?: number }) => void) => void;
+  setCurrentTime: (seconds: number) => void;
+  play: () => void;
+  pause: () => void;
+};
+type PlayerJsLib = { Player: new (el: HTMLIFrameElement) => PlayerJsPlayer };
+
+declare global {
+  interface Window {
+    playerjs?: PlayerJsLib;
+  }
+}
+
+const PLAYERJS_SRC = "https://assets.mediadelivery.net/playerjs/playerjs-latest.min.js";
+
+function loadPlayerJs(): Promise<PlayerJsLib | null> {
+  if (typeof window === "undefined") return Promise.resolve(null);
+  if (window.playerjs) return Promise.resolve(window.playerjs);
+  return new Promise((resolve) => {
+    let el = document.querySelector<HTMLScriptElement>("script[data-playerjs]");
+    if (!el) {
+      el = document.createElement("script");
+      el.src = PLAYERJS_SRC;
+      el.async = true;
+      el.dataset.playerjs = "true";
+      document.head.appendChild(el);
+    }
+    el.addEventListener("load", () => resolve(window.playerjs ?? null), { once: true });
+    // A failed script shouldn't break playback — the video still plays, it
+    // just starts at the top of the show and doesn't stop itself.
+    el.addEventListener("error", () => resolve(null), { once: true });
+  });
+}
+
 export default function ShowExperience({
   showTitle,
   showYear,
@@ -51,8 +96,9 @@ export default function ShowExperience({
     style: null,
   });
   const [viewing, setViewing] = useState<Viewing>(null);
-  const [embedUrl, setEmbedUrl] = useState<string | null>(null);
+  const [source, setSource] = useState<PlaybackSource | null>(null);
   const [loading, setLoading] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [confirmingDownload, setConfirmingDownload] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadMsg, setDownloadMsg] = useState<string | null>(null);
@@ -74,13 +120,63 @@ export default function ShowExperience({
 
   async function play(v: Viewing) {
     setViewing(v);
-    setEmbedUrl(null);
+    setSource(null);
     if (!v) return;
     setLoading(true);
-    const url = v.type === "full" ? await getEmbedUrl("full", showId) : await getEmbedUrl("perf", v.id);
-    setEmbedUrl(url);
+    const next = v.type === "full" ? await getEmbedUrl("full", showId) : await getEmbedUrl("perf", v.id);
+    setSource(next);
     setLoading(false);
   }
+
+  /**
+   * Make a section of the show recording behave like its own video: seek to
+   * the dance when the player is ready, and pause at its end rather than
+   * running on into the next dance.
+   *
+   * Only runs for a dance that actually has timestamps — the full show, and
+   * any dance with its own uploaded video, come back with null start/end and
+   * play untouched.
+   */
+  useEffect(() => {
+    const start = source?.startSeconds ?? null;
+    const end = source?.endSeconds ?? null;
+    if (!source || (start === null && end === null)) return;
+
+    let cancelled = false;
+    let atEnd = false;
+
+    void (async () => {
+      const lib = await loadPlayerJs();
+      const iframe = iframeRef.current;
+      if (cancelled || !lib || !iframe) return;
+
+      const player = new lib.Player(iframe);
+      player.on("ready", () => {
+        if (cancelled) return;
+        if (start !== null) player.setCurrentTime(start);
+
+        player.on("timeupdate", (d) => {
+          if (cancelled || end === null || atEnd) return;
+          if ((d?.seconds ?? 0) >= end) {
+            atEnd = true;
+            player.pause();
+          }
+        });
+
+        // Pressing play again after we stopped should replay this dance, not
+        // spill into the next one.
+        player.on("play", () => {
+          if (cancelled || !atEnd) return;
+          atEnd = false;
+          if (start !== null) player.setCurrentTime(start);
+        });
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [source]);
 
   const step = (d: number) => {
     const n = perfIndex + d;
@@ -89,7 +185,7 @@ export default function ShowExperience({
 
   const close = () => {
     setViewing(null);
-    setEmbedUrl(null);
+    setSource(null);
   };
 
   // Owner-only download, resolved on demand (URL never in page markup).
@@ -254,9 +350,13 @@ export default function ShowExperience({
               <div className={styles.player} onContextMenu={noContextMenu}>
                 {loading ? (
                   <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#8aa0b3", fontSize: 13 }}>Loading…</div>
-                ) : embedUrl ? (
+                ) : source ? (
                   <iframe
-                    src={embedUrl}
+                    // Remount when the source changes so prev/next between
+                    // dances re-runs the seek rather than reusing the player.
+                    key={source.url}
+                    ref={iframeRef}
+                    src={source.url}
                     allow="autoplay; fullscreen; picture-in-picture"
                     allowFullScreen
                     title={viewing.type === "full" ? `${showTitle} — full show` : curPerf?.title ?? "Performance"}

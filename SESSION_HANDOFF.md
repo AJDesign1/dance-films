@@ -30,6 +30,13 @@ you want to exercise checkout on localhost.
 
 ## Known non-blocking gaps
 
+- **`BUNNY_LIBRARY_ID` went missing from local `.env.local` once**, mid-session,
+  after having been added earlier — the file was back to its exact previous
+  contents (it's gitignored, so not a git operation). Symptom is every video
+  showing "No video available" locally while production is fine, with
+  `BUNNY_LIBRARY_ID is not set` in the dev-server log. Check that first before
+  debugging the player.
+
 - No per-dance download (full-show only, by design — see `DECISIONS.md`)
 - Marketing site / blog / SEO CMS: intentionally not built (V1 scope)
 - No automated test suite exists yet (manual verification only, throughout the build)
@@ -81,6 +88,29 @@ browser session end-to-end.
 **Bunny Stream switch + artwork upload** — verified by typecheck, production build, and visual checks of the admin UI (field labels, upload control) via a temporary preview route (removed before committing) — same auth limitation as above, no real admin session available. **Not verified**: an actual file upload writing to the new `artwork` bucket, and an actual video embed rendering (needs `BUNNY_LIBRARY_ID` set — see Immediate priorities — plus a real Bunny video ID pasted into a performance). Worth checking both once signed in: upload a show's cover artwork and confirm it appears on the shop card, and paste a real Bunny video ID into a performance and confirm it plays.
 
 **Access codes** — the customer-facing redemption flow *was* verified live end-to-end against the real dev database: an invalid code is correctly rejected, a valid code (`TESTCODE`, inserted directly and removed afterward) correctly advances to the email step, and submitting an email correctly inserts an `invited_emails` row **even for an email with no prior invite** — the core requirement. The magic-link send itself hit the rate limit mentioned above partway through testing; the call is otherwise identical to the already-proven `requestMagicLink` path. **Not verified**: the admin CRUD actions (create/regenerate/disable/change show) against a real DB with a real admin session — checked visually only via a temporary preview with dummy data — and the "code tied to a specific show redirects there after sign-in" behaviour, which was reasoned through but never actually observed end-to-end.
+
+## Dance clips — what was verified
+
+Verified live against the real dev DB, signed in as admin: the migration
+backfills correctly (5 dances with their own Bunny id → `standalone`, 2 empty
+ones → `show`); the admin row swaps between a Bunny ID field and Start/End
+fields with the source dropdown; `12:45`/`15:20` saves as 765/920 seconds with
+the length derived to 2:35; an end before the start is rejected with an error
+and not written; and opening a chapter dance resolves the **show's** video with
+`t=765`, loads player.js, and still puts no video id in the markup before the
+click. Typecheck and production build clean.
+
+**Not verified — needs a human with a real browser**: that playback actually
+seeks to the start and pauses at the end. The preview browser wouldn't start
+playback (a scripted click doesn't satisfy the autoplay policy, and the pane's
+renderer was failing), so the seek/stop path is the one thing exercised only by
+reading the code. It's a few minutes' work to confirm: open a dance set to
+"Show video" with start/end filled in, and check it starts in the right place
+and stops rather than running into the next dance.
+
+Also unverified: per-dance thumbnail **upload** (the control renders and the
+action mirrors the proven `uploadShowArtwork` path, but no file was actually
+pushed to the `artwork` bucket through it).
 
 ## Video thumbnails — what was verified
 

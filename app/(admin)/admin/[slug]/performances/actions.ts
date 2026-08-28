@@ -3,18 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { parseClock } from "@/lib/format";
+import { MAX_IMAGE_BYTES, tooLargeMessage } from "@/lib/uploads";
 
 export type ActionResult = { ok: true; message?: string } | { error: string };
+export type UploadResult = { url: string } | { error: string };
 type Kind = "group" | "style";
+type VideoSource = "show" | "standalone";
 
-/** "4:12" → 252, "1:12:40" → 4360, "" → null. */
-function parseDuration(s: string): number | null {
-  const t = s.trim();
-  if (!t) return null;
-  const parts = t.split(":").map((x) => parseInt(x, 10));
-  if (parts.some((n) => !Number.isFinite(n))) return null;
-  return parts.reduce((acc, n) => acc * 60 + n, 0);
-}
+// Was a local copy; the same "1:12:40" parsing is now needed for clip start/end
+// times too, so it lives in lib/format alongside the formatter that writes it.
+const parseDuration = parseClock;
 
 function rev(slug: string) {
   revalidatePath(`/admin/${slug}/performances`);
@@ -59,6 +58,80 @@ export async function updatePerformanceField(id: string, slug: string, field: "t
   if (error) return { error: "Couldn't save." };
   rev(slug);
   return { ok: true };
+}
+
+/**
+ * Switch a dance between playing a slice of the show video and playing its own
+ * upload. Only the flag changes — the other source's data is left in place, so
+ * flipping back and forth doesn't destroy a Bunny id or a pair of timestamps
+ * the admin might still want.
+ */
+export async function setPerformanceVideoSource(id: string, slug: string, source: VideoSource): Promise<ActionResult> {
+  await requireAdmin();
+  const admin = createAdminClient();
+  const { error } = await admin.from("performances").update({ video_source: source }).eq("id", id);
+  if (error) return { error: "Couldn't change the video source." };
+  rev(slug);
+  return { ok: true };
+}
+
+/**
+ * Start/end of a dance within the show recording, entered as "12:45" or
+ * "1:12:30". Saved together because they're validated against each other: the
+ * DB has a check constraint requiring end > start, so writing one at a time
+ * could otherwise be rejected purely because of the value already in the other
+ * column. Blank clears (null) — a dance with no end simply plays on.
+ */
+export async function setPerformanceClip(id: string, slug: string, startInput: string, endInput: string): Promise<ActionResult> {
+  await requireAdmin();
+  const start = parseDuration(startInput);
+  const end = parseDuration(endInput);
+  if (startInput.trim() && start === null) return { error: "Start time should look like 12:45 or 1:12:30." };
+  if (endInput.trim() && end === null) return { error: "End time should look like 12:45 or 1:12:30." };
+  if (start !== null && end !== null && end <= start) return { error: "The end time must be after the start time." };
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("performances")
+    .update({
+      clip_start_seconds: start,
+      clip_end_seconds: end,
+      // Length is derived for clips rather than typed twice — it can't drift
+      // out of step with the timestamps that actually control playback.
+      duration_seconds: start !== null && end !== null ? end - start : null,
+    })
+    .eq("id", id);
+  if (error) return { error: "Couldn't save those times." };
+  rev(slug);
+  return { ok: true };
+}
+
+/**
+ * Per-dance poster image, uploaded rather than pasted as a URL.
+ *
+ * A dance playing a slice of the show video has no Bunny thumbnail to copy —
+ * Bunny generates poster frames per video, not per timestamp — so there is no
+ * URL to paste for the majority case. Uploads also match how branding and show
+ * artwork already work (see DECISIONS.md); the URL field was the stopgap.
+ */
+export async function uploadPerformanceThumbnail(schoolId: string, formData: FormData): Promise<UploadResult> {
+  await requireAdmin();
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { error: "No file selected." };
+  if (!file.type.startsWith("image/")) return { error: "Please choose an image file." };
+  if (file.size > MAX_IMAGE_BYTES) return { error: tooLargeMessage(MAX_IMAGE_BYTES) };
+
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const path = `${schoolId}/${crypto.randomUUID()}.${ext}`;
+
+  const admin = createAdminClient();
+  const { error } = await admin.storage
+    .from("artwork")
+    .upload(path, file, { contentType: file.type, upsert: true, cacheControl: "31536000" });
+  if (error) return { error: "Upload failed. Please try again." };
+
+  const { data } = admin.storage.from("artwork").getPublicUrl(path);
+  return { url: data.publicUrl };
 }
 
 export async function setPerformanceCategory(perfId: string, slug: string, kind: Kind, categoryId: string): Promise<ActionResult> {
@@ -118,7 +191,16 @@ export async function bulkAddPerformances(showId: string, slug: string, text: st
     const [title, group, bunnyVideoId, dur] = line.split("|").map((x) => (x ?? "").trim());
     const { data: perf, error } = await admin
       .from("performances")
-      .insert({ show_id: showId, title: title || "Untitled", bunny_video_id: bunnyVideoId || "", duration_seconds: parseDuration(dur || ""), sort_order: order++ })
+      .insert({
+        show_id: showId,
+        title: title || "Untitled",
+        bunny_video_id: bunnyVideoId || "",
+        // A pasted line that names its own video means it, so don't let the
+        // column default ('show') quietly point it at the full show instead.
+        video_source: bunnyVideoId ? "standalone" : "show",
+        duration_seconds: parseDuration(dur || ""),
+        sort_order: order++,
+      })
       .select("id")
       .single();
     if (error || !perf) continue;

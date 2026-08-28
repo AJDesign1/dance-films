@@ -55,7 +55,7 @@ export async function fetchBunnyImage(rawUrl: string): Promise<Response | null> 
   return res.ok ? res : null;
 }
 
-export function bunnyEmbedUrl(videoId: string, opts?: { autoplay?: boolean }): string | null {
+export function bunnyEmbedUrl(videoId: string, opts?: { autoplay?: boolean; startSeconds?: number | null }): string | null {
   const libraryId = process.env.BUNNY_LIBRARY_ID;
   if (!libraryId) {
     // Logged, not thrown: callers already treat "no embed URL" as a normal
@@ -72,5 +72,14 @@ export function bunnyEmbedUrl(videoId: string, opts?: { autoplay?: boolean }): s
     preload: "true",
     responsive: "true",
   });
+  // Belt and braces for a dance that starts partway into the show recording:
+  // the authoritative seek is player.js setCurrentTime() once the player is
+  // ready (see ShowExperience), but starting the load at roughly the right
+  // place avoids a visible flash of the show's opening frame. `t` is what
+  // Bunny's own share links use; it isn't in the embed-parameter docs, so
+  // treat it as a hint that may be ignored rather than the mechanism.
+  if (opts?.startSeconds && opts.startSeconds > 0) {
+    params.set("t", String(Math.floor(opts.startSeconds)));
+  }
   return `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}?${params.toString()}`;
 }

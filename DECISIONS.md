@@ -244,6 +244,60 @@ Worth stating because it's the easy thing to get wrong when adding a feature:
 a new `await` on a page is a new serial round trip unless it's deliberately
 grouped with the others.
 
+## A dance can be a section of the show recording
+
+One full-show upload plus a start and an end timestamp now stands in for a
+separately uploaded video per dance (`performances.video_source = 'show'`).
+Standalone uploads remain a first-class option, unchanged, for any dance that
+genuinely needs its own file.
+
+The motivation is **workflow, not storage**. Storage was the stated reason, but
+the numbers don't support it: the first real show is 26GB, so uploading the
+dances separately costs roughly another 26GB — pennies a month. What it
+actually saves is exporting, uploading and encoding thirty clips per show, and
+it turns a mis-trimmed dance into an edit of two numbers rather than a re-export.
+Worth recording because the cheap-storage argument will look like the reason
+later, and it isn't one.
+
+Schema is deliberately additive: `video_source` (enum), `clip_start_seconds`,
+`clip_end_seconds`. `bunny_video_id` is untouched — still `not null` with `''`
+meaning "none" — so nothing had to be made nullable or rewritten. The migration
+backfills every dance that already has its own video to `'standalone'` while the
+column *default* is `'show'`, which is what lets existing content keep playing
+exactly as before while new dances get the preferred behaviour. Bulk-add applies
+the same rule per line: a pasted Bunny id means standalone.
+
+Playback uses Bunny's player.js API over postMessage: seek to the start when the
+player reports ready, and pause when `timeupdate` passes the end. The library is
+fetched from Bunny's CDN, lazily, only when a dance that needs it is opened — a
+standalone video never loads it, and if the script fails the video still plays,
+it just starts at the top of the show and doesn't stop itself. The embed URL also
+carries `t=<start>`; that's a hint to reduce the flash of the show's opening
+frame, not the mechanism (it isn't in Bunny's documented embed parameters).
+
+Three consequences worth stating plainly:
+
+- **The end time is presentation, not access control.** The underlying asset is
+  the whole show, so a viewer can scrub past the end or watch the lot. Fine for
+  making a dance feel like its own video; it means individual dances could never
+  be sold or gated separately under this model. Standalone uploads are the only
+  way to get that.
+- **The scrubber shows the whole show.** A two-minute dance inside a 1:12:40
+  recording gets a 1:12:40 timeline. Bunny's iframe player doesn't expose enough
+  to reshape it, and building custom controls over it would be a much larger
+  change than this one.
+- **Chapters have no automatic poster frame.** Bunny generates thumbnails per
+  video, not per timestamp, so there is no URL to paste for a clip. That's why
+  per-dance thumbnails became a real upload (`artwork` bucket, same plumbing as
+  show artwork) rather than the URL field added a day earlier — consistent with
+  "Branding images are Storage uploads, not URL fields" below.
+
+Length is derived (`end − start`) for clips rather than typed, so it can't drift
+out of step with the timestamps that actually drive playback; standalone dances
+keep the manual field. Start and end save together because the DB check
+constraint compares them — writing one at a time could be rejected purely
+because of the value already sitting in the other column.
+
 ## Video poster frames are proxied, not linked
 
 Performances and the full-show button now show the video's own still frame

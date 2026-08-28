@@ -1,20 +1,10 @@
 import { getManagedSchool } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatDuration } from "@/lib/format";
+import { formatDuration, formatClock } from "@/lib/format";
 import AdminHeader from "@/components/admin/AdminHeader";
 import ShowSelect from "@/components/admin/ShowSelect";
 import PerformancesManager, { type PerfRow } from "@/components/admin/PerformancesManager";
 import styles from "../admin.module.css";
-
-/** Seconds → "1:12:40" or "58:20" (editable clock for the full-show field). */
-function clock(seconds: number | null): string {
-  if (!seconds || seconds <= 0) return "";
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  const mm = h > 0 ? String(m).padStart(2, "0") : String(m);
-  return `${h > 0 ? `${h}:` : ""}${mm}:${String(s).padStart(2, "0")}`;
-}
 
 export default async function PerformancesPage({
   params,
@@ -49,7 +39,7 @@ export default async function PerformancesPage({
 
   const [{ data: video }, { data: perfs }, { data: cats }] = await Promise.all([
     admin.from("show_videos").select("full_show_bunny_video_id, duration_seconds, download_url, full_show_thumbnail_url").eq("show_id", activeShow.id).maybeSingle(),
-    admin.from("performances").select("id, title, bunny_video_id, thumbnail_url, duration_seconds, sort_order").eq("show_id", activeShow.id).order("sort_order", { ascending: true }),
+    admin.from("performances").select("id, title, bunny_video_id, thumbnail_url, duration_seconds, sort_order, video_source, clip_start_seconds, clip_end_seconds").eq("show_id", activeShow.id).order("sort_order", { ascending: true }),
     admin.from("categories").select("id, name, kind, sort_order").eq("show_id", activeShow.id).order("sort_order", { ascending: true }),
   ]);
 
@@ -70,7 +60,10 @@ export default async function PerformancesPage({
   const performances: PerfRow[] = (perfs ?? []).map((p) => ({
     id: p.id,
     title: p.title,
+    videoSource: p.video_source,
     bunnyVideoId: p.bunny_video_id,
+    clipStart: formatClock(p.clip_start_seconds),
+    clipEnd: formatClock(p.clip_end_seconds),
     thumbnailUrl: p.thumbnail_url ?? "",
     duration: formatDuration(p.duration_seconds),
     groupId: groupByPerf.get(p.id) ?? "",
@@ -89,9 +82,10 @@ export default async function PerformancesPage({
         </div>
         <PerformancesManager
           slug={slug}
+          schoolId={school.id}
           showId={activeShow.id}
           fullBunnyVideoId={video?.full_show_bunny_video_id ?? ""}
-          fullDuration={clock(video?.duration_seconds ?? null)}
+          fullDuration={formatClock(video?.duration_seconds ?? null)}
           fullDownload={video?.download_url ?? ""}
           fullThumbnailUrl={video?.full_show_thumbnail_url ?? ""}
           performances={performances}

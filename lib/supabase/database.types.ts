@@ -279,6 +279,8 @@ export type Database = {
       performances: {
         Row: {
           bunny_video_id: string
+          clip_end_seconds: number | null
+          clip_start_seconds: number | null
           created_at: string
           duration_seconds: number | null
           id: string
@@ -286,9 +288,12 @@ export type Database = {
           sort_order: number
           thumbnail_url: string | null
           title: string
+          video_source: Database["public"]["Enums"]["performance_video_source"]
         }
         Insert: {
           bunny_video_id: string
+          clip_end_seconds?: number | null
+          clip_start_seconds?: number | null
           created_at?: string
           duration_seconds?: number | null
           id?: string
@@ -296,9 +301,12 @@ export type Database = {
           sort_order?: number
           thumbnail_url?: string | null
           title: string
+          video_source?: Database["public"]["Enums"]["performance_video_source"]
         }
         Update: {
           bunny_video_id?: string
+          clip_end_seconds?: number | null
+          clip_start_seconds?: number | null
           created_at?: string
           duration_seconds?: number | null
           id?: string
@@ -306,6 +314,7 @@ export type Database = {
           sort_order?: number
           thumbnail_url?: string | null
           title?: string
+          video_source?: Database["public"]["Enums"]["performance_video_source"]
         }
         Relationships: [
           {
@@ -504,6 +513,7 @@ export type Database = {
       entitlement_source: "purchase" | "granted"
       invite_status: "invited" | "registered"
       order_status: "pending" | "paid" | "refunded"
+      performance_video_source: "show" | "standalone"
       school_status: "active" | "disabled"
       show_status: "draft" | "published"
     }
@@ -638,6 +648,7 @@ export const Constants = {
       entitlement_source: ["purchase", "granted"],
       invite_status: ["invited", "registered"],
       order_status: ["pending", "paid", "refunded"],
+      performance_video_source: ["show", "standalone"],
       school_status: ["active", "disabled"],
       show_status: ["draft", "published"],
     },
