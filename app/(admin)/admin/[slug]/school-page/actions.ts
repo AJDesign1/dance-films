@@ -1,7 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
+import { SCHOOLS_CACHE_TAG } from "@/lib/school";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type SchoolPageForm = {
@@ -43,5 +44,7 @@ export async function updateSchoolPage(
   if (error) return { error: "Couldn't save. Please try again." };
 
   revalidatePath(`/admin/${slug}/school-page`);
+  // The public site reads this school from a cross-request cache.
+  revalidateTag(SCHOOLS_CACHE_TAG);
   return { ok: true };
 }

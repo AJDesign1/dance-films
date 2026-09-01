@@ -19,9 +19,13 @@ export default async function ShowPage({
 }) {
   const { slug } = await params;
   const { purchase } = await searchParams;
-  const profile = await requireOnboardedProfile();
-  const school = await getCurrentSchool();
-  const supabase = await createClient();
+  // Independent of each other: the profile gate and the tenant lookup were two
+  // serial round trips purely because they were written on consecutive lines.
+  const [profile, school, supabase] = await Promise.all([
+    requireOnboardedProfile(),
+    getCurrentSchool(),
+    createClient(),
+  ]);
 
   const { data: show } = await supabase
     .from("shows")
@@ -112,9 +116,14 @@ export default async function ShowPage({
       .eq("show_id", show.id)
       .eq("user_id", profile.id)
       .maybeSingle(),
+    // Each dance's category links come back embedded rather than as a second
+    // query keyed on the ids this one returns. That read could only start once
+    // this one had finished, so it was a whole extra round trip on the critical
+    // path — cheap locally, but this runs from a Netlify function in the US
+    // against a database in London, where every trip is expensive.
     supabase
       .from("performances")
-      .select("id, title, thumbnail_url, duration_seconds, sort_order")
+      .select("id, title, thumbnail_url, duration_seconds, sort_order, performance_categories(category_id)")
       .eq("show_id", show.id)
       .order("sort_order", { ascending: true }),
     supabase
@@ -124,18 +133,10 @@ export default async function ShowPage({
       .order("sort_order", { ascending: true }),
   ]);
 
-  const perfIds = (perfRows ?? []).map((p) => p.id);
-  const { data: linkRows } = perfIds.length
-    ? await supabase.from("performance_categories").select("performance_id, category_id").in("performance_id", perfIds)
-    : { data: [] as { performance_id: string; category_id: string }[] };
-
   const catById = new Map((catRows ?? []).map((c) => [c.id, c]));
-  const linksByPerf = new Map<string, string[]>();
-  for (const l of linkRows ?? []) {
-    const arr = linksByPerf.get(l.performance_id) ?? [];
-    arr.push(l.category_id);
-    linksByPerf.set(l.performance_id, arr);
-  }
+  const linksByPerf = new Map<string, string[]>(
+    (perfRows ?? []).map((p) => [p.id, (p.performance_categories ?? []).map((l) => l.category_id)]),
+  );
 
   const performances: PerfItem[] = (perfRows ?? []).map((p) => {
     const cats = (linksByPerf.get(p.id) ?? []).map((id) => catById.get(id)).filter(Boolean);

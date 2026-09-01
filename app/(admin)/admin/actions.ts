@@ -1,8 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
+import { SCHOOLS_CACHE_TAG } from "@/lib/school";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type SchoolResult = { error: string } | never;
@@ -43,6 +44,7 @@ export async function toggleSchoolStatus(id: string, next: "active" | "disabled"
   const { error } = await admin.from("schools").update({ status: next }).eq("id", id);
   if (error) return { error: "Couldn't update status." };
   revalidatePath("/admin");
+  revalidateTag(SCHOOLS_CACHE_TAG);
   return { ok: true };
 }
 
@@ -78,5 +80,6 @@ export async function deleteSchool(id: string): Promise<{ ok: true } | { error: 
   const { error } = await admin.from("schools").delete().eq("id", id);
   if (error) return { error: "Couldn't delete the school." };
   revalidatePath("/admin");
+  revalidateTag(SCHOOLS_CACHE_TAG);
   return { ok: true };
 }

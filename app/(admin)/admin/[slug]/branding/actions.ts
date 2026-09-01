@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
+import { SCHOOLS_CACHE_TAG } from "@/lib/school";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MAX_IMAGE_BYTES, tooLargeMessage } from "@/lib/uploads";
 
@@ -110,5 +111,7 @@ export async function updateBranding(schoolId: string, slug: string, form: Brand
 
   if (newSub !== slug) redirect(`/admin/${newSub}/branding`);
   revalidatePath(`/admin/${slug}/branding`);
+  // The public site reads this school from a cross-request cache.
+  revalidateTag(SCHOOLS_CACHE_TAG);
   return { ok: true };
 }

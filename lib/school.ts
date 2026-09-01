@@ -1,9 +1,14 @@
 import "server-only";
 import { headers } from "next/headers";
 import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { createClient as createAnonClient } from "@supabase/supabase-js";
 import { SCHOOL_SLUG_HEADER } from "@/lib/tenant";
+import type { Database } from "@/lib/supabase/database.types";
 import type { SchoolTheme } from "@/lib/theme";
+
+/** Cache tag for every school row read. Bumped by any admin write to `schools`. */
+export const SCHOOLS_CACHE_TAG = "schools";
 
 /**
  * Editable copy for the two content bands on the shop page ("About <school>"
@@ -41,20 +46,47 @@ export type School = {
  * client — `schools` is readable pre-auth for active schools, so this works on
  * the login page too. `cache()` dedupes across a single request render.
  */
+/**
+ * The school row itself, cached across requests.
+ *
+ * This is the same row for every visitor to a subdomain and it only changes
+ * when an admin edits branding or page content, but it was being fetched on
+ * every single request — including the layout, for theming. That's one
+ * database round trip per page load, and this app's functions run in the US
+ * against a database in London, so a round trip is expensive.
+ *
+ * Deliberately uses a cookie-less anon client rather than the request-scoped
+ * one: `unstable_cache` can't read cookies or headers, and it doesn't need to —
+ * the "schools: read active" policy grants `anon` select on active schools, so
+ * this returns the same row regardless of who is asking.
+ *
+ * Writes call revalidateTag(SCHOOLS_CACHE_TAG); the TTL is a safety net so a
+ * missed invalidation self-heals in minutes rather than persisting.
+ */
+const loadSchoolBySlug = unstable_cache(
+  async (slug: string): Promise<School | null> => {
+    const supabase = createAnonClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    const { data } = await supabase
+      .from("schools")
+      .select(
+        `id, slug, name, platform_name, logo_colour_url, logo_white_url, hero_image_url, theme, ${PAGE_CONTENT_COLUMNS}`,
+      )
+      .eq("slug", slug)
+      .eq("status", "active")
+      .maybeSingle();
+
+    return (data as School | null) ?? null;
+  },
+  ["school-by-slug"],
+  { tags: [SCHOOLS_CACHE_TAG], revalidate: 300 },
+);
+
 export const getCurrentSchool = cache(async (): Promise<School | null> => {
   const h = await headers();
   const slug = h.get(SCHOOL_SLUG_HEADER);
   if (!slug) return null;
-
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("schools")
-    .select(
-      `id, slug, name, platform_name, logo_colour_url, logo_white_url, hero_image_url, theme, ${PAGE_CONTENT_COLUMNS}`,
-    )
-    .eq("slug", slug)
-    .eq("status", "active")
-    .maybeSingle();
-
-  return (data as School | null) ?? null;
+  return loadSchoolBySlug(slug);
 });

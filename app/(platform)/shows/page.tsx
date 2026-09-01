@@ -10,9 +10,12 @@ import ShowCard, { type ShopShow } from "@/components/platform/ShowCard";
 import styles from "./shop.module.css";
 
 export default async function ShowsPage() {
-  const profile = await requireOnboardedProfile();
-  const school = await getCurrentSchool();
-  const supabase = await createClient();
+  // Independent of each other — see the same grouping on the show page.
+  const [profile, school, supabase] = await Promise.all([
+    requireOnboardedProfile(),
+    getCurrentSchool(),
+    createClient(),
+  ]);
 
   // Published shows for this school (RLS: invited + published), and the user's
   // own entitlements (RLS: own rows only). Independent of each other, so they

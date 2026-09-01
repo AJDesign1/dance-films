@@ -10,20 +10,31 @@ export type Profile = {
   is_admin: boolean;
 };
 
+export type AuthUser = { id: string; email: string };
+
 /**
- * The current auth user, or null. Always use this (not getSession) for trust —
- * it validates the token with Supabase rather than trusting the cookie.
+ * The current auth user, or null. Still a *verified* identity, not a trusted
+ * cookie: getClaims() checks the JWT's signature against the project's JWKS.
  *
- * That validation is a network round trip, so it's wrapped in `cache()`: a
- * layout and the page inside it (or a page and a helper) asking for the user
- * now share one call per request instead of paying for it each time.
+ * Uses getClaims() rather than getUser() because getUser() asks the Auth server
+ * over the network on every single call. Measured against this project:
+ * getUser() costs 58–97ms each time, getClaims() ~1ms once the JWKS is cached
+ * (the cache is shared across client instances, so a warm serverless function
+ * pays it once, not per request). Middleware also validated the session, so the
+ * old arrangement bought two network round trips per page load.
+ *
+ * The trade-off is that claims come from the token, so a user deleted or banned
+ * mid-session stays valid until their access token expires. Access to data is
+ * unaffected — RLS evaluates the same JWT server-side either way.
+ *
+ * Still wrapped in `cache()` so a layout and the page inside it share one call.
  */
-export const getUser = cache(async () => {
+export const getUser = cache(async (): Promise<AuthUser | null> => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) return null;
+  return { id: claims.sub, email: typeof claims.email === "string" ? claims.email : "" };
 });
 
 /**
