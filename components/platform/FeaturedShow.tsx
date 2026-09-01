@@ -52,7 +52,7 @@ export default function FeaturedShow({ show, email }: { show: ShopShow; email: s
                 Video
               </span>
             </div>
-            <h2 className={styles.featTitle} style={{ fontFamily: "var(--disp)", fontWeight: 800, lineHeight: ".9", letterSpacing: ".01em", textTransform: "uppercase", color: "#fff", margin: "10px 0 18px" }}>
+            <h2 className={styles.featTitle} style={{ fontFamily: "var(--disp)", fontWeight: 800, lineHeight: ".96", letterSpacing: ".01em", textTransform: "uppercase", color: "#fff", margin: "10px 0 18px" }}>
               {show.title}
             </h2>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14 }}>

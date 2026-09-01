@@ -60,7 +60,7 @@ export default function CheckoutModal({
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
             <div style={{ flex: "0 0 auto", width: 58, aspectRatio: "3 / 4", borderRadius: "var(--r-sm)", overflow: "hidden", background: "linear-gradient(160deg, var(--brand-2), var(--ink))" }} />
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontFamily: "var(--disp)", fontWeight: 700, fontSize: 20, letterSpacing: ".01em", textTransform: "uppercase", color: "var(--text)", lineHeight: 1 }}>
+              <div style={{ fontFamily: "var(--disp)", fontWeight: 700, fontSize: 20, letterSpacing: ".01em", textTransform: "uppercase", color: "var(--text)", lineHeight: 1.06 }}>
                 {show.title}
               </div>
               <div style={{ fontSize: 12.5, color: "var(--text-2)", marginTop: 5 }}>

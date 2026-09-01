@@ -317,7 +317,7 @@ export default function ShowExperience({
               </div>
             </div>
             <div style={{ flex: "1 1 auto", minWidth: 0 }}>
-              <div className={styles.progTitle} style={{ fontFamily: "var(--disp)", fontWeight: 700, letterSpacing: ".01em", textTransform: "uppercase", color: "var(--text)", lineHeight: 1 }}>
+              <div className={styles.progTitle} style={{ fontFamily: "var(--disp)", fontWeight: 700, letterSpacing: ".01em", textTransform: "uppercase", color: "var(--text)", lineHeight: 1.06 }}>
                 {p.title}
               </div>
               <div style={{ fontSize: 12.5, fontWeight: 500, color: "var(--text-2)", marginTop: 8, display: "flex", flexWrap: "wrap", gap: "5px 12px" }}>

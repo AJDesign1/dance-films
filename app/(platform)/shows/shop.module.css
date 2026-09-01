@@ -37,7 +37,7 @@
   font-family: var(--disp);
   font-weight: 800;
   font-size: 54px;
-  line-height: .94;
+  line-height: 1;
   letter-spacing: .01em;
   text-transform: uppercase;
   color: var(--text);
@@ -78,7 +78,7 @@
   font-family: var(--disp);
   font-weight: 800;
   font-size: 40px;
-  line-height: .96;
+  line-height: 1.02;
   letter-spacing: .01em;
   text-transform: uppercase;
   color: var(--text);

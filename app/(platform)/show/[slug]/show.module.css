@@ -37,7 +37,7 @@
   align-items: flex-end;
 }
 .heroPad { position: relative; padding: 50px 0; max-width: 720px; }
-.heroTitle { font-size: 96px; line-height: 0.94; }
+.heroTitle { font-size: 96px; line-height: 1; }
 
 /* Bottom padding is the space below the performance list — it's the last block
    in here, with only the footer after it. */

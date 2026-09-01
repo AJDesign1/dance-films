@@ -53,7 +53,7 @@ const h1Style: CSSProperties = {
   fontFamily: "var(--disp)",
   fontWeight: 800,
   fontSize: 44,
-  lineHeight: ".92",
+  lineHeight: ".98",
   letterSpacing: ".01em",
   textTransform: "uppercase",
   color: "var(--text)",
