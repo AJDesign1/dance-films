@@ -4,16 +4,38 @@ What to pick up next. Update this file at the end of each working session so the
 
 ## Immediate priorities
 
-**Done since the last session** (all five previous priorities): `BUNNY_LIBRARY_ID`
-is set locally and on Netlify and video streams; the admin password is set;
-the leaked Supabase credentials have been rotated; Stripe keys are in Netlify.
-Note Stripe is *not* in local `.env.local` (still commented out), so local
-checkout shows "Payments aren't configured yet" — add test-mode keys there if
-you want to exercise checkout on localhost.
+**Done since the last session**: dances can now be sections of the full-show
+recording rather than separate uploads, and Bunny's own chapters fill the list
+automatically; the performances screen saves explicitly; shows can be deleted;
+posters are uploaded rather than pasted; images compress before upload.
+`BUNNY_STREAM_API_KEY` is set locally and on Netlify.
 
-1. **Load real Liberty content**: actual shows, performances (with real Bunny video IDs), categories, and the real parent email list, via the school admin (`/admin/liberty`). The current DB rows are demo seed data. Now also worth pasting each video's **thumbnail URL** while you're in there — the poster frames are a per-video copy/paste from Bunny's dashboard (see below).
-2. **Paste thumbnail URLs as content is loaded.** Each performance and the full-show video has a "Thumbnail URL" field on `/admin/{slug}/performances`. Get it from Bunny → the video → its thumbnail; the shape is `https://vz-….b-cdn.net/{video id}/thumbnail_….jpg`. Blank is fine — the tile falls back to the old gradient. There's no way to derive these automatically: the filename is per-video and the pull-zone hostname isn't derivable from the library id.
-3. **Decide on Bunny Token Authentication.** Referrer allowlisting is now on, but it's deterrence only — a spoofed `Referer` still fetches the MP4, and always could (Bunny accepts its own player domain). Token Authentication is the only setting that would actually close that, and it's a real feature to build (signing key + server-side signing), not a toggle. See `DECISIONS.md`.
+1. **Load the rest of the real Liberty content**: remaining shows, categories,
+   and the real parent email list, via `/admin/liberty`. Chapters and the first
+   show's dances are in.
+2. **Site speed still needs the Netlify plan decision.** Removing four database
+   round trips took the authenticated show page from 1250-2000ms to
+   ~950-1550ms, but an identical build serves it in ~250ms locally. The gap is
+   that functions run in Ohio while Supabase is in London, and region selection
+   is gated behind a plan upgrade ("upgrade to customize" in the UI). The
+   alternative, if the upgrade isn't wanted, is collapsing the remaining
+   per-page queries into a single Postgres function — one round trip instead of
+   about four. Worth pricing one against the other.
+3. **Decide on Bunny Token Authentication.** Referrer allowlisting is on, but
+   it's deterrence only — a spoofed `Referer` still fetches the MP4, and always
+   could (Bunny accepts its own player domain). Token Authentication is the only
+   setting that would actually close that, and it's a real feature to build
+   (signing key + server-side signing), not a toggle. See `DECISIONS.md`.
+
+**Two things that bit during this work, both worth knowing:**
+
+- **Bunny renames a video's thumbnail when you set a custom one.** A pasted
+  thumbnail URL keeps returning 200 and keeps serving the *old* auto-generated
+  frame, so it looks unchanged rather than broken. This is why posters are
+  uploads now, not pasted URLs.
+- **Netlify bakes environment variables in at build time.** Adding one does
+  nothing to what's already deployed — it needs a redeploy. Cost an hour of
+  "the API key is set but the app says it isn't".
 
 **Heads up on email sending**: while testing the access-code flow today, a `signInWithOtp` call failed with `AuthRetryableFetchError` (HTTP 500) after several magic-link sends in quick succession — almost certainly a rate limit (either Resend's or Supabase Auth's own OTP-request throttle), not a code defect; an identical call had just succeeded moments before. Worth keeping in mind if testing hits an unexplained "Something went wrong" on the login screen — try again after a short pause before assuming it's a bug.
 
