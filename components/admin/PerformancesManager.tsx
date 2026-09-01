@@ -11,7 +11,7 @@ import {
   addPerformance, updatePerformanceField, removePerformance, reorderPerformance,
   bulkAddPerformances, uploadThumbnailImage, savePerformancesPage,
   previewBunnyChapters, importBunnyChapters,
-  type PerformanceDraft, type FullShowDraft, type ChapterPreviewRow,
+  type PerformanceDraft, type FullShowDraft, type ChapterPreview,
 } from "@/app/(admin)/admin/[slug]/performances/actions";
 
 export type PerfRow = {
@@ -134,8 +134,9 @@ export default function PerformancesManager({
   // ---- Import from Bunny -------------------------------------------------
   // Chaptering the show once in Bunny and pulling the marks across beats
   // typing every start and end by hand. Previewed before anything is written.
-  const [importRows, setImportRows] = useState<ChapterPreviewRow[] | null>(null);
+  const [importPreview, setImportPreview] = useState<ChapterPreview | null>(null);
   const [importing, setImporting] = useState(false);
+  const importRows = importPreview?.rows ?? null;
 
   function openImport() {
     setError(null);
@@ -145,7 +146,7 @@ export default function PerformancesManager({
       const res = await previewBunnyChapters(showId);
       setImporting(false);
       if ("error" in res) { setError(res.error); return; }
-      setImportRows(res.rows);
+      setImportPreview(res);
     });
   }
 
@@ -154,7 +155,7 @@ export default function PerformancesManager({
     startTransition(async () => {
       const res = await importBunnyChapters(showId, slug);
       setImporting(false);
-      setImportRows(null);
+      setImportPreview(null);
       if ("error" in res) { setError(res.error); return; }
       setMsg(res.message ?? "Imported.");
       router.refresh();
@@ -226,7 +227,7 @@ export default function PerformancesManager({
           role="dialog"
           aria-modal="true"
           aria-label="Import chapters from Bunny"
-          onClick={() => !importing && setImportRows(null)}
+          onClick={() => !importing && setImportPreview(null)}
           style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, background: "rgba(12,20,26,.62)", backdropFilter: "blur(3px)" }}
         >
           <div onClick={(e) => e.stopPropagation()} className={styles.card} style={{ width: "100%", maxWidth: 560, padding: 24, maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
@@ -236,7 +237,7 @@ export default function PerformancesManager({
             <p style={{ margin: "10px 0 14px", fontSize: 14, lineHeight: 1.55, color: "var(--text-2)" }}>
               {newChapterCount > 0
                 ? `${newChapterCount} new ${newChapterCount === 1 ? "chapter" : "chapters"} will be added as performances, set to play a section of the show video. Nothing already in the list is changed.`
-                : "Every chapter on this video is already in the list — nothing to add."}
+                : "Every chapter on this video is already in the list."}
             </p>
 
             <div style={{ overflowY: "auto", border: "1px solid var(--border)", borderRadius: "var(--r-sm)" }}>
@@ -251,10 +252,27 @@ export default function PerformancesManager({
               ))}
             </div>
 
+            {(importPreview?.willSetDownloadUrl || importPreview?.willSetDuration) && (
+              <div style={{ marginTop: 14, padding: "10px 12px", background: "var(--surface-2)", borderRadius: "var(--r-sm)", fontSize: 12.5, color: "var(--text-2)" }}>
+                Also taken from Bunny:
+                {importPreview.willSetDownloadUrl && <> the <strong>download link</strong></>}
+                {importPreview.willSetDownloadUrl && importPreview.willSetDuration && " and"}
+                {importPreview.willSetDuration && <> the <strong>total length</strong> ({importPreview.willSetDuration})</>}.
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 18 }}>
-              <button className={styles.secondaryBtn} disabled={importing} onClick={() => setImportRows(null)}>Cancel</button>
-              <button className={styles.primaryBtn} disabled={importing || newChapterCount === 0} onClick={confirmImport}>
-                {importing ? "Adding…" : `Add ${newChapterCount} performance${newChapterCount === 1 ? "" : "s"}`}
+              <button className={styles.secondaryBtn} disabled={importing} onClick={() => setImportPreview(null)}>Cancel</button>
+              <button
+                className={styles.primaryBtn}
+                disabled={importing || (newChapterCount === 0 && !importPreview?.willSetDownloadUrl && !importPreview?.willSetDuration)}
+                onClick={confirmImport}
+              >
+                {importing
+                  ? "Adding…"
+                  : newChapterCount > 0
+                    ? `Add ${newChapterCount} performance${newChapterCount === 1 ? "" : "s"}`
+                    : "Update from Bunny"}
               </button>
             </div>
           </div>

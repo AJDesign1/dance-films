@@ -69,21 +69,72 @@ export async function fetchPosterImage(rawUrl: string): Promise<Response | null>
 
 export type BunnyChapter = { title: string; start: number; end: number };
 
+export type BunnyVideo = {
+  chapters: BunnyChapter[];
+  /** Length of the recording, seconds. */
+  durationSeconds: number | null;
+  /** Direct MP4 for the download button, or null when MP4 fallback is off. */
+  downloadUrl: string | null;
+};
+
 /**
- * The chapters defined on a Bunny video, in seconds.
+ * Best downloadable rendition, built from what the API already tells us.
+ *
+ * Bunny returns no direct video URL, but it returns enough to derive one:
+ * `thumbnailUrl` is an absolute CDN URL, so its origin *is* the pull zone
+ * host — which is otherwise unknowable from the library id alone and would
+ * mean yet another environment variable. `availableResolutions` says which
+ * play_*.mp4 files exist.
+ *
+ * Capped at 1080p deliberately: that's the highest Bunny encodes here, and the
+ * point is a DVD-replacement download for parents, not the 48GB 4K master
+ * sitting behind `original`.
+ *
+ * Returns null when MP4 fallback is switched off, because then no play_*.mp4
+ * exists and any URL built here would 404.
+ */
+function deriveDownloadUrl(body: {
+  guid?: string;
+  thumbnailUrl?: string;
+  availableResolutions?: string;
+  hasMP4Fallback?: boolean;
+}): string | null {
+  if (!body.hasMP4Fallback || !body.guid || !body.thumbnailUrl) return null;
+
+  let origin: string;
+  try {
+    origin = new URL(body.thumbnailUrl).origin;
+  } catch {
+    return null;
+  }
+
+  const heights = (body.availableResolutions ?? "")
+    .split(",")
+    .map((r) => parseInt(r.trim(), 10))
+    .filter((n) => Number.isFinite(n) && n > 0 && n <= 1080);
+  if (heights.length === 0) return null;
+
+  return `${origin}/${body.guid}/play_${Math.max(...heights)}p.mp4`;
+}
+
+/**
+ * A Bunny video's chapters, length and downloadable rendition.
  *
  * Bunny's own chapter marks are the natural source for a show's dance list:
  * `{title, start, end}` maps straight onto title / clip_start_seconds /
  * clip_end_seconds, so a show chaptered once in Bunny can fill the whole
- * performances grid rather than being typed in twice.
+ * performances grid rather than being typed in twice. The length and download
+ * link come from the same call — they were being copied by hand from the same
+ * dashboard page, and a download link left pointing at a replaced video is
+ * exactly the kind of stale paste this removes.
  *
  * Uses the Stream API key, which is *not* the library id — it reads the whole
  * library, so it's server-only and never reaches the browser. A read-only key
  * is enough; this only ever issues a GET.
  */
-export async function fetchBunnyChapters(
+export async function fetchBunnyVideo(
   videoId: string,
-): Promise<{ chapters: BunnyChapter[] } | { error: string }> {
+): Promise<BunnyVideo | { error: string }> {
   const libraryId = process.env.BUNNY_LIBRARY_ID;
   const key = process.env.BUNNY_STREAM_API_KEY;
   if (!libraryId) return { error: "BUNNY_LIBRARY_ID isn't set." };
@@ -105,7 +156,14 @@ export async function fetchBunnyChapters(
   if (res.status === 404) return { error: "Bunny doesn't have a video with that ID in this library." };
   if (!res.ok) return { error: `Bunny returned an error (${res.status}).` };
 
-  const body = (await res.json()) as { chapters?: { title?: string; start?: number; end?: number }[] };
+  const body = (await res.json()) as {
+    chapters?: { title?: string; start?: number; end?: number }[];
+    guid?: string;
+    length?: number;
+    thumbnailUrl?: string;
+    availableResolutions?: string;
+    hasMP4Fallback?: boolean;
+  };
   const chapters = (body.chapters ?? [])
     .filter((c) => typeof c.start === "number" && typeof c.end === "number")
     .map((c) => ({
@@ -117,7 +175,11 @@ export async function fetchBunnyChapters(
     .filter((c) => c.end > c.start)
     .sort((a, b) => a.start - b.start);
 
-  return { chapters };
+  return {
+    chapters,
+    durationSeconds: typeof body.length === "number" && body.length > 0 ? Math.floor(body.length) : null,
+    downloadUrl: deriveDownloadUrl(body),
+  };
 }
 
 export function bunnyEmbedUrl(videoId: string, opts?: { autoplay?: boolean; startSeconds?: number | null }): string | null {

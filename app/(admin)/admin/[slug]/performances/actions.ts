@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { parseClock } from "@/lib/format";
-import { fetchBunnyChapters } from "@/lib/bunny";
+import { parseClock, formatClock } from "@/lib/format";
+import { fetchBunnyVideo } from "@/lib/bunny";
 import { MAX_IMAGE_BYTES, tooLargeMessage } from "@/lib/uploads";
 
 export type ActionResult = { ok: true; message?: string } | { error: string };
@@ -169,15 +169,20 @@ export type ChapterPreviewRow = {
  * re-importing after adding a chapter in Bunny brings in only the new one and
  * leaves existing rows, including their edited titles, alone.
  */
-export async function previewBunnyChapters(
-  showId: string,
-): Promise<{ rows: ChapterPreviewRow[] } | { error: string }> {
+export type ChapterPreview = {
+  rows: ChapterPreviewRow[];
+  /** Set alongside the chapters, when they'd change something. */
+  willSetDownloadUrl: boolean;
+  willSetDuration: string | null;
+};
+
+export async function previewBunnyChapters(showId: string): Promise<ChapterPreview | { error: string }> {
   await requireAdmin();
   const admin = createAdminClient();
 
   const { data: video } = await admin
     .from("show_videos")
-    .select("full_show_bunny_video_id")
+    .select("full_show_bunny_video_id, download_url, duration_seconds")
     .eq("show_id", showId)
     .maybeSingle();
 
@@ -185,7 +190,7 @@ export async function previewBunnyChapters(
     return { error: "Set the full-show Bunny video ID first — chapters are read from that video." };
   }
 
-  const result = await fetchBunnyChapters(video.full_show_bunny_video_id);
+  const result = await fetchBunnyVideo(video.full_show_bunny_video_id);
   if ("error" in result) return result;
   if (result.chapters.length === 0) {
     return { error: "That video has no chapters in Bunny yet. Add them there, then import." };
@@ -199,7 +204,28 @@ export async function previewBunnyChapters(
 
   return {
     rows: result.chapters.map((c) => ({ ...c, alreadyImported: taken.has(c.start) })),
+    willSetDownloadUrl: shouldReplaceDownloadUrl(video.download_url, result.downloadUrl),
+    willSetDuration:
+      result.durationSeconds !== null && result.durationSeconds !== video.duration_seconds
+        ? formatClock(result.durationSeconds)
+        : null,
   };
+}
+
+/**
+ * Whether the derived MP4 link should replace what's stored.
+ *
+ * Fills an empty field, and corrects a link still pointing at a *different*
+ * video — which is the case that actually bites: replace the recording in Bunny
+ * and the old download link keeps working, silently handing parents the
+ * previous show. A link that already points at this video is left alone, so a
+ * deliberately customised one isn't clobbered.
+ */
+function shouldReplaceDownloadUrl(stored: string | null, derived: string | null): boolean {
+  if (!derived) return false;
+  if (!stored?.trim()) return true;
+  const videoId = derived.split("/").at(-2);
+  return !!videoId && !stored.includes(videoId);
 }
 
 /**
@@ -212,10 +238,41 @@ export async function importBunnyChapters(showId: string, slug: string): Promise
   const preview = await previewBunnyChapters(showId);
   if ("error" in preview) return preview;
 
-  const toAdd = preview.rows.filter((r) => !r.alreadyImported);
-  if (toAdd.length === 0) return { ok: true, message: "Every chapter is already in the list." };
-
   const admin = createAdminClient();
+
+  // Length and download link come from the same Bunny record as the chapters,
+  // so there's no reason to make someone copy them across by hand as well.
+  if (preview.willSetDownloadUrl || preview.willSetDuration) {
+    const { data: current } = await admin
+      .from("show_videos")
+      .select("full_show_bunny_video_id")
+      .eq("show_id", showId)
+      .maybeSingle();
+    if (current?.full_show_bunny_video_id) {
+      const details = await fetchBunnyVideo(current.full_show_bunny_video_id);
+      if (!("error" in details)) {
+        const patch: { download_url?: string; duration_seconds?: number } = {};
+        if (preview.willSetDownloadUrl && details.downloadUrl) patch.download_url = details.downloadUrl;
+        if (preview.willSetDuration && details.durationSeconds !== null) patch.duration_seconds = details.durationSeconds;
+        if (Object.keys(patch).length > 0) {
+          await admin.from("show_videos").update(patch).eq("show_id", showId);
+        }
+      }
+    }
+  }
+
+  const toAdd = preview.rows.filter((r) => !r.alreadyImported);
+  if (toAdd.length === 0) {
+    rev(slug);
+    return {
+      ok: true,
+      message:
+        preview.willSetDownloadUrl || preview.willSetDuration
+          ? "Chapters were already in the list; updated the download link and length from Bunny."
+          : "Every chapter is already in the list.",
+    };
+  }
+
   const { data: last } = await admin
     .from("performances")
     .select("sort_order")
