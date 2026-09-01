@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { createSchool, toggleSchoolStatus, deleteSchool } from "@/app/(admin)/admin/actions";
 
 export type SchoolRow = {
@@ -39,19 +40,21 @@ export default function SchoolsManager({ schools }: { schools: SchoolRow[] }) {
     });
   }
 
-  function remove(id: string, name: string) {
-    const sure = window.confirm(
-      `Permanently delete "${name}"?\n\nThis removes its shows, performances, categories, branding and parent invites for good. This can't be undone.`,
-    );
-    if (!sure) return;
+  // Was a window.confirm — too easy to dismiss on reflex for something this
+  // destructive, and it can't show what's about to go. Now the same typed
+  // confirmation the show delete uses.
+  const [target, setTarget] = useState<{ id: string; name: string } | null>(null);
 
+  function confirmRemove() {
+    if (!target) return;
     setDeleteError(null);
     startTransition(async () => {
-      const res = await deleteSchool(id);
+      const res = await deleteSchool(target.id);
       if (res && "error" in res) {
         setDeleteError(res.error);
         return;
       }
+      setTarget(null);
       router.refresh();
     });
   }
@@ -113,11 +116,32 @@ export default function SchoolsManager({ schools }: { schools: SchoolRow[] }) {
               <a href={`https://${s.slug}.dancefilms.co.uk`} target="_blank" rel="noreferrer" className={styles.quietBtn}>View site</a>
               <button className={styles.quietBtn} disabled={pending} onClick={() => toggle(s.id, s.status)}>{s.status === "active" ? "Disable" : "Enable"}</button>
               <Link href={`/admin/${s.slug}`} className={styles.primaryBtn} style={{ padding: "7px 14px", fontSize: 12.5 }}>Configure</Link>
-              <button className={styles.dangerBtn} disabled={pending} onClick={() => remove(s.id, s.name)}>Delete</button>
+              <button className={styles.dangerBtn} disabled={pending} onClick={() => setTarget({ id: s.id, name: s.name })}>Delete</button>
             </div>
           </div>
         ))}
       </div>
+
+      <ConfirmDialog
+        open={!!target}
+        title="Delete this school?"
+        body={
+          target
+            ? `"${target.name}" will be permanently removed, along with everything belonging to it. This can't be undone.`
+            : ""
+        }
+        consequences={[
+          "Every show, performance, category and video setting",
+          "All branding, logos and page content",
+          "The parent invite list, access codes and their access to any show",
+        ]}
+        confirmPhrase={target?.name}
+        confirmLabel="Delete school"
+        busy={pending}
+        error={deleteError}
+        onConfirm={confirmRemove}
+        onCancel={() => { setTarget(null); setDeleteError(null); }}
+      />
     </>
   );
 }

@@ -1,13 +1,14 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
 import { MAX_IMAGE_BYTES, tooLargeMessage, uploadFailedMessage } from "@/lib/uploads";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import {
-  setFullShowVideo, addPerformance, updatePerformanceField, setPerformanceCategory,
-  removePerformance, reorderPerformance, bulkAddPerformances,
-  setPerformanceVideoSource, setPerformanceClip, uploadPerformanceThumbnail,
+  addPerformance, updatePerformanceField, removePerformance, reorderPerformance,
+  bulkAddPerformances, uploadPerformanceThumbnail, savePerformancesPage,
+  type PerformanceDraft, type FullShowDraft,
 } from "@/app/(admin)/admin/[slug]/performances/actions";
 
 export type PerfRow = {
@@ -15,10 +16,10 @@ export type PerfRow = {
   title: string;
   videoSource: "show" | "standalone";
   bunnyVideoId: string;
-  clipStart: string; // formatted clock, e.g. "12:45"
+  clipStart: string;
   clipEnd: string;
   thumbnailUrl: string;
-  duration: string; // formatted
+  duration: string;
   groupId: string;
   styleId: string;
 };
@@ -29,6 +30,19 @@ const GRID = "34px 62px minmax(130px,1fr) 124px 124px 118px 186px 70px 52px";
 const cell: React.CSSProperties = { width: "100%", padding: "8px 10px", borderRadius: "var(--r-sm)", border: "1px solid transparent", background: "transparent", fontSize: 13.5, color: "var(--text)", fontFamily: "var(--body)" };
 const mono: React.CSSProperties = { ...cell, fontFamily: "ui-monospace, monospace", fontSize: 12.5 };
 const timeInput: React.CSSProperties = { ...mono, width: 84, textAlign: "center", padding: "8px 4px" };
+
+/** Edits live here until Save; `thumbnailUrl` is excluded because uploads save immediately. */
+type Draft = { full: FullShowDraft; rows: PerfRow[] };
+
+function buildDraft(
+  fullBunnyVideoId: string, fullDuration: string, fullDownload: string, fullThumbnailUrl: string,
+  performances: PerfRow[],
+): Draft {
+  return {
+    full: { bunnyVideoId: fullBunnyVideoId, duration: fullDuration, downloadUrl: fullDownload, thumbnailUrl: fullThumbnailUrl },
+    rows: performances.map((p) => ({ ...p })),
+  };
+}
 
 export default function PerformancesManager({
   slug, schoolId, showId, fullBunnyVideoId, fullDuration, fullDownload, fullThumbnailUrl, performances, groups, styles: styleCats,
@@ -41,19 +55,101 @@ export default function PerformancesManager({
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulk, setBulk] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
-  const run = (fn: () => Promise<unknown>, after?: () => void) => startTransition(async () => { await fn(); after?.(); router.refresh(); });
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const hasShowVideo = !!fullBunnyVideoId.trim();
-  const chapterCount = performances.filter((p) => p.videoSource === "show").length;
+  const serverState = useMemo(
+    () => buildDraft(fullBunnyVideoId, fullDuration, fullDownload, fullThumbnailUrl, performances),
+    [fullBunnyVideoId, fullDuration, fullDownload, fullThumbnailUrl, performances],
+  );
+  const [draft, setDraft] = useState<Draft>(serverState);
+
+  // Structural actions (add/delete/reorder) refresh from the server, so adopt
+  // the new server state as the baseline when it changes.
+  useEffect(() => { setDraft(serverState); }, [serverState]);
+
+  const dirty = useMemo(
+    () => JSON.stringify(draft) !== JSON.stringify(serverState),
+    [draft, serverState],
+  );
+
+  // A page reload or a click on another admin link would silently discard
+  // buffered edits, which is exactly the failure the Save button exists to
+  // prevent — so warn on the way out.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  const setFull = (patch: Partial<FullShowDraft>) =>
+    setDraft((d) => ({ ...d, full: { ...d.full, ...patch } }));
+  const setRow = (id: string, patch: Partial<PerfRow>) =>
+    setDraft((d) => ({ ...d, rows: d.rows.map((r) => (r.id === id ? { ...r, ...patch } : r)) }));
+
+  const save = useCallback(async (): Promise<boolean> => {
+    setError(null);
+    setMsg(null);
+    setSaving(true);
+    try {
+      const rows: PerformanceDraft[] = draft.rows.map((r) => ({
+        id: r.id, title: r.title, videoSource: r.videoSource, bunnyVideoId: r.bunnyVideoId,
+        clipStart: r.clipStart, clipEnd: r.clipEnd, duration: r.duration,
+        groupId: r.groupId, styleId: r.styleId,
+      }));
+      const res = await savePerformancesPage(showId, slug, draft.full, rows);
+      if ("error" in res) { setError(res.error); return false; }
+      setMsg(res.message ?? "Saved.");
+      router.refresh();
+      return true;
+    } catch {
+      setError("Couldn't save. Please try again.");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [draft, showId, slug, router]);
+
+  /**
+   * Add / delete / reorder all re-read from the server, which would throw away
+   * anything buffered — so flush first rather than blocking the button or
+   * losing the edits.
+   */
+  const structural = (fn: () => Promise<unknown>) => {
+    startTransition(async () => {
+      if (dirty && !(await save())) return;
+      await fn();
+      router.refresh();
+    });
+  };
+
+  const hasShowVideo = !!draft.full.bunnyVideoId.trim();
+  const chapterCount = draft.rows.filter((r) => r.videoSource === "show").length;
+  const busy = pending || saving;
 
   return (
     <>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 13, color: "var(--text-3)" }}>{performances.length} performances</span>
+        <span style={{ fontSize: 13, color: "var(--text-3)" }}>{draft.rows.length} performances</span>
+        {dirty && (
+          <span className={`${styles.badge} ${styles.badgeWarn}`}>Unsaved changes</span>
+        )}
         <div style={{ flex: 1 }} />
         <button className={styles.secondaryBtn} onClick={() => setBulkOpen((o) => !o)}>Bulk add</button>
-        <button className={styles.primaryBtn} disabled={pending} onClick={() => run(() => addPerformance(showId, slug))}>Add performance</button>
+        <button className={styles.secondaryBtn} disabled={busy} onClick={() => structural(() => addPerformance(showId, slug))}>Add performance</button>
+        <button
+          className={styles.primaryBtn}
+          disabled={busy || !dirty}
+          style={!dirty && !busy ? { opacity: 0.55 } : undefined}
+          onClick={() => void save()}
+        >
+          {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
+        </button>
       </div>
+
+      {error && <div className={`${styles.msg} ${styles.msgErr}`} style={{ marginBottom: 12 }}>{error}</div>}
+      {msg && !dirty && <div className={`${styles.msg} ${styles.msgOk}`} style={{ marginBottom: 12 }}>{msg}</div>}
 
       {/* Full-show video */}
       <div className={`${styles.card} ${styles.cardPad}`} style={{ marginBottom: 22 }}>
@@ -68,29 +164,29 @@ export default function PerformancesManager({
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 220 }}>
             <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Bunny video ID</label>
-            <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace" }} defaultValue={fullBunnyVideoId} placeholder="e.g. 3a1f9c2e-…-guid"
-              onBlur={(e) => run(() => setFullShowVideo(showId, slug, e.target.value, fullDuration, fullDownload, fullThumbnailUrl))} />
+            <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace" }} value={draft.full.bunnyVideoId} placeholder="e.g. 3a1f9c2e-…-guid"
+              onChange={(e) => setFull({ bunnyVideoId: e.target.value })} />
           </div>
           <div style={{ width: 150 }}>
             <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Total length</label>
-            <input className={styles.input} style={{ textAlign: "center" }} defaultValue={fullDuration} placeholder="1:12:40"
-              onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullBunnyVideoId, e.target.value, fullDownload, fullThumbnailUrl))} />
+            <input className={styles.input} style={{ textAlign: "center" }} value={draft.full.duration} placeholder="1:12:40"
+              onChange={(e) => setFull({ duration: e.target.value })} />
           </div>
         </div>
         <label className={styles.fieldLabel}>Download URL (full-show file — parents download their purchased show)</label>
-        <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace", fontSize: 12.5 }} defaultValue={fullDownload}
+        <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace", fontSize: 12.5 }} value={draft.full.downloadUrl}
           placeholder="https://…  (a Bunny Stream direct file URL, or any hosted file)"
-          onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullBunnyVideoId, fullDuration, e.target.value, fullThumbnailUrl))} />
+          onChange={(e) => setFull({ downloadUrl: e.target.value })} />
         <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 6 }}>Leave blank to hide the download button. The link is entitlement-gated — only owners can fetch it.</div>
         <label className={styles.fieldLabel}>Thumbnail URL (poster shown before playback)</label>
-        <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace", fontSize: 12.5 }} defaultValue={fullThumbnailUrl}
-          placeholder="https://vz-….b-cdn.net/{video id}/thumbnail_….jpg — copy from Bunny's dashboard for this video"
-          onBlur={(e) => run(() => setFullShowVideo(showId, slug, fullBunnyVideoId, fullDuration, fullDownload, e.target.value))} />
+        <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace", fontSize: 12.5 }} value={draft.full.thumbnailUrl}
+          placeholder="https://vz-….b-cdn.net/{video id}/thumbnail.jpg — copy from Bunny's dashboard for this video"
+          onChange={(e) => setFull({ thumbnailUrl: e.target.value })} />
         <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 6 }}>Leave blank to show a plain background instead.</div>
       </div>
 
       {!hasShowVideo && chapterCount > 0 && (
-        <div className={`${styles.msg} ${styles.msgWarn ?? ""}`} style={{ marginBottom: 14, background: "var(--warn-tint, #FFF4E5)", color: "var(--warn, #8A5A00)", padding: "10px 14px", borderRadius: "var(--r-sm)", fontSize: 13 }}>
+        <div style={{ marginBottom: 14, background: "var(--warn-tint, #FFF4E5)", color: "var(--warn, #8A5A00)", padding: "10px 14px", borderRadius: "var(--r-sm)", fontSize: 13 }}>
           {chapterCount} {chapterCount === 1 ? "dance is" : "dances are"} set to play a section of the show video, but no full-show Bunny video ID is set above — those dances won&apos;t play until it is.
         </div>
       )}
@@ -110,35 +206,37 @@ export default function PerformancesManager({
           <textarea className={styles.textarea} rows={5} style={{ fontFamily: "ui-monospace, monospace", fontSize: 13 }} value={bulk} onChange={(e) => setBulk(e.target.value)}
             placeholder={"Twinkle | Minis (3–5) | | \nPlayground | Midis (5–7) | | "} />
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button className={styles.primaryBtn} disabled={pending || !bulk.trim()} onClick={() => run(async () => { const r = await bulkAddPerformances(showId, slug, bulk); setMsg("error" in r ? r.error : (r.message ?? "Added.")); }, () => { setBulk(""); setBulkOpen(false); })}>Add all</button>
+            <button className={styles.primaryBtn} disabled={busy || !bulk.trim()} onClick={() => structural(async () => { const r = await bulkAddPerformances(showId, slug, bulk); setMsg("error" in r ? r.error : (r.message ?? "Added.")); setBulk(""); setBulkOpen(false); })}>Add all</button>
             <button className={styles.secondaryBtn} onClick={() => setBulkOpen(false)}>Cancel</button>
           </div>
         </div>
       )}
-      {msg && <div className={`${styles.msg} ${styles.msgOk}`} style={{ marginBottom: 12 }}>{msg}</div>}
 
       <div className={styles.card} style={{ overflowX: "auto" }}>
         <div style={{ minWidth: 1080 }}>
           <div style={{ display: "grid", gridTemplateColumns: GRID, gap: 10, padding: "11px 16px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--text-3)" }}>
             <span></span><span>Image</span><span>Title</span><span>Group</span><span>Style</span><span>Video</span><span>Source detail</span><span>Length</span><span></span>
           </div>
-          {performances.length === 0 ? (
+          {draft.rows.length === 0 ? (
             <div style={{ padding: "40px 20px", textAlign: "center" }}>
               <div style={{ fontFamily: "var(--disp)", fontWeight: 700, fontSize: 18, textTransform: "uppercase" }}>No performances yet</div>
               <p style={{ color: "var(--text-2)", fontSize: 14, margin: "8px 0 0" }}>Add them one by one, or paste a list to add several.</p>
             </div>
-          ) : performances.map((p, i) => (
+          ) : draft.rows.map((p, i) => (
             <Row
               key={p.id}
               perf={p}
               index={i}
-              total={performances.length}
+              total={draft.rows.length}
               slug={slug}
               schoolId={schoolId}
               groups={groups}
               styleCats={styleCats}
-              pending={pending}
-              run={run}
+              busy={busy}
+              onChange={(patch) => setRow(p.id, patch)}
+              onReorder={(dir) => structural(() => reorderPerformance(p.id, slug, dir))}
+              onRemove={() => structural(() => removePerformance(p.id, slug))}
+              onRefresh={() => router.refresh()}
             />
           ))}
         </div>
@@ -148,31 +246,24 @@ export default function PerformancesManager({
 }
 
 function Row({
-  perf: p, index: i, total, slug, schoolId, groups, styleCats, pending, run,
+  perf: p, index: i, total, slug, schoolId, groups, styleCats, busy, onChange, onReorder, onRemove, onRefresh,
 }: {
   perf: PerfRow; index: number; total: number; slug: string; schoolId: string;
-  groups: Cat[]; styleCats: Cat[]; pending: boolean;
-  run: (fn: () => Promise<unknown>, after?: () => void) => void;
+  groups: Cat[]; styleCats: Cat[]; busy: boolean;
+  onChange: (patch: Partial<PerfRow>) => void;
+  onReorder: (dir: -1 | 1) => void;
+  onRemove: () => void;
+  onRefresh: () => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  // Start and end are saved together (the DB check constraint compares them),
-  // so both live here rather than being read off the individual inputs.
-  const [start, setStart] = useState(p.clipStart);
-  const [end, setEnd] = useState(p.clipEnd);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const isChapter = p.videoSource === "show";
 
-  const saveClip = (nextStart: string, nextEnd: string) => {
-    if (nextStart === p.clipStart && nextEnd === p.clipEnd) return;
-    setErr(null);
-    run(async () => {
-      const r = await setPerformanceClip(p.id, slug, nextStart, nextEnd);
-      if ("error" in r) setErr(r.error);
-    });
-  };
-
+  /** Images save on pick rather than waiting for Save — there's no half-typed
+   *  state to protect, and holding a File in the draft would be awkward. */
   async function onPickFile(file: File) {
     setErr(null);
     if (file.size > MAX_IMAGE_BYTES) { setErr(tooLargeMessage(MAX_IMAGE_BYTES)); return; }
@@ -182,10 +273,9 @@ function Row({
       fd.append("file", file);
       const r = await uploadPerformanceThumbnail(schoolId, fd);
       if ("error" in r) { setErr(r.error); return; }
-      run(() => updatePerformanceField(p.id, slug, "thumbnail_url", r.url));
+      await updatePerformanceField(p.id, slug, "thumbnail_url", r.url);
+      onRefresh();
     } catch {
-      // Never leave the control stuck on "…" — see DECISIONS.md on upload
-      // handlers that had no catch and hung forever on a thrown action.
       setErr(uploadFailedMessage(MAX_IMAGE_BYTES));
     } finally {
       setUploading(false);
@@ -197,19 +287,17 @@ function Row({
     <div style={{ borderBottom: "1px solid var(--border)" }}>
       <div style={{ display: "grid", gridTemplateColumns: GRID, gap: 10, alignItems: "center", padding: "9px 16px" }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <button className={styles.quietBtn} style={{ padding: 1, border: "none" }} disabled={pending || i === 0} onClick={() => run(() => reorderPerformance(p.id, slug, -1))}>▲</button>
-          <button className={styles.quietBtn} style={{ padding: 1, border: "none" }} disabled={pending || i === total - 1} onClick={() => run(() => reorderPerformance(p.id, slug, 1))}>▼</button>
+          <button className={styles.quietBtn} style={{ padding: 1, border: "none" }} disabled={busy || i === 0} onClick={() => onReorder(-1)}>▲</button>
+          <button className={styles.quietBtn} style={{ padding: 1, border: "none" }} disabled={busy || i === total - 1} onClick={() => onReorder(1)}>▼</button>
         </div>
 
-        {/* Poster image — uploaded, because a dance playing a slice of the show
-            video has no Bunny thumbnail URL to paste. */}
         <div>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickFile(f); }} />
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            disabled={uploading || pending}
+            disabled={uploading || busy}
             title={p.thumbnailUrl ? "Replace image" : "Upload an image"}
             style={{
               width: 56, height: 34, borderRadius: 6, overflow: "hidden", cursor: "pointer", padding: 0,
@@ -222,14 +310,14 @@ function Row({
           </button>
         </div>
 
-        <input style={cell} defaultValue={p.title} onBlur={(e) => { if (e.target.value !== p.title) run(() => updatePerformanceField(p.id, slug, "title", e.target.value)); }} />
+        <input style={cell} value={p.title} onChange={(e) => onChange({ title: e.target.value })} />
 
-        <select className={styles.select} style={{ padding: "7px 8px", fontSize: 13 }} defaultValue={p.groupId} onChange={(e) => run(() => setPerformanceCategory(p.id, slug, "group", e.target.value))}>
+        <select className={styles.select} style={{ padding: "7px 8px", fontSize: 13 }} value={p.groupId} onChange={(e) => onChange({ groupId: e.target.value })}>
           <option value="">—</option>
           {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
         </select>
 
-        <select className={styles.select} style={{ padding: "7px 8px", fontSize: 13 }} defaultValue={p.styleId} onChange={(e) => run(() => setPerformanceCategory(p.id, slug, "style", e.target.value))}>
+        <select className={styles.select} style={{ padding: "7px 8px", fontSize: 13 }} value={p.styleId} onChange={(e) => onChange({ styleId: e.target.value })}>
           <option value="">—</option>
           {styleCats.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
@@ -238,49 +326,46 @@ function Row({
           className={styles.select}
           style={{ padding: "7px 8px", fontSize: 13 }}
           value={p.videoSource}
-          onChange={(e) => run(() => setPerformanceVideoSource(p.id, slug, e.target.value as "show" | "standalone"))}
+          onChange={(e) => onChange({ videoSource: e.target.value as "show" | "standalone" })}
         >
           <option value="show">Show video</option>
           <option value="standalone">Separate video</option>
         </select>
 
-        {/* Either a slice of the show recording, or this dance's own upload. */}
         {isChapter ? (
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <input
-              style={timeInput}
-              value={start}
-              placeholder="Start"
-              onChange={(e) => setStart(e.target.value)}
-              onBlur={() => saveClip(start, end)}
-            />
+            <input style={timeInput} value={p.clipStart} placeholder="Start" onChange={(e) => onChange({ clipStart: e.target.value })} />
             <span style={{ color: "var(--text-3)", fontSize: 12 }}>→</span>
-            <input
-              style={timeInput}
-              value={end}
-              placeholder="End"
-              onChange={(e) => setEnd(e.target.value)}
-              onBlur={() => saveClip(start, end)}
-            />
+            <input style={timeInput} value={p.clipEnd} placeholder="End" onChange={(e) => onChange({ clipEnd: e.target.value })} />
           </div>
         ) : (
-          <input style={mono} defaultValue={p.bunnyVideoId} placeholder="Bunny video ID"
-            onBlur={(e) => { if (e.target.value !== p.bunnyVideoId) run(() => updatePerformanceField(p.id, slug, "bunny_video_id", e.target.value)); }} />
+          <input style={mono} value={p.bunnyVideoId} placeholder="Bunny video ID" onChange={(e) => onChange({ bunnyVideoId: e.target.value })} />
         )}
 
-        {/* Derived for a clip (end − start), typed for a standalone upload. */}
         {isChapter ? (
-          <span style={{ fontSize: 13, color: "var(--text-3)", textAlign: "center" }}>{p.duration || "—"}</span>
+          <span style={{ fontSize: 13, color: "var(--text-3)", textAlign: "center" }} title="Worked out from the start and end times">
+            {p.duration || "—"}
+          </span>
         ) : (
-          <input style={{ ...cell, textAlign: "center" }} defaultValue={p.duration} placeholder="—"
-            onBlur={(e) => { if (e.target.value !== p.duration) run(() => updatePerformanceField(p.id, slug, "duration", e.target.value)); }} />
+          <input style={{ ...cell, textAlign: "center" }} value={p.duration} placeholder="—" onChange={(e) => onChange({ duration: e.target.value })} />
         )}
 
-        <button className={styles.dangerBtn} disabled={pending} onClick={() => run(() => removePerformance(p.id, slug))}>Del</button>
+        <button className={styles.dangerBtn} disabled={busy} onClick={() => setConfirmOpen(true)}>Del</button>
       </div>
       {err && (
         <div style={{ padding: "0 16px 9px 112px", fontSize: 12, color: "var(--danger, #B4232A)" }}>{err}</div>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Remove this performance?"
+        body={`"${p.title.trim() || "Untitled"}" will be removed from this show.`}
+        consequences={["Its group and style tags go with it", "Any uploaded image for it is no longer used"]}
+        confirmLabel="Remove"
+        busy={busy}
+        onConfirm={() => { setConfirmOpen(false); onRemove(); }}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

@@ -39,6 +39,118 @@ export async function setFullShowVideo(showId: string, slug: string, bunnyVideoI
   return { ok: true };
 }
 
+/** One dance's editable fields, as the admin grid holds them. */
+export type PerformanceDraft = {
+  id: string;
+  title: string;
+  videoSource: VideoSource;
+  bunnyVideoId: string;
+  clipStart: string; // "12:45"
+  clipEnd: string;
+  duration: string; // only used for standalone; clips derive it
+  groupId: string;
+  styleId: string;
+};
+
+export type FullShowDraft = {
+  bunnyVideoId: string;
+  duration: string;
+  downloadUrl: string;
+  thumbnailUrl: string;
+};
+
+/**
+ * Save the whole Performances screen in one go.
+ *
+ * The screen used to write on every field blur. That kept the database current
+ * without a Save button, but it also meant a half-typed value could persist
+ * because focus moved, and there was no way to review a set of edits before
+ * committing them. Now the grid buffers changes and sends them here together.
+ *
+ * Validation runs over the whole batch *before* anything is written, so a bad
+ * timestamp on one dance doesn't leave the other rows half-saved.
+ */
+export async function savePerformancesPage(
+  showId: string,
+  slug: string,
+  full: FullShowDraft,
+  rows: PerformanceDraft[],
+): Promise<ActionResult> {
+  await requireAdmin();
+
+  // ---- validate everything first ----
+  for (const r of rows) {
+    if (r.videoSource !== "show") continue;
+    const start = parseDuration(r.clipStart);
+    const end = parseDuration(r.clipEnd);
+    const label = r.title.trim() || "Untitled";
+    if (r.clipStart.trim() && start === null) return { error: `${label}: start time should look like 12:45 or 1:12:30.` };
+    if (r.clipEnd.trim() && end === null) return { error: `${label}: end time should look like 12:45 or 1:12:30.` };
+    if (start !== null && end !== null && end <= start) return { error: `${label}: the end time must be after the start time.` };
+  }
+
+  const admin = createAdminClient();
+
+  const { error: videoError } = await admin.from("show_videos").upsert(
+    {
+      show_id: showId,
+      full_show_bunny_video_id: full.bunnyVideoId.trim() || null,
+      duration_seconds: parseDuration(full.duration),
+      download_url: full.downloadUrl.trim() || null,
+      full_show_thumbnail_url: full.thumbnailUrl.trim() || null,
+    },
+    { onConflict: "show_id" },
+  );
+  if (videoError) return { error: "Couldn't save the full-show video." };
+
+  // Category ids for this show, split by kind — needed to clear only the links
+  // of the kind being set, the same way setPerformanceCategory does.
+  const { data: cats } = await admin.from("categories").select("id, kind").eq("show_id", showId);
+  const idsByKind: Record<Kind, string[]> = {
+    group: (cats ?? []).filter((c) => c.kind === "group").map((c) => c.id),
+    style: (cats ?? []).filter((c) => c.kind === "style").map((c) => c.id),
+  };
+
+  for (const r of rows) {
+    const isChapter = r.videoSource === "show";
+    const start = isChapter ? parseDuration(r.clipStart) : null;
+    const end = isChapter ? parseDuration(r.clipEnd) : null;
+
+    const { error } = await admin
+      .from("performances")
+      .update({
+        title: r.title.trim() || "Untitled",
+        video_source: r.videoSource,
+        bunny_video_id: r.bunnyVideoId.trim(),
+        clip_start_seconds: start,
+        clip_end_seconds: end,
+        // A clip's length is end − start; a standalone upload keeps whatever
+        // the admin typed.
+        duration_seconds: isChapter
+          ? start !== null && end !== null
+            ? end - start
+            : null
+          : parseDuration(r.duration),
+      })
+      .eq("id", r.id);
+    if (error) return { error: `Couldn't save "${r.title.trim() || "Untitled"}".` };
+
+    for (const kind of ["group", "style"] as Kind[]) {
+      const chosen = kind === "group" ? r.groupId : r.styleId;
+      const kindIds = idsByKind[kind];
+      if (kindIds.length) {
+        await admin.from("performance_categories").delete().eq("performance_id", r.id).in("category_id", kindIds);
+      }
+      if (chosen) {
+        await admin.from("performance_categories").insert({ performance_id: r.id, category_id: chosen });
+      }
+    }
+  }
+
+  rev(slug);
+  return { ok: true, message: `Saved ${rows.length} performance${rows.length === 1 ? "" : "s"}.` };
+}
+
 export async function addPerformance(showId: string, slug: string): Promise<ActionResult> {
   await requireAdmin();
   const admin = createAdminClient();

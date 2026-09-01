@@ -124,6 +124,71 @@ export async function updateShow(showId: string, schoolId: string, slug: string,
   redirect(`/admin/${slug}/shows`);
 }
 
+/**
+ * How much a show delete would destroy, so the confirmation can say so rather
+ * than the admin finding out afterwards.
+ */
+export type ShowDeleteImpact = {
+  title: string;
+  performances: number;
+  entitlements: number;
+  orders: number;
+};
+
+export async function getShowDeleteImpact(showId: string): Promise<ShowDeleteImpact | { error: string }> {
+  await requireAdmin();
+  const admin = createAdminClient();
+  const { data: show } = await admin.from("shows").select("title").eq("id", showId).maybeSingle();
+  if (!show) return { error: "Not found." };
+
+  const [perf, ent, ord] = await Promise.all([
+    admin.from("performances").select("id", { count: "exact", head: true }).eq("show_id", showId),
+    admin.from("entitlements").select("id", { count: "exact", head: true }).eq("show_id", showId),
+    admin.from("orders").select("id", { count: "exact", head: true }).eq("show_id", showId),
+  ]);
+
+  return {
+    title: show.title,
+    performances: perf.count ?? 0,
+    entitlements: ent.count ?? 0,
+    orders: ord.count ?? 0,
+  };
+}
+
+/**
+ * Delete a show and everything hanging off it.
+ *
+ * `entitlements` cascades from `shows`, so this silently removes access from
+ * every parent who owns it — which is why the UI makes the admin type the show
+ * title first. `orders` deliberately does *not* cascade (payment records
+ * outlive the content), so the database would reject the delete with a foreign
+ * key error; that's checked up front instead, to fail with an explanation
+ * rather than a constraint violation.
+ */
+export async function deleteShow(showId: string, slug: string): Promise<{ ok: true } | { error: string }> {
+  await requireAdmin();
+  const admin = createAdminClient();
+
+  const { count: orderCount } = await admin
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("show_id", showId);
+
+  if ((orderCount ?? 0) > 0) {
+    return {
+      error:
+        `This show has ${orderCount} order${orderCount === 1 ? "" : "s"} against it, so it can't be deleted — ` +
+        `payment records are kept even when content is removed. Set the show back to Draft to hide it from parents instead.`,
+    };
+  }
+
+  const { error } = await admin.from("shows").delete().eq("id", showId);
+  if (error) return { error: "Couldn't delete that show. Please try again." };
+
+  revalidatePath(`/admin/${slug}/shows`);
+  return { ok: true };
+}
+
 export async function reorderShow(showId: string, slug: string, dir: -1 | 1): Promise<{ ok: true } | { error: string }> {
   await requireAdmin();
   const admin = createAdminClient();

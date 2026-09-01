@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
 import { formatPrice } from "@/lib/format";
-import { reorderShow } from "@/app/(admin)/admin/[slug]/shows/actions";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import {
+  reorderShow, deleteShow, getShowDeleteImpact, type ShowDeleteImpact,
+} from "@/app/(admin)/admin/[slug]/shows/actions";
 
 export type ShowRow = {
   id: string;
@@ -22,6 +25,36 @@ export default function ShowsList({ slug, shows }: { slug: string; shows: ShowRo
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const move = (id: string, dir: -1 | 1) => startTransition(async () => { await reorderShow(id, slug, dir); router.refresh(); });
+
+  // Deleting a show cascades into parents' entitlements, so the dialog loads
+  // the real counts first rather than warning in the abstract.
+  const [target, setTarget] = useState<{ id: string; impact: ShowDeleteImpact } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function askDelete(id: string) {
+    setError(null);
+    setBusy(true);
+    startTransition(async () => {
+      const res = await getShowDeleteImpact(id);
+      setBusy(false);
+      if ("error" in res) { setError(res.error); return; }
+      setTarget({ id, impact: res });
+    });
+  }
+
+  function confirmDelete() {
+    if (!target) return;
+    setBusy(true);
+    setError(null);
+    startTransition(async () => {
+      const res = await deleteShow(target.id, slug);
+      setBusy(false);
+      if ("error" in res) { setError(res.error); return; }
+      setTarget(null);
+      router.refresh();
+    });
+  }
 
   if (shows.length === 0) {
     return (
@@ -55,10 +88,44 @@ export default function ShowsList({ slug, shows }: { slug: string; shows: ShowRo
             <div style={{ display: "flex", gap: 7, justifyContent: "flex-end" }}>
               <Link href={`/admin/${slug}/performances?show=${s.id}`} className={styles.quietBtn}>Performances</Link>
               <Link href={`/admin/${slug}/shows/${s.id}`} className={styles.quietBtn}>Edit</Link>
+              <button className={styles.dangerBtn} disabled={pending} onClick={() => askDelete(s.id)}>Delete</button>
             </div>
           </div>
         ))}
       </div>
+
+      {error && !target && (
+        <div style={{ padding: "12px 20px", fontSize: 13, color: "var(--danger, #B4232A)" }}>{error}</div>
+      )}
+
+      <ConfirmDialog
+        open={!!target}
+        title="Delete this show?"
+        body={
+          target
+            ? `"${target.impact.title}" and everything inside it will be permanently removed. This can't be undone.`
+            : ""
+        }
+        consequences={
+          target
+            ? [
+                `${target.impact.performances} performance${target.impact.performances === 1 ? "" : "s"}, plus its categories and video settings`,
+                target.impact.entitlements > 0
+                  ? `${target.impact.entitlements} parent${target.impact.entitlements === 1 ? "" : "s"} will lose access to this show`
+                  : "No parents currently have access to this show",
+                target.impact.orders > 0
+                  ? `${target.impact.orders} order${target.impact.orders === 1 ? "" : "s"} exist — the delete will be refused, set the show to Draft instead`
+                  : "No orders are attached to this show",
+              ]
+            : []
+        }
+        confirmPhrase={target?.impact.title}
+        confirmLabel="Delete show"
+        busy={busy}
+        error={error}
+        onConfirm={confirmDelete}
+        onCancel={() => { setTarget(null); setError(null); }}
+      />
     </div>
   );
 }
