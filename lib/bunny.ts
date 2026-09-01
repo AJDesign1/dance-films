@@ -25,22 +25,27 @@ import "server-only";
  *  - responsive=true  → player fills its container (we size the container)
  */
 /**
- * Fetch a Bunny-hosted still image (a video's poster frame) server-side.
+ * Fetch a poster image server-side, from either place one can live.
  *
- * Two reasons this goes through us rather than the browser hitting Bunny
- * directly:
- *  - Bunny's Pull Zone has "Block direct url file access" on with an allowed-
- *    referrer list, so a request with no `Referer` (which is what any
- *    server-side fetch sends, including next/image's optimiser) gets a 403.
- *    We set the header explicitly here.
- *  - A Bunny thumbnail URL contains the `bunny_video_id`. Proxying keeps it
- *    off the page entirely, per the anti-copy rule in AI_INSTRUCTIONS.md.
+ * Two sources, because posters arrived in two waves:
+ *  - **Bunny** (`*.b-cdn.net`) — a pasted thumbnail URL. Bunny's Pull Zone has
+ *    "Block direct url file access" on with an allowed-referrer list, so a
+ *    request with no `Referer` — which is what any server-side fetch sends,
+ *    including next/image's optimiser — gets a 403. The header is set below.
+ *    These URLs also contain the `bunny_video_id`, so proxying keeps it off the
+ *    page per the anti-copy rule in AI_INSTRUCTIONS.md.
+ *  - **Supabase Storage** — an image uploaded through the admin. Public, needs
+ *    no referrer, and carries no video id. It still comes through here so the
+ *    entitlement gate in /api/thumbnail applies to every poster equally, rather
+ *    than the component having to know where each one came from.
  *
- * The URL is admin-pasted, and this fetch runs on our server, so the host is
- * checked rather than trusted — an arbitrary pasted URL must not become a
- * server-side request to somewhere else.
+ * Missing the second case is what broke every uploaded thumbnail when per-dance
+ * posters moved from pasted URLs to uploads: the host check rejected them and
+ * the route 404'd. Hosts are still checked rather than trusted — this fetch
+ * runs on our server, so an arbitrary stored URL must not become a request to
+ * somewhere else.
  */
-export async function fetchBunnyImage(rawUrl: string): Promise<Response | null> {
+export async function fetchPosterImage(rawUrl: string): Promise<Response | null> {
   let url: URL;
   try {
     url = new URL(rawUrl);
@@ -48,10 +53,17 @@ export async function fetchBunnyImage(rawUrl: string): Promise<Response | null> 
     return null;
   }
   if (url.protocol !== "https:") return null;
-  if (url.hostname !== "b-cdn.net" && !url.hostname.endsWith(".b-cdn.net")) return null;
+
+  const isBunny = url.hostname === "b-cdn.net" || url.hostname.endsWith(".b-cdn.net");
+  const isSupabase = url.hostname.endsWith(".supabase.co");
+  if (!isBunny && !isSupabase) return null;
 
   const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "dancefilms.co.uk";
-  const res = await fetch(url, { headers: { Referer: `https://${root}/` } });
+  const res = await fetch(url, {
+    // Only Bunny needs the referrer; Supabase Storage serves public objects
+    // without one.
+    headers: isBunny ? { Referer: `https://${root}/` } : undefined,
+  });
   return res.ok ? res : null;
 }
 

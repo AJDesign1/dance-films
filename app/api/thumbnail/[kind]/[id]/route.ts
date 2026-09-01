@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { getUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { fetchBunnyImage } from "@/lib/bunny";
+import { fetchPosterImage } from "@/lib/bunny";
 
 // Bunny's poster frames are fetched with an outbound `Referer` header, and
 // resized with sharp — both Node-only.
@@ -55,7 +55,7 @@ export async function GET(
 
   if (!url) return NOT_FOUND;
 
-  const upstream = await fetchBunnyImage(url);
+  const upstream = await fetchPosterImage(url);
   if (!upstream) return NOT_FOUND;
 
   const webp = await sharp(Buffer.from(await upstream.arrayBuffer()))
