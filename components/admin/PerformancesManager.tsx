@@ -6,9 +6,10 @@ import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
 import { MAX_IMAGE_BYTES, tooLargeMessage, uploadFailedMessage } from "@/lib/uploads";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { formatClock } from "@/lib/format";
+import { compressImage } from "@/lib/imageCompress";
 import {
   addPerformance, updatePerformanceField, removePerformance, reorderPerformance,
-  bulkAddPerformances, uploadPerformanceThumbnail, savePerformancesPage,
+  bulkAddPerformances, uploadThumbnailImage, savePerformancesPage,
   previewBunnyChapters, importBunnyChapters,
   type PerformanceDraft, type FullShowDraft, type ChapterPreviewRow,
 } from "@/app/(admin)/admin/[slug]/performances/actions";
@@ -162,6 +163,33 @@ export default function PerformancesManager({
 
   const newChapterCount = (importRows ?? []).filter((r) => !r.alreadyImported).length;
 
+  // ---- Full-show poster image -------------------------------------------
+  // Was a pasted Bunny URL. Bunny renames the file when a custom thumbnail is
+  // set, so the pasted one silently kept serving the old auto-generated frame.
+  const fullThumbRef = useRef<HTMLInputElement>(null);
+  const [fullThumbBusy, setFullThumbBusy] = useState(false);
+  const [fullThumbError, setFullThumbError] = useState<string | null>(null);
+
+  async function onPickFullThumb(file: File) {
+    setFullThumbError(null);
+    setFullThumbBusy(true);
+    try {
+      const compressed = await compressImage(file);
+      if (compressed.size > MAX_IMAGE_BYTES) { setFullThumbError(tooLargeMessage(MAX_IMAGE_BYTES)); return; }
+      const fd = new FormData();
+      fd.append("file", compressed);
+      const r = await uploadThumbnailImage(schoolId, fd);
+      if ("error" in r) { setFullThumbError(r.error); return; }
+      // Into the draft, not straight to the database — it saves with the rest
+      // of the screen, so this can be undone with Remove before committing.
+      setFull({ thumbnailUrl: r.url });
+    } catch {
+      setFullThumbError(uploadFailedMessage(MAX_IMAGE_BYTES));
+    } finally {
+      setFullThumbBusy(false);
+    }
+  }
+
   return (
     <>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
@@ -260,11 +288,36 @@ export default function PerformancesManager({
           placeholder="https://…  (a Bunny Stream direct file URL, or any hosted file)"
           onChange={(e) => setFull({ downloadUrl: e.target.value })} />
         <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 6 }}>Leave blank to hide the download button. The link is entitlement-gated — only owners can fetch it.</div>
-        <label className={styles.fieldLabel}>Thumbnail URL (poster shown before playback)</label>
-        <input className={styles.input} style={{ fontFamily: "ui-monospace, monospace", fontSize: 12.5 }} value={draft.full.thumbnailUrl}
-          placeholder="https://vz-….b-cdn.net/{video id}/thumbnail.jpg — copy from Bunny's dashboard for this video"
-          onChange={(e) => setFull({ thumbnailUrl: e.target.value })} />
-        <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 6 }}>Leave blank to show a plain background instead.</div>
+        <label className={styles.fieldLabel}>Poster image (shown before playback)</label>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+          <div
+            style={{
+              width: 176, height: 99, borderRadius: 8, overflow: "hidden", flex: "0 0 auto",
+              border: draft.full.thumbnailUrl ? "1px solid var(--border)" : "1px dashed var(--border)",
+              background: draft.full.thumbnailUrl ? `center/cover no-repeat url(${JSON.stringify(draft.full.thumbnailUrl)})` : "var(--surface-2)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 11, color: "var(--text-3)", fontWeight: 600,
+            }}
+          >
+            {draft.full.thumbnailUrl ? "" : "No image"}
+          </div>
+          <div>
+            <input ref={fullThumbRef} type="file" accept="image/*" style={{ display: "none" }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickFullThumb(f); e.target.value = ""; }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className={styles.secondaryBtn} disabled={fullThumbBusy || busy} onClick={() => fullThumbRef.current?.click()}>
+                {fullThumbBusy ? "Uploading…" : draft.full.thumbnailUrl ? "Replace image" : "Upload image"}
+              </button>
+              {draft.full.thumbnailUrl && (
+                <button className={styles.quietBtn} disabled={fullThumbBusy || busy} onClick={() => setFull({ thumbnailUrl: "" })}>Remove</button>
+              )}
+            </div>
+            <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 8, maxWidth: 380 }}>
+              Large photos are resized automatically before uploading. Leave empty to show a plain background instead.
+            </div>
+            {fullThumbError && <div style={{ fontSize: 12, color: "var(--danger, #B4232A)", marginTop: 6 }}>{fullThumbError}</div>}
+          </div>
+        </div>
       </div>
 
       {!hasShowVideo && chapterCount > 0 && (
@@ -348,12 +401,13 @@ function Row({
    *  state to protect, and holding a File in the draft would be awkward. */
   async function onPickFile(file: File) {
     setErr(null);
-    if (file.size > MAX_IMAGE_BYTES) { setErr(tooLargeMessage(MAX_IMAGE_BYTES)); return; }
     setUploading(true);
     try {
+      const compressed = await compressImage(file);
+      if (compressed.size > MAX_IMAGE_BYTES) { setErr(tooLargeMessage(MAX_IMAGE_BYTES)); return; }
       const fd = new FormData();
-      fd.append("file", file);
-      const r = await uploadPerformanceThumbnail(schoolId, fd);
+      fd.append("file", compressed);
+      const r = await uploadThumbnailImage(schoolId, fd);
       if ("error" in r) { setErr(r.error); return; }
       await updatePerformanceField(p.id, slug, "thumbnail_url", r.url);
       onRefresh();

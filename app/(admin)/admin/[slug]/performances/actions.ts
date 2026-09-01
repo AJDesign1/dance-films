@@ -316,14 +316,17 @@ export async function setPerformanceClip(id: string, slug: string, startInput: s
 }
 
 /**
- * Per-dance poster image, uploaded rather than pasted as a URL.
+ * Poster image for a dance or for the full show, uploaded rather than pasted
+ * as a URL.
  *
  * A dance playing a slice of the show video has no Bunny thumbnail to copy —
  * Bunny generates poster frames per video, not per timestamp — so there is no
- * URL to paste for the majority case. Uploads also match how branding and show
- * artwork already work (see DECISIONS.md); the URL field was the stopgap.
+ * URL to paste for the majority case. The full show does have one, but its
+ * filename changes when a custom thumbnail is set in Bunny, so a pasted URL
+ * silently keeps serving the old auto-generated frame. Uploading here removes
+ * both problems, and matches how branding and show artwork already work.
  */
-export async function uploadPerformanceThumbnail(schoolId: string, formData: FormData): Promise<UploadResult> {
+export async function uploadThumbnailImage(schoolId: string, formData: FormData): Promise<UploadResult> {
   await requireAdmin();
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { error: "No file selected." };

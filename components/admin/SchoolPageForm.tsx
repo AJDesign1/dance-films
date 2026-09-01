@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
 import { uploadBrandingImage, type BrandingSlot } from "@/app/(admin)/admin/[slug]/branding/actions";
 import { MAX_IMAGE_BYTES, isRedirectError, tooLargeMessage, uploadFailedMessage } from "@/lib/uploads";
+import { compressImage } from "@/lib/imageCompress";
 import { updateSchoolPage, type SchoolPageForm as FormT } from "@/app/(admin)/admin/[slug]/school-page/actions";
 
 export default function SchoolPageForm({
@@ -25,16 +26,16 @@ export default function SchoolPageForm({
 
   async function uploadImage(slot: BrandingSlot, field: keyof FormT, file: File) {
     setMsg(null);
-    // Checked here too so an oversized file fails instantly and accurately,
-    // rather than being rejected by the request-body cap mid-flight.
-    if (file.size > MAX_IMAGE_BYTES) {
-      setMsg({ ok: false, text: tooLargeMessage(MAX_IMAGE_BYTES) });
-      return;
-    }
     setUploading(slot);
     try {
+      // Resized first — see ShowEditor. SVG logos pass through untouched.
+      const image = await compressImage(file);
+      if (image.size > MAX_IMAGE_BYTES) {
+        setMsg({ ok: false, text: tooLargeMessage(MAX_IMAGE_BYTES) });
+        return;
+      }
       const fd = new FormData();
-      fd.set("file", file);
+      fd.set("file", image);
       const res = await uploadBrandingImage(schoolId, slot, fd);
       if ("url" in res) set(field, res.url as FormT[typeof field]);
       else setMsg({ ok: false, text: res.error });

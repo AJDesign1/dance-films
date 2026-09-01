@@ -5,6 +5,7 @@ import Link from "next/link";
 import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
 import { createShow, updateShow, uploadShowArtwork, type ShowForm } from "@/app/(admin)/admin/[slug]/shows/actions";
 import { MAX_ARTWORK_BYTES, isRedirectError, tooLargeMessage, uploadFailedMessage } from "@/lib/uploads";
+import { compressImage } from "@/lib/imageCompress";
 
 export type EditableShow = {
   id: string;
@@ -44,16 +45,18 @@ export default function ShowEditor({
 
   async function uploadArtwork(file: File) {
     setError(null);
-    // Checked here too so an oversized file fails instantly and accurately,
-    // rather than being rejected by the request-body cap mid-flight.
-    if (file.size > MAX_ARTWORK_BYTES) {
-      setError(tooLargeMessage(MAX_ARTWORK_BYTES));
-      return;
-    }
     setUploading(true);
     try {
+      // Resized first: camera and phone originals routinely exceed the limit,
+      // and rejecting them outright left the admin with no way to use the only
+      // copy of the photo they had.
+      const image = await compressImage(file);
+      if (image.size > MAX_ARTWORK_BYTES) {
+        setError(tooLargeMessage(MAX_ARTWORK_BYTES));
+        return;
+      }
       const fd = new FormData();
-      fd.set("file", file);
+      fd.set("file", image);
       const res = await uploadShowArtwork(schoolId, fd);
       if ("url" in res) set("artwork_url", res.url);
       else setError(res.error);
