@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseClock } from "@/lib/format";
+import { fetchBunnyChapters } from "@/lib/bunny";
 import { MAX_IMAGE_BYTES, tooLargeMessage } from "@/lib/uploads";
 
 export type ActionResult = { ok: true; message?: string } | { error: string };
@@ -149,6 +150,102 @@ export async function savePerformancesPage(
 
   rev(slug);
   return { ok: true, message: `Saved ${rows.length} performance${rows.length === 1 ? "" : "s"}.` };
+}
+
+/** A Bunny chapter alongside whether this show already has a dance at that point. */
+export type ChapterPreviewRow = {
+  title: string;
+  start: number;
+  end: number;
+  alreadyImported: boolean;
+};
+
+/**
+ * What "Import from Bunny" would do, without doing it.
+ *
+ * Matching is on start time rather than title: a title can be edited here after
+ * import (and often is — Bunny's chapter names are working notes), whereas the
+ * start second is what actually identifies the dance inside the recording. So
+ * re-importing after adding a chapter in Bunny brings in only the new one and
+ * leaves existing rows, including their edited titles, alone.
+ */
+export async function previewBunnyChapters(
+  showId: string,
+): Promise<{ rows: ChapterPreviewRow[] } | { error: string }> {
+  await requireAdmin();
+  const admin = createAdminClient();
+
+  const { data: video } = await admin
+    .from("show_videos")
+    .select("full_show_bunny_video_id")
+    .eq("show_id", showId)
+    .maybeSingle();
+
+  if (!video?.full_show_bunny_video_id) {
+    return { error: "Set the full-show Bunny video ID first — chapters are read from that video." };
+  }
+
+  const result = await fetchBunnyChapters(video.full_show_bunny_video_id);
+  if ("error" in result) return result;
+  if (result.chapters.length === 0) {
+    return { error: "That video has no chapters in Bunny yet. Add them there, then import." };
+  }
+
+  const { data: existing } = await admin
+    .from("performances")
+    .select("clip_start_seconds")
+    .eq("show_id", showId);
+  const taken = new Set((existing ?? []).map((p) => p.clip_start_seconds).filter((s): s is number => s !== null));
+
+  return {
+    rows: result.chapters.map((c) => ({ ...c, alreadyImported: taken.has(c.start) })),
+  };
+}
+
+/**
+ * Create a dance for each Bunny chapter this show doesn't already have,
+ * pointed at the show's own recording with the chapter's timings.
+ */
+export async function importBunnyChapters(showId: string, slug: string): Promise<ActionResult> {
+  await requireAdmin();
+
+  const preview = await previewBunnyChapters(showId);
+  if ("error" in preview) return preview;
+
+  const toAdd = preview.rows.filter((r) => !r.alreadyImported);
+  if (toAdd.length === 0) return { ok: true, message: "Every chapter is already in the list." };
+
+  const admin = createAdminClient();
+  const { data: last } = await admin
+    .from("performances")
+    .select("sort_order")
+    .eq("show_id", showId)
+    .order("sort_order", { ascending: false })
+    .limit(1);
+  let order = (last?.[0]?.sort_order ?? -1) + 1;
+
+  const { error } = await admin.from("performances").insert(
+    toAdd.map((c) => ({
+      show_id: showId,
+      title: c.title,
+      bunny_video_id: "",
+      video_source: "show" as const,
+      clip_start_seconds: c.start,
+      clip_end_seconds: c.end,
+      duration_seconds: c.end - c.start,
+      sort_order: order++,
+    })),
+  );
+  if (error) return { error: "Couldn't add those chapters. Please try again." };
+
+  rev(slug);
+  const skipped = preview.rows.length - toAdd.length;
+  return {
+    ok: true,
+    message:
+      `Added ${toAdd.length} performance${toAdd.length === 1 ? "" : "s"} from Bunny` +
+      (skipped > 0 ? ` (${skipped} already there).` : "."),
+  };
 }
 
 export async function addPerformance(showId: string, slug: string): Promise<ActionResult> {

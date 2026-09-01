@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
 import { MAX_IMAGE_BYTES, tooLargeMessage, uploadFailedMessage } from "@/lib/uploads";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { formatClock } from "@/lib/format";
 import {
   addPerformance, updatePerformanceField, removePerformance, reorderPerformance,
   bulkAddPerformances, uploadPerformanceThumbnail, savePerformancesPage,
-  type PerformanceDraft, type FullShowDraft,
+  previewBunnyChapters, importBunnyChapters,
+  type PerformanceDraft, type FullShowDraft, type ChapterPreviewRow,
 } from "@/app/(admin)/admin/[slug]/performances/actions";
 
 export type PerfRow = {
@@ -128,6 +130,38 @@ export default function PerformancesManager({
   const chapterCount = draft.rows.filter((r) => r.videoSource === "show").length;
   const busy = pending || saving;
 
+  // ---- Import from Bunny -------------------------------------------------
+  // Chaptering the show once in Bunny and pulling the marks across beats
+  // typing every start and end by hand. Previewed before anything is written.
+  const [importRows, setImportRows] = useState<ChapterPreviewRow[] | null>(null);
+  const [importing, setImporting] = useState(false);
+
+  function openImport() {
+    setError(null);
+    setMsg(null);
+    setImporting(true);
+    startTransition(async () => {
+      const res = await previewBunnyChapters(showId);
+      setImporting(false);
+      if ("error" in res) { setError(res.error); return; }
+      setImportRows(res.rows);
+    });
+  }
+
+  function confirmImport() {
+    setImporting(true);
+    startTransition(async () => {
+      const res = await importBunnyChapters(showId, slug);
+      setImporting(false);
+      setImportRows(null);
+      if ("error" in res) { setError(res.error); return; }
+      setMsg(res.message ?? "Imported.");
+      router.refresh();
+    });
+  }
+
+  const newChapterCount = (importRows ?? []).filter((r) => !r.alreadyImported).length;
+
   return (
     <>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
@@ -136,6 +170,14 @@ export default function PerformancesManager({
           <span className={`${styles.badge} ${styles.badgeWarn}`}>Unsaved changes</span>
         )}
         <div style={{ flex: 1 }} />
+        <button
+          className={styles.secondaryBtn}
+          disabled={busy || importing || !hasShowVideo}
+          title={hasShowVideo ? "Create a performance from each chapter marked on the show video in Bunny" : "Set the full-show Bunny video ID first"}
+          onClick={openImport}
+        >
+          {importing && !importRows ? "Checking…" : "Import from Bunny"}
+        </button>
         <button className={styles.secondaryBtn} onClick={() => setBulkOpen((o) => !o)}>Bulk add</button>
         <button className={styles.secondaryBtn} disabled={busy} onClick={() => structural(() => addPerformance(showId, slug))}>Add performance</button>
         <button
@@ -150,6 +192,46 @@ export default function PerformancesManager({
 
       {error && <div className={`${styles.msg} ${styles.msgErr}`} style={{ marginBottom: 12 }}>{error}</div>}
       {msg && !dirty && <div className={`${styles.msg} ${styles.msgOk}`} style={{ marginBottom: 12 }}>{msg}</div>}
+
+      {importRows && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Import chapters from Bunny"
+          onClick={() => !importing && setImportRows(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, background: "rgba(12,20,26,.62)", backdropFilter: "blur(3px)" }}
+        >
+          <div onClick={(e) => e.stopPropagation()} className={styles.card} style={{ width: "100%", maxWidth: 560, padding: 24, maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
+            <div style={{ fontFamily: "var(--disp)", fontWeight: 800, fontSize: 22, textTransform: "uppercase", color: "var(--text)" }}>
+              Import chapters from Bunny
+            </div>
+            <p style={{ margin: "10px 0 14px", fontSize: 14, lineHeight: 1.55, color: "var(--text-2)" }}>
+              {newChapterCount > 0
+                ? `${newChapterCount} new ${newChapterCount === 1 ? "chapter" : "chapters"} will be added as performances, set to play a section of the show video. Nothing already in the list is changed.`
+                : "Every chapter on this video is already in the list — nothing to add."}
+            </p>
+
+            <div style={{ overflowY: "auto", border: "1px solid var(--border)", borderRadius: "var(--r-sm)" }}>
+              {importRows.map((c) => (
+                <div key={`${c.start}-${c.title}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderBottom: "1px solid var(--border)", opacity: c.alreadyImported ? 0.5 : 1 }}>
+                  <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, color: "var(--text-3)", whiteSpace: "nowrap" }}>
+                    {formatClock(c.start)} → {formatClock(c.end)}
+                  </span>
+                  <span style={{ fontSize: 13.5, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</span>
+                  {c.alreadyImported && <span className={`${styles.badge} ${styles.badgeMuted}`}>Already added</span>}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 18 }}>
+              <button className={styles.secondaryBtn} disabled={importing} onClick={() => setImportRows(null)}>Cancel</button>
+              <button className={styles.primaryBtn} disabled={importing || newChapterCount === 0} onClick={confirmImport}>
+                {importing ? "Adding…" : `Add ${newChapterCount} performance${newChapterCount === 1 ? "" : "s"}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Full-show video */}
       <div className={`${styles.card} ${styles.cardPad}`} style={{ marginBottom: 22 }}>

@@ -55,6 +55,59 @@ export async function fetchBunnyImage(rawUrl: string): Promise<Response | null> 
   return res.ok ? res : null;
 }
 
+export type BunnyChapter = { title: string; start: number; end: number };
+
+/**
+ * The chapters defined on a Bunny video, in seconds.
+ *
+ * Bunny's own chapter marks are the natural source for a show's dance list:
+ * `{title, start, end}` maps straight onto title / clip_start_seconds /
+ * clip_end_seconds, so a show chaptered once in Bunny can fill the whole
+ * performances grid rather than being typed in twice.
+ *
+ * Uses the Stream API key, which is *not* the library id — it reads the whole
+ * library, so it's server-only and never reaches the browser. A read-only key
+ * is enough; this only ever issues a GET.
+ */
+export async function fetchBunnyChapters(
+  videoId: string,
+): Promise<{ chapters: BunnyChapter[] } | { error: string }> {
+  const libraryId = process.env.BUNNY_LIBRARY_ID;
+  const key = process.env.BUNNY_STREAM_API_KEY;
+  if (!libraryId) return { error: "BUNNY_LIBRARY_ID isn't set." };
+  if (!key) return { error: "No Bunny API key is configured, so chapters can't be read." };
+
+  let res: Response;
+  try {
+    res = await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos/${videoId}`, {
+      headers: { AccessKey: key, accept: "application/json" },
+      cache: "no-store",
+    });
+  } catch {
+    return { error: "Couldn't reach Bunny. Please try again." };
+  }
+
+  if (res.status === 401 || res.status === 403) {
+    return { error: "Bunny rejected the API key. Check BUNNY_STREAM_API_KEY belongs to this video library." };
+  }
+  if (res.status === 404) return { error: "Bunny doesn't have a video with that ID in this library." };
+  if (!res.ok) return { error: `Bunny returned an error (${res.status}).` };
+
+  const body = (await res.json()) as { chapters?: { title?: string; start?: number; end?: number }[] };
+  const chapters = (body.chapters ?? [])
+    .filter((c) => typeof c.start === "number" && typeof c.end === "number")
+    .map((c) => ({
+      // Bunny titles are free text and often carry double spaces from pasting.
+      title: (c.title ?? "").replace(/\s+/g, " ").trim() || "Untitled",
+      start: Math.max(0, Math.floor(c.start!)),
+      end: Math.max(0, Math.floor(c.end!)),
+    }))
+    .filter((c) => c.end > c.start)
+    .sort((a, b) => a.start - b.start);
+
+  return { chapters };
+}
+
 export function bunnyEmbedUrl(videoId: string, opts?: { autoplay?: boolean; startSeconds?: number | null }): string | null {
   const libraryId = process.env.BUNNY_LIBRARY_ID;
   if (!libraryId) {
