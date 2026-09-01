@@ -19,20 +19,21 @@ export function formatDuration(seconds: number | null | undefined): string {
 }
 
 /**
- * 4360 → "1:12:40"; 765 → "12:45" (an editable clock value, not a label).
+ * 4360 → "01:12:40"; 765 → "00:12:45" (an editable clock value, not a label).
  *
- * Unlike formatDuration this keeps hours, because it round-trips through admin
- * inputs — full-show length, and the start/end timestamps of a dance taken from
- * inside a show recording, which routinely run past an hour. Parsed back by
- * parseClock().
+ * Always full `hh:mm:ss`, matching how Bunny's dashboard writes timestamps, so
+ * a dance's start and end can be read straight off the video there and checked
+ * here without mentally reformatting. Admin-only — parents see the shorter
+ * formatDuration/formatRuntime. Parsed back by parseClock(), which accepts this
+ * and the shorter forms alike.
  */
 export function formatClock(seconds: number | null | undefined): string {
   if (seconds === null || seconds === undefined || seconds < 0) return "";
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
-  const mm = h > 0 ? String(m).padStart(2, "0") : String(m);
-  return `${h > 0 ? `${h}:` : ""}${mm}:${String(s).padStart(2, "0")}`;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
 /**

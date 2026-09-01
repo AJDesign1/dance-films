@@ -169,7 +169,7 @@ export default function PerformancesManager({
           </div>
           <div style={{ width: 150 }}>
             <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Total length</label>
-            <input className={styles.input} style={{ textAlign: "center" }} value={draft.full.duration} placeholder="1:12:40"
+            <input className={styles.input} style={{ textAlign: "center" }} value={draft.full.duration} placeholder="01:12:40"
               onChange={(e) => setFull({ duration: e.target.value })} />
           </div>
         </div>
@@ -334,9 +334,9 @@ function Row({
 
         {isChapter ? (
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <input style={timeInput} value={p.clipStart} placeholder="Start" onChange={(e) => onChange({ clipStart: e.target.value })} />
+            <input style={timeInput} value={p.clipStart} placeholder="00:00:00" onChange={(e) => onChange({ clipStart: e.target.value })} />
             <span style={{ color: "var(--text-3)", fontSize: 12 }}>→</span>
-            <input style={timeInput} value={p.clipEnd} placeholder="End" onChange={(e) => onChange({ clipEnd: e.target.value })} />
+            <input style={timeInput} value={p.clipEnd} placeholder="00:00:00" onChange={(e) => onChange({ clipEnd: e.target.value })} />
           </div>
         ) : (
           <input style={mono} value={p.bunnyVideoId} placeholder="Bunny video ID" onChange={(e) => onChange({ bunnyVideoId: e.target.value })} />
