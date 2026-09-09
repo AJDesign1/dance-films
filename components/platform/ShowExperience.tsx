@@ -299,7 +299,18 @@ export default function ShowExperience({
         </div>
       )}
 
-      <div className={styles.progGrid} style={{ marginTop: 40 }}>
+      {/* Two columns that fill top-to-bottom, so a numbered programme reads
+          1,2,3 down the left then 4,5,6 down the right — not 1,2 across. Grid
+          can only do that with an explicit row count, and the count has to
+          follow the *filtered* list, since the group/style dropdowns change
+          how many are showing. Collapses to one column under 900px, where the
+          row count is ignored (see show.module.css). */}
+      <div
+        className={styles.progGrid}
+        // Never 0: `repeat(0, auto)` is invalid CSS and would drop the whole
+        // track declaration, which a filter matching nothing would otherwise do.
+        style={{ marginTop: 40, "--prog-rows": Math.max(1, Math.ceil(visible.length / 2)) } as CSSProperties}
+      >
         {visible.map((p) => (
           <button key={p.id} className={styles.progRow} onClick={() => play({ type: "perf", id: p.id })}>
             <div className={styles.progNum}>{pad2(performances.indexOf(p) + 1)}</div>
