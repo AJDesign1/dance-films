@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
-import { formatPrice } from "@/lib/format";
+import ShowPrice from "@/components/platform/ShowPrice";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import {
   reorderShow, deleteShow, getShowDeleteImpact, type ShowDeleteImpact,
@@ -17,6 +17,7 @@ export type ShowRow = {
   season: string | null;
   show_year: number | null;
   price_pence: number;
+  sale_price_pence: number | null;
   status: "draft" | "published";
   perfCount: number;
 };
@@ -68,12 +69,12 @@ export default function ShowsList({ slug, shows }: { slug: string; shows: ShowRo
 
   return (
     <div className={styles.card} style={{ overflowX: "auto" }}>
-      <div style={{ minWidth: 720 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "36px minmax(200px,1fr) 90px 84px 104px 170px", gap: 12, padding: "12px 20px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--text-3)" }}>
+      <div style={{ minWidth: 800 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "36px minmax(200px,1fr) 90px 150px 104px 170px", gap: 12, padding: "12px 20px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--text-3)" }}>
           <span></span><span>Show</span><span>Year</span><span>Price</span><span>Status</span><span></span>
         </div>
         {shows.map((s, i) => (
-          <div key={s.id} style={{ display: "grid", gridTemplateColumns: "36px minmax(200px,1fr) 90px 84px 104px 170px", gap: 12, alignItems: "center", padding: "13px 20px", borderBottom: "1px solid var(--border)" }}>
+          <div key={s.id} style={{ display: "grid", gridTemplateColumns: "36px minmax(200px,1fr) 90px 150px 104px 170px", gap: 12, alignItems: "center", padding: "13px 20px", borderBottom: "1px solid var(--border)" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
               <button className={styles.quietBtn} style={{ padding: 2, border: "none" }} disabled={pending || i === 0} onClick={() => move(s.id, -1)}>▲</button>
               <button className={styles.quietBtn} style={{ padding: 2, border: "none" }} disabled={pending || i === shows.length - 1} onClick={() => move(s.id, 1)}>▼</button>
@@ -83,7 +84,7 @@ export default function ShowsList({ slug, shows }: { slug: string; shows: ShowRo
               <div style={{ fontSize: 12, color: "var(--text-3)" }}>{s.perfCount} performances{s.season ? ` · ${s.season}` : ""}</div>
             </div>
             <span style={{ fontSize: 14, color: "var(--text-2)" }}>{s.show_year ?? "—"}</span>
-            <span style={{ fontSize: 14, fontWeight: 600 }}>{formatPrice(s.price_pence)}</span>
+            <span style={{ fontSize: 14, fontWeight: 600 }}><ShowPrice show={s} /></span>
             <span className={`${styles.badge} ${s.status === "published" ? styles.badgeOk : styles.badgeWarn}`}>{s.status === "published" ? "Published" : "Draft"}</span>
             <div style={{ display: "flex", gap: 7, justifyContent: "flex-end" }}>
               <Link href={`/admin/${slug}/performances?show=${s.id}`} className={styles.quietBtn}>Performances</Link>

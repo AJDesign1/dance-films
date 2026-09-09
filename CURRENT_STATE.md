@@ -10,6 +10,7 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 | Subdomain theming | ✅ Middleware resolves school by subdomain/`?school=`; DB `theme` jsonb → CSS variables at runtime |
 | Auth | ✅ Invite-only magic link (allowlist checked server-side before OTP send); name capture on first sign-in; admin flag auto-set for the configured admin email |
 | Shows shop | ✅ Unified shop, owned ("Watch") / not-owned ("Buy") from real entitlements |
+| Sale pricing | ✅ Optional per-show discount with admin validation, crossed-out regular price + red sale price and Sale tag across parent purchase surfaces, and server-side discounted Stripe Checkout amount |
 | Show page + video | ✅ Hero, gated full-show + performance library, group/style filter dropdowns, viewing overlay with prev/next |
 | Video anti-copy | ✅ Bunny Stream iframe-only embeds, embed URLs resolved on demand (never in page markup), context-menu/selection disabled. Pull Zone referrer allowlisting now on (`dancefilms.co.uk` + wildcard). Token Authentication still not wired up — see `DECISIONS.md` |
 | Dance clips | ✅ A dance can play a section of the show's own recording (`video_source='show'` + start/end) instead of its own upload — one upload per show. Standalone per-dance videos still fully supported and unchanged. Seek/stop via Bunny player.js — see `DECISIONS.md` |

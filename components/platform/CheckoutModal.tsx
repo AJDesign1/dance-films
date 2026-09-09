@@ -3,12 +3,14 @@
 import { useState, useTransition } from "react";
 import { createCheckoutSession } from "@/app/(platform)/checkout/actions";
 import { formatPrice } from "@/lib/format";
+import ShowPrice, { effectiveShowPrice } from "@/components/platform/ShowPrice";
 
 export type CheckoutShow = {
   slug: string;
   title: string;
   show_year: number | null;
   price_pence: number;
+  sale_price_pence: number | null;
 };
 
 /**
@@ -68,7 +70,7 @@ export default function CheckoutModal({
               </div>
             </div>
             <div style={{ marginLeft: "auto", fontFamily: "var(--disp)", fontWeight: 700, fontSize: 24, color: "var(--text)" }}>
-              {formatPrice(show.price_pence)}
+              <ShowPrice show={show} />
             </div>
           </div>
 
@@ -90,7 +92,7 @@ export default function CheckoutModal({
             disabled={pending}
             style={{ width: "100%", marginTop: 18, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9, padding: 15, borderRadius: 10, border: "none", background: "var(--accent)", color: "#fff", fontFamily: "var(--disp)", fontWeight: 700, fontSize: 18, letterSpacing: ".04em", textTransform: "uppercase", cursor: "pointer", opacity: pending ? 0.7 : 1 }}
           >
-            {pending ? "Redirecting…" : `Pay ${formatPrice(show.price_pence)}`}
+            {pending ? "Redirecting…" : `Pay ${formatPrice(effectiveShowPrice(show))}`}
           </button>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, marginTop: 14, fontSize: 11.5, color: "var(--text-2)" }}>
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="7" width="10" height="7" rx="1.5" /><path d="M5 7V5a3 3 0 016 0v2" /></svg>

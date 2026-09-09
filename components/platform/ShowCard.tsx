@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "@/app/(platform)/shows/shop.module.css";
-import { formatPrice } from "@/lib/format";
+import ShowPrice from "@/components/platform/ShowPrice";
 import CheckoutModal from "@/components/platform/CheckoutModal";
 import CoverImage from "@/components/platform/CoverImage";
 
@@ -13,6 +13,7 @@ export type ShopShow = {
   show_year: number | null;
   season: string | null;
   price_pence: number;
+  sale_price_pence: number | null;
   artwork_url: string | null;
   owned: boolean;
 };
@@ -68,7 +69,7 @@ export default function ShowCard({ show, email }: { show: ShopShow; email: strin
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 10 }}>
               <span style={{ fontSize: 12.5, fontWeight: 700, color: "#fff" }}>
                 {show.show_year ? `${show.show_year} · ` : ""}
-                {formatPrice(show.price_pence)}
+                <ShowPrice show={show} color="#fff" />
               </span>
               {show.owned ? (
                 <span style={pill("var(--accent)", "#fff")}>

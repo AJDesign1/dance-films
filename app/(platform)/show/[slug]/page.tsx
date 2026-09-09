@@ -3,11 +3,12 @@ import Link from "next/link";
 import { requireOnboardedProfile } from "@/lib/auth";
 import { getCurrentSchool } from "@/lib/school";
 import { createClient } from "@/lib/supabase/server";
-import { formatPrice, formatDuration, formatRuntime } from "@/lib/format";
+import { formatDuration, formatRuntime } from "@/lib/format";
 import Footer from "@/components/platform/Footer";
 import BuyButton from "@/components/platform/BuyButton";
 import ShowExperience, { type PerfItem } from "@/components/platform/ShowExperience";
 import CoverImage from "@/components/platform/CoverImage";
+import ShowPrice from "@/components/platform/ShowPrice";
 import styles from "./show.module.css";
 
 export default async function ShowPage({
@@ -29,7 +30,7 @@ export default async function ShowPage({
 
   const { data: show } = await supabase
     .from("shows")
-    .select("id, slug, title, show_year, season, intro_text, artwork_url, price_pence")
+    .select("id, slug, title, show_year, season, intro_text, artwork_url, price_pence, sale_price_pence")
     .eq("school_id", school!.id)
     .eq("slug", slug)
     .eq("status", "published")
@@ -83,11 +84,11 @@ export default async function ShowPage({
             </div>
             <p style={{ color: "var(--text-2)", fontSize: 15, lineHeight: 1.55, margin: "10px 0 18px" }}>
               Buy <strong style={{ color: "var(--text)" }}>{show.title}</strong> for{" "}
-              <strong style={{ color: "var(--text)" }}>{formatPrice(show.price_pence)}</strong> to watch the full show
+              <strong style={{ color: "var(--text)" }}><ShowPrice show={show} /></strong> to watch the full show
               and every performance. Checkout is wired in Stage 6.
             </p>
             <BuyButton
-              show={{ slug: show.slug, title: show.title, show_year: show.show_year, price_pence: show.price_pence }}
+              show={{ slug: show.slug, title: show.title, show_year: show.show_year, price_pence: show.price_pence, sale_price_pence: show.sale_price_pence }}
               email={profile.email}
             />
           </div>

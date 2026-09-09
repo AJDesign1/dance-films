@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "@/app/(platform)/shows/shop.module.css";
-import { formatPrice } from "@/lib/format";
+import ShowPrice from "@/components/platform/ShowPrice";
 import CheckoutModal from "@/components/platform/CheckoutModal";
 import CoverImage from "@/components/platform/CoverImage";
 import type { ShopShow } from "@/components/platform/ShowCard";
@@ -67,7 +67,7 @@ export default function FeaturedShow({ show, email }: { show: ShopShow; email: s
                 <>
                   <span style={cta("#fff", "var(--ink)")}>
                     <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="6" cy="14" r="1" /><circle cx="13" cy="14" r="1" /><path d="M1 1.5h2l1.8 8.5h8.2l1.4-6H4.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    Buy · {formatPrice(show.price_pence)}
+                    Buy · <ShowPrice show={show} color="var(--ink)" />
                   </span>
                   <span style={{ fontSize: 13.5, fontWeight: 600, color: "#dbe3ea" }}>One-time purchase · yours forever</span>
                 </>

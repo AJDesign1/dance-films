@@ -4,7 +4,10 @@ What to pick up next. Update this file at the end of each working session so the
 
 ## Immediate priorities
 
-**Done since the last session**: dances can now be sections of the full-show
+**Done since the last session**: shows now support an optional discounted sale
+price, shown to parents with the regular price crossed out and a Sale tag; the
+discounted amount is also used for Stripe Checkout. This requires migration
+`20260909120000_show_sale_price.sql` before deployment. Dances can now be sections of the full-show
 recording rather than separate uploads, and Bunny's own chapters fill the list
 automatically; the performances screen saves explicitly; shows can be deleted;
 posters are uploaded rather than pasted; images compress before upload.

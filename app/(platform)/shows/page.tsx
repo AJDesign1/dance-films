@@ -23,7 +23,7 @@ export default async function ShowsPage() {
   const [{ data: showRows }, { data: entRows }] = await Promise.all([
     supabase
       .from("shows")
-      .select("id, slug, title, show_year, season, price_pence, artwork_url")
+      .select("id, slug, title, show_year, season, price_pence, sale_price_pence, artwork_url")
       .eq("school_id", school!.id)
       .eq("status", "published")
       .order("sort_order", { ascending: true }),
@@ -40,6 +40,7 @@ export default async function ShowsPage() {
     show_year: s.show_year,
     season: s.season,
     price_pence: s.price_pence,
+    sale_price_pence: s.sale_price_pence,
     artwork_url: s.artwork_url,
     // Admin previews every show fully unlocked, regardless of entitlement —
     // RLS already allows admin to read the gated tables either way.

@@ -449,6 +449,7 @@ export type Database = {
           id: string
           intro_text: string | null
           price_pence: number
+          sale_price_pence: number | null
           school_id: string
           season: string | null
           show_year: number | null
@@ -464,6 +465,7 @@ export type Database = {
           id?: string
           intro_text?: string | null
           price_pence?: number
+          sale_price_pence?: number | null
           school_id: string
           season?: string | null
           show_year?: number | null
@@ -479,6 +481,7 @@ export type Database = {
           id?: string
           intro_text?: string | null
           price_pence?: number
+          sale_price_pence?: number | null
           school_id?: string
           season?: string | null
           show_year?: number | null

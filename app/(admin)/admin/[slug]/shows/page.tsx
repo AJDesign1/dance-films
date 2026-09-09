@@ -12,7 +12,7 @@ export default async function ShowsPage({ params }: { params: Promise<{ slug: st
 
   const { data: shows } = await admin
     .from("shows")
-    .select("id, slug, title, season, show_year, price_pence, status")
+    .select("id, slug, title, season, show_year, price_pence, sale_price_pence, status")
     .eq("school_id", school.id)
     .order("sort_order", { ascending: true });
 
@@ -30,6 +30,7 @@ export default async function ShowsPage({ params }: { params: Promise<{ slug: st
     season: s.season,
     show_year: s.show_year,
     price_pence: s.price_pence,
+    sale_price_pence: s.sale_price_pence,
     status: s.status,
     perfCount: perfCounts.get(s.id) ?? 0,
   }));

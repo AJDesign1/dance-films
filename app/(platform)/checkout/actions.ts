@@ -27,12 +27,13 @@ export async function createCheckoutSession(slug: string): Promise<CheckoutResul
   const supabase = await createClient();
   const { data: show } = await supabase
     .from("shows")
-    .select("id, slug, title, show_year, price_pence, stripe_price_id")
+    .select("id, slug, title, show_year, price_pence, sale_price_pence, stripe_price_id")
     .eq("school_id", school.id)
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
   if (!show) return { error: "That show isn't available." };
+  const checkoutPrice = show.sale_price_pence ?? show.price_pence;
 
   // Already owned? Don't double-charge.
   const { data: existing } = await supabase.from("entitlements").select("id").eq("show_id", show.id).maybeSingle();
@@ -44,18 +45,18 @@ export async function createCheckoutSession(slug: string): Promise<CheckoutResul
   // Record a pending order (service role — orders aren't client-writable).
   const { data: order, error: orderErr } = await admin
     .from("orders")
-    .insert({ user_id: user.id, show_id: show.id, amount_pence: show.price_pence, currency: "gbp", status: "pending" })
+    .insert({ user_id: user.id, show_id: show.id, amount_pence: checkoutPrice, currency: "gbp", status: "pending" })
     .select("id")
     .single();
   if (orderErr || !order) return { error: "Couldn't start checkout. Please try again." };
 
-  const lineItem: import("stripe").Stripe.Checkout.SessionCreateParams.LineItem = show.stripe_price_id
+  const lineItem: import("stripe").Stripe.Checkout.SessionCreateParams.LineItem = show.stripe_price_id && show.sale_price_pence === null
     ? { price: show.stripe_price_id, quantity: 1 }
     : {
         quantity: 1,
         price_data: {
           currency: "gbp",
-          unit_amount: show.price_pence,
+          unit_amount: checkoutPrice,
           product_data: {
             name: `${show.title}${show.show_year ? ` (${show.show_year})` : ""}`,
             description: "Full show + every performance",

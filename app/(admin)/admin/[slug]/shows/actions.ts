@@ -12,6 +12,7 @@ export type ShowForm = {
   season: string;
   show_year: string; // raw input
   price: string; // pounds, raw input
+  sale_price: string; // optional pounds, raw input
   intro_text: string;
   artwork_url: string;
   status: "draft" | "published";
@@ -20,15 +21,25 @@ export type ShowForm = {
 function parseForm(f: ShowForm) {
   const year = parseInt(f.show_year, 10);
   const pounds = parseFloat(f.price);
+  const salePounds = f.sale_price.trim() ? parseFloat(f.sale_price) : null;
   return {
     title: f.title.trim(),
     season: f.season.trim() || null,
     show_year: Number.isFinite(year) ? year : null,
     price_pence: Number.isFinite(pounds) ? Math.round(pounds * 100) : 0,
+    sale_price_pence: salePounds !== null && Number.isFinite(salePounds) ? Math.round(salePounds * 100) : null,
     intro_text: f.intro_text.trim() || null,
     artwork_url: f.artwork_url.trim() || null,
     status: f.status,
   };
+}
+
+function validatePrice(data: ReturnType<typeof parseForm>, rawSalePrice: string): string | null {
+  if (data.price_pence <= 0) return "Enter a full-show price greater than £0.";
+  if (rawSalePrice.trim() && data.sale_price_pence === null) return "Enter a valid sale price, or leave it blank.";
+  if (data.sale_price_pence !== null && data.sale_price_pence <= 0) return "Enter a sale price greater than £0, or leave it blank.";
+  if (data.sale_price_pence !== null && data.sale_price_pence >= data.price_pence) return "The sale price must be lower than the full price.";
+  return null;
 }
 
 // Same sanitisation whether deriving a slug from the title (auto, on create)
@@ -70,6 +81,8 @@ export async function createShow(schoolId: string, slug: string, form: ShowForm)
   await requireAdmin();
   const data = parseForm(form);
   if (!data.title) return { error: "Enter a show title." };
+  const priceError = validatePrice(data, form.sale_price);
+  if (priceError) return { error: priceError };
   const admin = createAdminClient();
 
   const explicit = slugify(form.slug.trim());
@@ -101,6 +114,8 @@ export async function updateShow(showId: string, schoolId: string, slug: string,
   await requireAdmin();
   const data = parseForm(form);
   if (!data.title) return { error: "Enter a show title." };
+  const priceError = validatePrice(data, form.sale_price);
+  if (priceError) return { error: priceError };
   const admin = createAdminClient();
 
   // Fall back to deriving from the (possibly just-changed) title if the URL

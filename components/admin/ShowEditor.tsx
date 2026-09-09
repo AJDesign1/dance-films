@@ -14,6 +14,7 @@ export type EditableShow = {
   season: string | null;
   show_year: number | null;
   price_pence: number;
+  sale_price_pence: number | null;
   intro_text: string | null;
   artwork_url: string | null;
   status: "draft" | "published";
@@ -34,6 +35,7 @@ export default function ShowEditor({
     season: show?.season ?? "",
     show_year: show?.show_year ? String(show.show_year) : "",
     price: show ? String(show.price_pence / 100) : "",
+    sale_price: show?.sale_price_pence !== null && show?.sale_price_pence !== undefined ? String(show.sale_price_pence / 100) : "",
     intro_text: show?.intro_text ?? "",
     artwork_url: show?.artwork_url ?? "",
     status: show?.status ?? "draft",
@@ -87,6 +89,10 @@ export default function ShowEditor({
           <div><label className={styles.fieldLabel} style={{ marginTop: 0 }}>Season / tag</label><input className={styles.input} value={form.season} onChange={(e) => set("season", e.target.value)} placeholder="e.g. Summer Showcase" /></div>
           <div><label className={styles.fieldLabel} style={{ marginTop: 0 }}>Year</label><input className={styles.input} value={form.show_year} onChange={(e) => set("show_year", e.target.value)} placeholder="2025" inputMode="numeric" /></div>
           <div><label className={styles.fieldLabel} style={{ marginTop: 0 }}>Full-show price (£)</label><input className={styles.input} value={form.price} onChange={(e) => set("price", e.target.value)} placeholder="24" inputMode="decimal" /></div>
+          <div><label className={styles.fieldLabel} style={{ marginTop: 0 }}>Sale price (£, optional)</label><input className={styles.input} value={form.sale_price} onChange={(e) => set("sale_price", e.target.value)} placeholder="e.g. 18" inputMode="decimal" /></div>
+        </div>
+        <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 6 }}>
+          Leave blank for the regular price. A sale price must be lower than the full price.
         </div>
         <label className={styles.fieldLabel}>Show URL</label>
         <div style={{ display: "flex", alignItems: "center", border: "1.5px solid var(--border)", borderRadius: "var(--r-md)", overflow: "hidden", background: "var(--surface-2)" }}>
