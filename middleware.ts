@@ -50,6 +50,15 @@ export async function middleware(request: NextRequest) {
     .getAll()
     .some((c) => c.name.startsWith("sb-"));
 
+  // Avoid / -> /shows -> /login for a signed-out visitor. Each hop invokes the
+  // dynamic Next.js function, so the old login-first path paid for two extra
+  // server responses before rendering the sign-in screen.
+  if (slug && pathname === "/" && !hasAuthCookie) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
   if (hasAuthCookie) {
     // Keep the Supabase session fresh (writes refreshed auth cookies onto the response).
     const supabase = createServerClient(

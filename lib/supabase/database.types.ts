@@ -506,6 +506,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_show_page: {
+        Args: { p_school_id: string; p_show_slug: string }
+        Returns: Json
+      }
+      get_shows_page: { Args: { p_school_id: string }; Returns: Json }
       has_entitlement: { Args: { p_show: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_invited: { Args: { p_school: string }; Returns: boolean }

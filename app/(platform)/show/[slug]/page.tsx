@@ -11,6 +11,39 @@ import CoverImage from "@/components/platform/CoverImage";
 import ShowPrice from "@/components/platform/ShowPrice";
 import styles from "./show.module.css";
 
+type ShowPageBundle = {
+  show: {
+    id: string;
+    slug: string;
+    title: string;
+    show_year: number | null;
+    season: string | null;
+    intro_text: string | null;
+    artwork_url: string | null;
+    price_pence: number;
+    sale_price_pence: number | null;
+  };
+  owned: boolean;
+  video?: {
+    duration_seconds: number | null;
+    has_full_show: boolean;
+    has_thumbnail: boolean;
+  } | null;
+  downloaded?: boolean;
+  performances?: Array<{
+    id: string;
+    title: string;
+    has_thumbnail: boolean;
+    duration_seconds: number | null;
+    category_ids: string[];
+  }>;
+  categories?: Array<{
+    id: string;
+    name: string;
+    kind: "group" | "style";
+  }>;
+};
+
 export default async function ShowPage({
   params,
   searchParams,
@@ -28,25 +61,18 @@ export default async function ShowPage({
     createClient(),
   ]);
 
-  const { data: show } = await supabase
-    .from("shows")
-    .select("id, slug, title, show_year, season, intro_text, artwork_url, price_pence, sale_price_pence")
-    .eq("school_id", school!.id)
-    .eq("slug", slug)
-    .eq("status", "published")
-    .maybeSingle();
+  // One Data API request returns the show, ownership and (when entitled) all
+  // page content. The SECURITY INVOKER function preserves every existing RLS
+  // boundary while eliminating transatlantic round trips between each query.
+  const { data } = await supabase.rpc("get_show_page", {
+    p_school_id: school!.id,
+    p_show_slug: slug,
+  });
+  const bundle = data as unknown as ShowPageBundle | null;
 
-  if (!show) notFound();
+  if (!bundle) notFound();
 
-  // Ownership via the user's own entitlement row (RLS: own rows only).
-  const { data: ent } = await supabase
-    .from("entitlements")
-    .select("id")
-    .eq("show_id", show.id)
-    .maybeSingle();
-  // Admin previews every show fully unlocked, regardless of entitlement —
-  // RLS already allows admin to read the gated tables either way.
-  const owned = !!ent || profile.is_admin;
+  const { show, owned } = bundle;
 
   const schoolName = school?.name ?? "Dance Films";
   const logoWhite = school?.logo_white_url ?? null;
@@ -98,49 +124,15 @@ export default async function ShowPage({
     );
   }
 
-  // ---- Owned: load gated content ----
-  // Four independent reads for the same show — run concurrently, since as
-  // sequential awaits they were four separate round trips to the database
-  // before anything could render.
-  const [{ data: video }, { data: downloadRow }, { data: perfRows }, { data: catRows }] = await Promise.all([
-    supabase
-      .from("show_videos")
-      .select("full_show_bunny_video_id, duration_seconds, full_show_thumbnail_url")
-      .eq("show_id", show.id)
-      .maybeSingle(),
-    // Informational "Downloaded" badge — explicitly scoped to this user (not
-    // just RLS's default) so an admin previewing doesn't see another
-    // customer's download show up as their own.
-    supabase
-      .from("downloads")
-      .select("id")
-      .eq("show_id", show.id)
-      .eq("user_id", profile.id)
-      .maybeSingle(),
-    // Each dance's category links come back embedded rather than as a second
-    // query keyed on the ids this one returns. That read could only start once
-    // this one had finished, so it was a whole extra round trip on the critical
-    // path — cheap locally, but this runs from a Netlify function in the US
-    // against a database in London, where every trip is expensive.
-    supabase
-      .from("performances")
-      .select("id, title, thumbnail_url, duration_seconds, sort_order, performance_categories(category_id)")
-      .eq("show_id", show.id)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("categories")
-      .select("id, name, kind, sort_order")
-      .eq("show_id", show.id)
-      .order("sort_order", { ascending: true }),
-  ]);
+  // ---- Owned: gated content arrived in the same database response ----
+  const video = bundle.video;
+  const perfRows = bundle.performances ?? [];
+  const catRows = bundle.categories ?? [];
 
   const catById = new Map((catRows ?? []).map((c) => [c.id, c]));
-  const linksByPerf = new Map<string, string[]>(
-    (perfRows ?? []).map((p) => [p.id, (p.performance_categories ?? []).map((l) => l.category_id)]),
-  );
 
   const performances: PerfItem[] = (perfRows ?? []).map((p) => {
-    const cats = (linksByPerf.get(p.id) ?? []).map((id) => catById.get(id)).filter(Boolean);
+    const cats = p.category_ids.map((id) => catById.get(id)).filter(Boolean);
     const group = cats.find((c) => c!.kind === "group")?.name ?? null;
     const style = cats.find((c) => c!.kind === "style")?.name ?? null;
     return {
@@ -148,7 +140,7 @@ export default async function ShowPage({
       title: p.title,
       // Only whether there's a poster — the Bunny URL itself carries the
       // video id, so it stays server-side (see /api/thumbnail).
-      hasThumbnail: !!p.thumbnail_url,
+      hasThumbnail: p.has_thumbnail,
       duration: formatDuration(p.duration_seconds),
       group,
       style,
@@ -172,10 +164,10 @@ export default async function ShowPage({
         showYear={show.show_year}
         showId={show.id}
         intro={show.intro_text}
-        fullShowAvailable={!!video?.full_show_bunny_video_id}
+        fullShowAvailable={!!video?.has_full_show}
         fullShowDuration={formatRuntime(video?.duration_seconds)}
-        fullShowHasThumbnail={!!video?.full_show_thumbnail_url}
-        alreadyDownloaded={!!downloadRow}
+        fullShowHasThumbnail={!!video?.has_thumbnail}
+        alreadyDownloaded={!!bundle.downloaded}
         performances={performances}
         groups={groups}
         styles={styleList}

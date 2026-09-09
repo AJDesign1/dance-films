@@ -16,14 +16,14 @@ posters are uploaded rather than pasted; images compress before upload.
 1. **Load the rest of the real Liberty content**: remaining shows, categories,
    and the real parent email list, via `/admin/liberty`. Chapters and the first
    show's dances are in.
-2. **Site speed still needs the Netlify plan decision.** Removing four database
-   round trips took the authenticated show page from 1250-2000ms to
-   ~950-1550ms, but an identical build serves it in ~250ms locally. The gap is
-   that functions run in Ohio while Supabase is in London, and region selection
-   is gated behind a plan upgrade ("upgrade to customize" in the UI). The
-   alternative, if the upgrade isn't wanted, is collapsing the remaining
-   per-page queries into a single Postgres function — one round trip instead of
-   about four. Worth pricing one against the other.
+2. **Verify the page-speed RPCs live before upgrading Netlify.** Netlify's UI
+   confirms the functions run in N. Virginia (`iad`), while Supabase is London
+   (`eu-west-2`). The parent shop and show pages now each fetch their page data
+   through one `SECURITY INVOKER` Postgres function, retaining RLS while
+   removing the remaining cross-region Data API round trips. The signed-out
+   root route also goes directly to `/login` instead of `/` → `/shows` →
+   `/login`. Apply `20260909223000_page_load_bundles.sql`, deploy, and compare
+   authenticated timings before paying for a configurable Netlify region.
 3. **Decide on Bunny Token Authentication.** Referrer allowlisting is on, but
    it's deterrence only — a spoofed `Referer` still fetches the MP4, and always
    could (Bunny accepts its own player domain). Token Authentication is the only

@@ -244,6 +244,20 @@ Worth stating because it's the easy thing to get wrong when adding a feature:
 a new `await` on a page is a new serial round trip unless it's deliberately
 grouped with the others.
 
+## Parent page data is bundled at the database boundary
+
+Netlify's deployed Next.js functions run in N. Virginia while the Supabase
+project is in London. Parallelising independent reads removed serial waits, but
+each authenticated page still made multiple Data API requests across the
+Atlantic. The shop and individual show page now call one Postgres function
+each (`get_shows_page` / `get_show_page`) and receive a JSON bundle.
+
+Both functions are `SECURITY INVOKER`, execute only for `authenticated`, and
+query the same RLS-protected tables as the former application-side requests.
+They do not return Bunny identifiers or download URLs. This reduces network
+round trips without weakening the existing access boundary or making
+per-user pages publicly cacheable.
+
 ## A dance can be a section of the show recording
 
 One full-show upload plus a start and an end timestamp now stands in for a
