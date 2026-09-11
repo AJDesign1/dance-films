@@ -13,11 +13,13 @@ automatically; the performances screen saves explicitly; shows can be deleted;
 posters are uploaded rather than pasted; images compress before upload.
 `BUNNY_STREAM_API_KEY` is set locally and on Netlify.
 
-**Bunny MP4 403 fixed in the customer flow**: the Download button had opened
-the URL with `noreferrer`, but Bunny's direct-file protection requires the
-allowed `dancefilms.co.uk` referrer. It now preserves that header while keeping
-`noopener`. Opening the MP4 by pasting it into the address bar is still expected
-to return 403; test downloads through an entitled show's Download button.
+**Bunny full-show downloads now stream as attachments in the browser**:
+Bunny's fallback MP4 has no attachment header and is 3.5GB, so opening it plays
+inline and proxying it through Netlify is not viable. `public/download-worker.js`
+fetches it directly from Bunny after the existing entitlement check and supplies
+the attachment header without buffering the file. It also preserves the allowed
+site referrer and forwards byte ranges. The Bunny dashboard's own Download URL
+contains a storage access key and must never be pasted into the app.
 
 1. **Load the rest of the real Liberty content**: remaining shows, categories,
    and the real parent email list, via `/admin/liberty`. Chapters and the first

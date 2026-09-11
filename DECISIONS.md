@@ -2,14 +2,27 @@
 
 Key choices made during the build and the reasoning behind them. For the original product decisions (pricing model, invite-only, whole-show purchase, etc.), see `docs/Dance Show Platform - Master Brief.md` — this file covers decisions made *during implementation* that extend or reconcile that spec.
 
-## Full-show downloads preserve the browser referrer
+## Full-show downloads stream through a browser worker
 
-Bunny's "Block direct URL file access" setting intentionally returns 403 when
-an MP4 is opened without an allowed `Referer`. The customer download action
-therefore opens the entitlement-gated URL with `noopener` (protecting the app
-from the new tab) but not `noreferrer` (which would strip the header Bunny needs).
-Pasting the same MP4 URL directly into the address bar can still return 403 by
-design; the supported route is the Download button on the entitled show page.
+Bunny's MP4 fallback is a playback URL: it returns `video/mp4` without a
+`Content-Disposition: attachment` header, so opening it correctly plays the
+video rather than downloading it. Query-string variants do not change that.
+The real file is 3.5GB, which rules out buffering it in the browser or proxying
+it through a Netlify Function.
+
+The customer flow therefore registers `public/download-worker.js`. After the
+existing server-side entitlement check returns the Bunny URL, the worker fetches
+the MP4 directly from Bunny and streams the response unchanged apart from an
+attachment filename. Bunny supplies CORS and byte-range support, so Netlify
+never carries the video and the browser does not hold 3.5GB in memory. The
+worker accepts only Bunny HTTPS MP4 fallback paths and preserves the originating
+site referrer required by Bunny's direct-file protection. If service workers are
+unavailable, the video opens normally with an instruction to use the browser's
+Save Video control.
+
+Bunny's dashboard-level Download link is deliberately not used: it contains a
+storage-zone access key and must never be exposed in page markup or saved as a
+show download URL.
 
 ## Show URL is now editable, not fixed at creation
 

@@ -58,6 +58,8 @@ declare global {
 }
 
 const PLAYERJS_SRC = "https://assets.mediadelivery.net/playerjs/playerjs-latest.min.js";
+const DOWNLOAD_WORKER_SRC = "/download-worker.js";
+const DOWNLOAD_WORKER_SCOPE = "/download/";
 
 function loadPlayerJs(): Promise<PlayerJsLib | null> {
   if (typeof window === "undefined") return Promise.resolve(null);
@@ -76,6 +78,33 @@ function loadPlayerJs(): Promise<PlayerJsLib | null> {
     // just starts at the top of the show and doesn't stop itself.
     el.addEventListener("error", () => resolve(null), { once: true });
   });
+}
+
+async function prepareDownloadWorker(): Promise<boolean> {
+  if (!("serviceWorker" in navigator)) return false;
+
+  try {
+    const registration = await navigator.serviceWorker.register(DOWNLOAD_WORKER_SRC, {
+      scope: DOWNLOAD_WORKER_SCOPE,
+    });
+    if (registration.active?.state === "activated") return true;
+
+    const worker = registration.installing ?? registration.waiting;
+    if (!worker) return false;
+    if (worker.state === "activated") return true;
+
+    return await new Promise<boolean>((resolve) => {
+      const timeout = window.setTimeout(() => resolve(false), 10_000);
+      worker.addEventListener("statechange", () => {
+        if (worker.state === "activated") {
+          window.clearTimeout(timeout);
+          resolve(true);
+        }
+      });
+    });
+  } catch {
+    return false;
+  }
 }
 
 export default function ShowExperience({
@@ -194,13 +223,26 @@ export default function ShowExperience({
   async function confirmDownload() {
     setDownloadMsg(null);
     setDownloading(true);
-    const url = await getFullShowDownloadUrl(showId);
+    const [url, workerReady] = await Promise.all([
+      getFullShowDownloadUrl(showId),
+      prepareDownloadWorker(),
+    ]);
     setDownloading(false);
     setConfirmingDownload(false);
     if (url) {
-      // Bunny's direct-file protection checks that the request originated on
-      // our allowed domain. Keep opener isolation, but preserve the Referer.
-      window.open(url, "_blank", "noopener");
+      if (workerReady) {
+        const download = new URL("/download/file", window.location.origin);
+        download.searchParams.set("source", url);
+        download.searchParams.set(
+          "filename",
+          `${showTitle}${showYear ? ` ${showYear}` : ""} - Full Show.mp4`,
+        );
+        window.location.assign(download);
+      } else {
+        // Older/private browsers can still save from Bunny's native player.
+        window.open(url, "_blank", "noopener");
+        setDownloadMsg("Use your browser's Download or Save Video option to save the file.");
+      }
       setDownloaded(true); // informational only — never blocks downloading again
     } else {
       setDownloadMsg("Download isn't available yet — check back soon.");
