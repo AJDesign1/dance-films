@@ -2,6 +2,15 @@
 
 Key choices made during the build and the reasoning behind them. For the original product decisions (pricing model, invite-only, whole-show purchase, etc.), see `docs/Dance Show Platform - Master Brief.md` — this file covers decisions made *during implementation* that extend or reconcile that spec.
 
+## Full-show downloads preserve the browser referrer
+
+Bunny's "Block direct URL file access" setting intentionally returns 403 when
+an MP4 is opened without an allowed `Referer`. The customer download action
+therefore opens the entitlement-gated URL with `noopener` (protecting the app
+from the new tab) but not `noreferrer` (which would strip the header Bunny needs).
+Pasting the same MP4 URL directly into the address bar can still return 403 by
+design; the supported route is the Download button on the entitled show page.
+
 ## Show URL is now editable, not fixed at creation
 
 `shows.slug` was set once at creation (auto-derived from the title, silently de-duped with a `-2` suffix if taken) and never editable — a problem once a show gets renamed and the URL no longer matches. Now exposed as a "Show URL" field in `ShowEditor`:

@@ -198,7 +198,9 @@ export default function ShowExperience({
     setDownloading(false);
     setConfirmingDownload(false);
     if (url) {
-      window.open(url, "_blank", "noopener,noreferrer");
+      // Bunny's direct-file protection checks that the request originated on
+      // our allowed domain. Keep opener isolation, but preserve the Referer.
+      window.open(url, "_blank", "noopener");
       setDownloaded(true); // informational only — never blocks downloading again
     } else {
       setDownloadMsg("Download isn't available yet — check back soon.");

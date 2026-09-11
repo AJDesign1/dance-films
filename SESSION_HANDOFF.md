@@ -13,6 +13,12 @@ automatically; the performances screen saves explicitly; shows can be deleted;
 posters are uploaded rather than pasted; images compress before upload.
 `BUNNY_STREAM_API_KEY` is set locally and on Netlify.
 
+**Bunny MP4 403 fixed in the customer flow**: the Download button had opened
+the URL with `noreferrer`, but Bunny's direct-file protection requires the
+allowed `dancefilms.co.uk` referrer. It now preserves that header while keeping
+`noopener`. Opening the MP4 by pasting it into the address bar is still expected
+to return 403; test downloads through an entitled show's Download button.
+
 1. **Load the rest of the real Liberty content**: remaining shows, categories,
    and the real parent email list, via `/admin/liberty`. Chapters and the first
    show's dances are in.
