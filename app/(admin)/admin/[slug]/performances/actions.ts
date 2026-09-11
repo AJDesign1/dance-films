@@ -9,8 +9,16 @@ import { MAX_IMAGE_BYTES, tooLargeMessage } from "@/lib/uploads";
 
 export type ActionResult = { ok: true; message?: string } | { error: string };
 export type UploadResult = { url: string } | { error: string };
+export type PerformanceThumbnailUploadResult = UploadResult | { skipped: true };
 type Kind = "group" | "style";
 type VideoSource = "show" | "standalone";
+
+export type AutoThumbnailSource = {
+  performanceId: string;
+  title: string;
+  sourceUrl: string;
+  atSeconds: number;
+};
 
 // Was a local copy; the same "1:12:40" parsing is now needed for clip start/end
 // times too, so it lives in lib/format alongside the formatter that writes it.
@@ -400,6 +408,131 @@ export async function uploadThumbnailImage(schoolId: string, formData: FormData)
   if (error) return { error: "Upload failed. Please try again." };
 
   const { data } = admin.storage.from("artwork").getPublicUrl(path);
+  return { url: data.publicUrl };
+}
+
+/**
+ * Resolve the private video sources needed to make poster frames in the admin.
+ *
+ * Bunny exposes one poster for a whole video, not one at an arbitrary chapter
+ * timestamp. The admin browser therefore seeks the MP4 to each dance's start,
+ * captures a small frame, and uploads it through uploadPerformanceThumbnail.
+ * These direct video URLs are returned only after requireAdmin(); the public
+ * show page continues to receive neither Bunny IDs nor direct media URLs.
+ *
+ * Existing thumbnails are intentionally omitted. An uploaded image (or a frame
+ * generated on an earlier run) is an override and is never replaced in bulk.
+ */
+export async function getAutoThumbnailSources(showId: string): Promise<AutoThumbnailSource[] | { error: string }> {
+  await requireAdmin();
+  const admin = createAdminClient();
+
+  const [{ data: performances, error: performanceError }, { data: showVideo }] = await Promise.all([
+    admin
+      .from("performances")
+      .select("id, title, video_source, bunny_video_id, clip_start_seconds, clip_end_seconds, thumbnail_url")
+      .eq("show_id", showId)
+      .order("sort_order", { ascending: true }),
+    admin
+      .from("show_videos")
+      .select("full_show_bunny_video_id, download_url")
+      .eq("show_id", showId)
+      .maybeSingle(),
+  ]);
+
+  if (performanceError) return { error: "Couldn't read the performances." };
+  const missing = (performances ?? []).filter((p) => !p.thumbnail_url?.trim());
+  if (missing.length === 0) return [];
+
+  // Resolve each Bunny video once. Most shows need only the full-show video;
+  // standalone dances add their own IDs to this set.
+  const ids = new Set<string>();
+  if (missing.some((p) => p.video_source === "show") && showVideo?.full_show_bunny_video_id) {
+    ids.add(showVideo.full_show_bunny_video_id);
+  }
+  for (const p of missing) {
+    if (p.video_source === "standalone" && p.bunny_video_id?.trim()) ids.add(p.bunny_video_id.trim());
+  }
+
+  const resolved = new Map<string, string>();
+  await Promise.all(
+    [...ids].map(async (id) => {
+      const video = await fetchBunnyVideo(id);
+      if (!("error" in video) && video.downloadUrl) resolved.set(id, video.downloadUrl);
+    }),
+  );
+
+  const fullShowUrl = showVideo?.full_show_bunny_video_id
+    ? resolved.get(showVideo.full_show_bunny_video_id) ?? showVideo.download_url?.trim() ?? ""
+    : showVideo?.download_url?.trim() ?? "";
+
+  return missing.flatMap((p) => {
+    const sourceUrl = p.video_source === "show"
+      ? fullShowUrl
+      : resolved.get(p.bunny_video_id?.trim() ?? "") ?? "";
+    if (!sourceUrl) return [];
+
+    const start = p.video_source === "show" ? Math.max(0, p.clip_start_seconds ?? 0) : 0;
+    const end = p.video_source === "show" ? p.clip_end_seconds : null;
+    // A chapter boundary is often a fade-to-black. Move three seconds into the
+    // dance, but never beyond a very short chapter's end.
+    const atSeconds = end !== null
+      ? Math.min(start + 3, Math.max(start, end - 0.1))
+      : start + 3;
+
+    return [{
+      performanceId: p.id,
+      title: p.title,
+      sourceUrl,
+      atSeconds,
+    }];
+  });
+}
+
+/**
+ * Store and link one dance poster. `onlyIfEmpty` is used by bulk generation so
+ * a manual upload made in another tab can never be overwritten by a late frame.
+ */
+export async function uploadPerformanceThumbnail(
+  performanceId: string,
+  showId: string,
+  slug: string,
+  formData: FormData,
+  onlyIfEmpty = false,
+): Promise<PerformanceThumbnailUploadResult> {
+  await requireAdmin();
+  const admin = createAdminClient();
+
+  const [{ data: performance }, { data: show }] = await Promise.all([
+    admin.from("performances").select("show_id, thumbnail_url").eq("id", performanceId).maybeSingle(),
+    admin.from("shows").select("school_id").eq("id", showId).maybeSingle(),
+  ]);
+  if (!performance || performance.show_id !== showId || !show?.school_id) {
+    return { error: "That performance wasn't found." };
+  }
+  if (onlyIfEmpty && performance.thumbnail_url?.trim()) return { skipped: true };
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { error: "No file selected." };
+  if (!file.type.startsWith("image/")) return { error: "Please choose an image file." };
+  if (file.size > MAX_IMAGE_BYTES) return { error: tooLargeMessage(MAX_IMAGE_BYTES) };
+
+  const ext = (file.name.split(".").pop() || "webp").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const path = `${show.school_id}/${crypto.randomUUID()}.${ext}`;
+  const { error: uploadError } = await admin.storage
+    .from("artwork")
+    .upload(path, file, { contentType: file.type, upsert: true, cacheControl: "31536000" });
+  if (uploadError) return { error: "Upload failed. Please try again." };
+
+  const { data } = admin.storage.from("artwork").getPublicUrl(path);
+  const { error: updateError } = await admin
+    .from("performances")
+    .update({ thumbnail_url: data.publicUrl })
+    .eq("id", performanceId)
+    .eq("show_id", showId);
+  if (updateError) return { error: "The image uploaded, but couldn't be linked to the performance." };
+
+  rev(slug);
   return { url: data.publicUrl };
 }
 

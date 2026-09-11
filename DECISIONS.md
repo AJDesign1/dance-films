@@ -388,6 +388,31 @@ renders, as WebP, takes that to ~79KB. Without it this feature would have
 re-introduced, on the one page parents spend their time, exactly the problem
 "Images go through next/image" above was written to solve.
 
+## Performance posters default to generated chapter frames
+
+Bunny Stream supplies one main thumbnail per video, but it does not expose a
+supported thumbnail-at-timestamp URL. That matters because most performances
+are chapters inside one full-show recording: using Bunny's main thumbnail would
+put the same opening image on every dance, while creating a separate Bunny video
+for every thumbnail would undo the single-upload design.
+
+The Performances admin therefore generates missing posters in the browser. It
+loads the existing MP4 fallback with CORS enabled, seeks to three seconds after
+each performance start (capped inside short clips), draws an 800px frame to a
+canvas, encodes it as WebP, and uploads it to the existing `artwork` bucket.
+Bunny supports byte ranges, so this reads the portions needed for seeking rather
+than downloading the multi-gigabyte show. The resulting `thumbnail_url` uses the
+existing authenticated `/api/thumbnail/perf/{id}` delivery path; no Bunny ID or
+direct video URL is added to the public show markup.
+
+New Bunny chapter imports run this automatically. Existing shows have a
+**Generate missing thumbnails** action. The operation only considers empty
+thumbnail fields, so generated frames never replace an existing image; clicking
+an individual thumbnail still uploads a custom replacement at any time. Frame
+capture stays in the admin browser rather than a Netlify function because video
+seeking is native there, whereas server-side extraction would require ffmpeg and
+large media transfers through the serverless runtime.
+
 ## The school pages are deliberately not CDN-cached
 
 Tempting, since every page is server-rendered on demand, but rejected:

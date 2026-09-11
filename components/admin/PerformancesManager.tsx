@@ -8,10 +8,11 @@ import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { formatClock } from "@/lib/format";
 import { compressImage } from "@/lib/imageCompress";
 import {
-  addPerformance, updatePerformanceField, removePerformance, reorderPerformance,
+  addPerformance, removePerformance, reorderPerformance,
   bulkAddPerformances, uploadThumbnailImage, savePerformancesPage,
   previewBunnyChapters, importBunnyChapters,
-  type PerformanceDraft, type FullShowDraft, type ChapterPreview,
+  getAutoThumbnailSources, uploadPerformanceThumbnail,
+  type PerformanceDraft, type FullShowDraft, type ChapterPreview, type AutoThumbnailSource,
 } from "@/app/(admin)/admin/[slug]/performances/actions";
 
 export type PerfRow = {
@@ -33,6 +34,65 @@ const GRID = "34px 62px minmax(130px,1fr) 124px 124px 118px 186px 70px 52px";
 const cell: React.CSSProperties = { width: "100%", padding: "8px 10px", borderRadius: "var(--r-sm)", border: "1px solid transparent", background: "transparent", fontSize: 13.5, color: "var(--text)", fontFamily: "var(--body)" };
 const mono: React.CSSProperties = { ...cell, fontFamily: "ui-monospace, monospace", fontSize: 12.5 };
 const timeInput: React.CSSProperties = { ...mono, width: 84, textAlign: "center", padding: "8px 4px" };
+
+function waitForVideoEvent(video: HTMLVideoElement, event: "loadedmetadata" | "seeked", timeoutMs = 45000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      window.clearTimeout(timer);
+      video.removeEventListener(event, onReady);
+      video.removeEventListener("error", onError);
+    };
+    const onReady = () => { cleanup(); resolve(); };
+    const onError = () => { cleanup(); reject(new Error("The video couldn't be loaded.")); };
+    const timer = window.setTimeout(() => {
+      cleanup();
+      reject(new Error(event === "seeked" ? "The video took too long to seek." : "The video took too long to load."));
+    }, timeoutMs);
+    video.addEventListener(event, onReady, { once: true });
+    video.addEventListener("error", onError, { once: true });
+  });
+}
+
+async function loadCaptureVideo(video: HTMLVideoElement, sourceUrl: string): Promise<void> {
+  video.crossOrigin = "anonymous";
+  video.preload = "metadata";
+  video.muted = true;
+  video.playsInline = true;
+  video.src = sourceUrl;
+  video.load();
+  if (video.readyState < HTMLMediaElement.HAVE_METADATA) {
+    await waitForVideoEvent(video, "loadedmetadata");
+  }
+}
+
+async function captureFrame(video: HTMLVideoElement, requestedSeconds: number): Promise<Blob> {
+  const latest = Number.isFinite(video.duration) ? Math.max(0, video.duration - 0.1) : requestedSeconds;
+  const target = Math.min(Math.max(0, requestedSeconds), latest);
+  if (Math.abs(video.currentTime - target) > 0.05 || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+    video.currentTime = target;
+    await waitForVideoEvent(video, "seeked");
+  }
+
+  const sourceWidth = video.videoWidth;
+  const sourceHeight = video.videoHeight;
+  if (!sourceWidth || !sourceHeight) throw new Error("The video frame isn't ready yet.");
+  const width = Math.min(800, sourceWidth);
+  const height = Math.max(1, Math.round(sourceHeight * (width / sourceWidth)));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("This browser can't create the thumbnail image.");
+  context.drawImage(video, 0, 0, width, height);
+
+  return await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => blob ? resolve(blob) : reject(new Error("This browser couldn't encode the thumbnail image.")),
+      "image/webp",
+      0.8,
+    );
+  });
+}
 
 /** Edits live here until Save; `thumbnailUrl` is excluded because uploads save immediately. */
 type Draft = { full: FullShowDraft; rows: PerfRow[] };
@@ -60,6 +120,8 @@ export default function PerformancesManager({
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generateProgress, setGenerateProgress] = useState<{ done: number; total: number } | null>(null);
 
   const serverState = useMemo(
     () => buildDraft(fullBunnyVideoId, fullDuration, fullDownload, fullThumbnailUrl, performances),
@@ -129,7 +191,89 @@ export default function PerformancesManager({
 
   const hasShowVideo = !!draft.full.bunnyVideoId.trim();
   const chapterCount = draft.rows.filter((r) => r.videoSource === "show").length;
-  const busy = pending || saving;
+  const busy = pending || saving || generating;
+
+  // ---- Automatic performance thumbnails --------------------------------
+  // Bunny has no per-timestamp poster endpoint. Seeking the direct MP4 here
+  // lets the browser fetch only the byte ranges around each chapter mark; the
+  // full recording is not downloaded. The resulting small WebPs then follow
+  // the same storage/proxy path as manually uploaded posters.
+  const generateMissingThumbnails = useCallback(async (saveFirst = true): Promise<void> => {
+    setError(null);
+    setMsg(null);
+    setGenerating(true);
+    setGenerateProgress(null);
+
+    try {
+      if (saveFirst && dirty && !(await save())) return;
+      const result = await getAutoThumbnailSources(showId);
+      if ("error" in result) { setError(result.error); return; }
+      if (result.length === 0) {
+        setMsg("Every performance already has a thumbnail, or has no usable video yet.");
+        return;
+      }
+
+      const grouped = new Map<string, AutoThumbnailSource[]>();
+      for (const row of result) {
+        const group = grouped.get(row.sourceUrl) ?? [];
+        group.push(row);
+        grouped.set(row.sourceUrl, group);
+      }
+
+      let done = 0;
+      let failed = 0;
+      setGenerateProgress({ done, total: result.length });
+
+      for (const [sourceUrl, rows] of grouped) {
+        const video = document.createElement("video");
+        video.style.position = "fixed";
+        video.style.width = "1px";
+        video.style.height = "1px";
+        video.style.opacity = "0";
+        video.style.pointerEvents = "none";
+        document.body.appendChild(video);
+
+        try {
+          await loadCaptureVideo(video, sourceUrl);
+          for (const row of rows) {
+            try {
+              const blob = await captureFrame(video, row.atSeconds);
+              const formData = new FormData();
+              formData.append("file", new File([blob], `${row.performanceId}.webp`, { type: "image/webp" }));
+              const upload = await uploadPerformanceThumbnail(row.performanceId, showId, slug, formData, true);
+              if ("error" in upload) failed++;
+            } catch {
+              failed++;
+            } finally {
+              done++;
+              setGenerateProgress({ done, total: result.length });
+            }
+          }
+        } catch {
+          failed += rows.length;
+          done += rows.length;
+          setGenerateProgress({ done, total: result.length });
+        } finally {
+          video.removeAttribute("src");
+          video.load();
+          video.remove();
+        }
+      }
+
+      router.refresh();
+      const made = result.length - failed;
+      if (failed > 0) {
+        setError(`Generated ${made} thumbnail${made === 1 ? "" : "s"}; ${failed} couldn't be created. You can retry or upload those images manually.`);
+      } else {
+        setMsg(`Generated ${made} thumbnail${made === 1 ? "" : "s"} from the performance start times.`);
+      }
+    } catch {
+      setError("Couldn't generate the thumbnails. Check the video is available and try again.");
+    } finally {
+      setGenerating(false);
+      setGenerateProgress(null);
+    }
+  }, [dirty, save, showId, slug, router]);
 
   // ---- Import from Bunny -------------------------------------------------
   // Chaptering the show once in Bunny and pulling the marks across beats
@@ -159,6 +303,9 @@ export default function PerformancesManager({
       if ("error" in res) { setError(res.error); return; }
       setMsg(res.message ?? "Imported.");
       router.refresh();
+      // New chapter rows have no custom artwork, so make their default poster
+      // frames immediately. Existing/manual thumbnails are skipped server-side.
+      await generateMissingThumbnails(false);
     });
   }
 
@@ -199,6 +346,18 @@ export default function PerformancesManager({
           <span className={`${styles.badge} ${styles.badgeWarn}`}>Unsaved changes</span>
         )}
         <div style={{ flex: 1 }} />
+        <button
+          className={styles.secondaryBtn}
+          disabled={busy || draft.rows.length === 0}
+          title="Create images for performances that do not already have one, using their video start times"
+          onClick={() => void generateMissingThumbnails()}
+        >
+          {generating && generateProgress
+            ? `Generating ${generateProgress.done}/${generateProgress.total}…`
+            : generating
+              ? "Preparing thumbnails…"
+              : "Generate missing thumbnails"}
+        </button>
         <button
           className={styles.secondaryBtn}
           disabled={busy || importing || !hasShowVideo}
@@ -348,6 +507,9 @@ export default function PerformancesManager({
         <span className={styles.cardTitle}>Individual performances</span>
         <span style={{ fontSize: 12.5, color: "var(--text-3)" }}>Class clips, watched one by one</span>
       </div>
+      <p style={{ fontSize: 12.5, color: "var(--text-2)", margin: "-3px 0 12px" }}>
+        Missing images can be generated from three seconds after each performance starts. Click any image to upload your own replacement.
+      </p>
 
       {bulkOpen && (
         <div className={`${styles.card} ${styles.cardPad}`} style={{ marginBottom: 18, borderColor: "var(--accent)" }}>
@@ -382,7 +544,7 @@ export default function PerformancesManager({
               index={i}
               total={draft.rows.length}
               slug={slug}
-              schoolId={schoolId}
+              showId={showId}
               groups={groups}
               styleCats={styleCats}
               busy={busy}
@@ -399,9 +561,9 @@ export default function PerformancesManager({
 }
 
 function Row({
-  perf: p, index: i, total, slug, schoolId, groups, styleCats, busy, onChange, onReorder, onRemove, onRefresh,
+  perf: p, index: i, total, slug, showId, groups, styleCats, busy, onChange, onReorder, onRemove, onRefresh,
 }: {
-  perf: PerfRow; index: number; total: number; slug: string; schoolId: string;
+  perf: PerfRow; index: number; total: number; slug: string; showId: string;
   groups: Cat[]; styleCats: Cat[]; busy: boolean;
   onChange: (patch: Partial<PerfRow>) => void;
   onReorder: (dir: -1 | 1) => void;
@@ -425,9 +587,8 @@ function Row({
       if (compressed.size > MAX_IMAGE_BYTES) { setErr(tooLargeMessage(MAX_IMAGE_BYTES)); return; }
       const fd = new FormData();
       fd.append("file", compressed);
-      const r = await uploadThumbnailImage(schoolId, fd);
+      const r = await uploadPerformanceThumbnail(p.id, showId, slug, fd);
       if ("error" in r) { setErr(r.error); return; }
-      await updatePerformanceField(p.id, slug, "thumbnail_url", r.url);
       onRefresh();
     } catch {
       setErr(uploadFailedMessage(MAX_IMAGE_BYTES));

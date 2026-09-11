@@ -21,6 +21,15 @@ the attachment header without buffering the file. It also preserves the allowed
 site referrer and forwards byte ranges. The Bunny dashboard's own Download URL
 contains a storage access key and must never be pasted into the app.
 
+**Performance thumbnails can now be generated from their video times**:
+the Performances admin creates missing WebP posters from three seconds after
+each dance starts, using browser video seeking and canvas, then stores them in
+the existing Supabase `artwork` bucket. New Bunny chapter imports generate
+missing posters automatically; existing shows have a **Generate missing
+thumbnails** button. Existing images are skipped, and clicking a thumbnail still
+uploads a manual replacement. Bunny's MP4 was checked to support CORS and byte
+ranges, so this does not download the complete show recording.
+
 1. **Load the rest of the real Liberty content**: remaining shows, categories,
    and the real parent email list, via `/admin/liberty`. Chapters and the first
    show's dances are in.
