@@ -22,7 +22,7 @@ site referrer and forwards byte ranges. The Bunny dashboard's own Download URL
 contains a storage access key and must never be pasted into the app.
 
 **Performance thumbnails can now be generated from their video times**:
-the Performances admin creates missing WebP posters from three seconds after
+the Performances admin creates missing WebP posters from ten seconds after
 each dance starts, using browser video seeking and canvas, then stores them in
 the existing Supabase `artwork` bucket. New Bunny chapter imports generate
 missing posters automatically; existing shows have a **Generate missing

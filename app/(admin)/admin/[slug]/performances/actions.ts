@@ -474,11 +474,11 @@ export async function getAutoThumbnailSources(showId: string): Promise<AutoThumb
 
     const start = p.video_source === "show" ? Math.max(0, p.clip_start_seconds ?? 0) : 0;
     const end = p.video_source === "show" ? p.clip_end_seconds : null;
-    // A chapter boundary is often a fade-to-black. Move three seconds into the
+    // A chapter boundary is often a fade-to-black. Move ten seconds into the
     // dance, but never beyond a very short chapter's end.
     const atSeconds = end !== null
-      ? Math.min(start + 3, Math.max(start, end - 0.1))
-      : start + 3;
+      ? Math.min(start + 10, Math.max(start, end - 0.1))
+      : start + 10;
 
     return [{
       performanceId: p.id,

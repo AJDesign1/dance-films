@@ -508,7 +508,7 @@ export default function PerformancesManager({
         <span style={{ fontSize: 12.5, color: "var(--text-3)" }}>Class clips, watched one by one</span>
       </div>
       <p style={{ fontSize: 12.5, color: "var(--text-2)", margin: "-3px 0 12px" }}>
-        Missing images can be generated from three seconds after each performance starts. Click any image to upload your own replacement.
+        Missing images can be generated from ten seconds after each performance starts. Click any image to upload your own replacement.
       </p>
 
       {bulkOpen && (

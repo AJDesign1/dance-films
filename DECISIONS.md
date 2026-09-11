@@ -397,7 +397,7 @@ put the same opening image on every dance, while creating a separate Bunny video
 for every thumbnail would undo the single-upload design.
 
 The Performances admin therefore generates missing posters in the browser. It
-loads the existing MP4 fallback with CORS enabled, seeks to three seconds after
+loads the existing MP4 fallback with CORS enabled, seeks to ten seconds after
 each performance start (capped inside short clips), draws an 800px frame to a
 canvas, encodes it as WebP, and uploads it to the existing `artwork` bucket.
 Bunny supports byte ranges, so this reads the portions needed for seeking rather
