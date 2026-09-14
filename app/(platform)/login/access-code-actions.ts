@@ -98,7 +98,9 @@ export async function redeemAccessCode(code: string, email: string): Promise<Red
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email: clean,
-    options: { emailRedirectTo: `${origin}/auth/callback?next=${next}` },
+    options: {
+      emailRedirectTo: `${origin}/auth/magic-link?next=${encodeURIComponent(next)}`,
+    },
   });
 
   if (error) return { status: "error", message: error.message };

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getOrigin } from "@/lib/url";
+import { safeAuthNext } from "@/lib/auth-redirect";
 
 /**
  * PKCE code exchange — the default magic-link flow with @supabase/ssr.
@@ -14,7 +15,7 @@ import { getOrigin } from "@/lib/url";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/shows";
+  const next = safeAuthNext(searchParams.get("next"));
   const origin = await getOrigin();
 
   if (code) {

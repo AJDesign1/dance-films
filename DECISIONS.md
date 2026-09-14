@@ -455,3 +455,19 @@ Two changes, both preserving the same trust model:
 
 The second one matters most for signed-out traffic — the login page every parent
 loads first now reaches Supabase for the school row only, not for auth as well.
+
+## Magic links require a deliberate second click
+
+The emailed sign-in link no longer points at Supabase's one-click
+`ConfirmationURL`. Microsoft/Outlook and other mail-security scanners can open
+that URL while checking the message, consuming its single-use token before the
+parent clicks it. The PKCE version also ties the exchange to the browser that
+requested the link, which is fragile when the email opens elsewhere.
+
+Supabase's template now sends `TokenHash` to `/auth/magic-link`. That route only
+renders a branded **Finish signing in** page; it does not verify anything on the
+initial GET. Verification happens at `/auth/confirm` only after the person
+presses the page's button. Automated link previews may safely visit the first
+page without consuming the token, while the token-hash flow works independently
+of the browser that originally requested the email. The old PKCE callback stays
+in place so already-sent links retain their existing route.

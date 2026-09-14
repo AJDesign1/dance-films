@@ -173,3 +173,22 @@ worth watching on the first deploy.
 ## Where things stand technically
 
 See `CURRENT_STATE.md` for the full status table. Short version: the app is feature-complete for the Liberty V1 scope described in `docs/Dance Show Platform - Master Brief.md`, is deployed on the real domain, and is not yet receiving real traffic.
+
+## Magic-link scanner fix
+
+Parent magic links now use a two-step token-hash flow. The email lands on
+`/auth/magic-link`, which displays a school-branded **Finish signing in** button;
+only that deliberate form submission calls `/auth/confirm` and consumes the
+single-use Supabase token. This avoids Outlook/Microsoft Safe Links and similar
+email scanners using the link before the parent. Both invite and access-code
+emails preserve their tenant origin and intended post-login page. The legacy
+PKCE `/auth/callback` route remains for links that were sent before the change.
+
+Supabase's Magic Link template must use:
+
+```html
+<p><a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email">Sign in</a></p>
+```
+
+After any template or deployment change, request a **fresh** email for testing;
+previously consumed links cannot be repaired.
