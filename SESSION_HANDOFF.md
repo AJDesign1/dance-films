@@ -20,8 +20,28 @@ Before deployment, live warm complete-response medians (5 authenticated samples)
 were shop **910ms**, show **920ms**, Performances admin **2350ms**. Repeated
 full-show poster responses were about **2060ms** without a browser cache. These
 are HTTP timings, not browser LCP; compare complete responses after deployment,
-not just the earlier first byte enabled by streaming. Final live comparison is
-pending deployment. The temporary audit sessions send no email and are revoked
+not just the earlier first byte enabled by streaming. Commit `db93c71` was
+published by Netlify successfully. After deployment, complete-response medians
+were shop **670ms** (26% faster), show **639ms** (31% faster), admin **1493ms**
+(36% faster). Full-show poster repeated responses were **591/631ms**, versus
+**2061/2062ms** before (about 70% faster). Performance poster gains were smaller
+and variable: repeat responses ranged **379–629ms** after deployment.
+
+Do not hide tail latency: the first show response was **3893ms**, and one of the
+five admin requests took **7780ms**; other admin samples were **1316–1900ms**.
+These tests do not isolate cold starts from network/platform delays. No hosting
+upgrade has been made. London compute should reduce ordinary database latency,
+but these outliers cannot honestly be attributed to geography alone.
+
+Live verification also passed: all pages returned complete content, four warmed
+poster URLs rejected anonymous callers with 404, signed-out show content was
+replaced by the login redirect, and the relational playback read matched the
+previous query. In the actual browser Jolly Holiday played from its chapter
+offset (~187 seconds). Ten focused regression tests passed, including mocked
+non-entitled cache access and overlapping reads without bypassing the profile
+gate. A full real-parent RLS sweep remains separate work.
+
+The temporary audit sessions send no email and are revoked
 with local-scope sign-out so existing browser sessions remain untouched.
 
 **Done since the last session**: shows now support an optional discounted sale
@@ -53,14 +73,14 @@ ranges, so this does not download the complete show recording.
 1. **Load the rest of the real Liberty content**: remaining shows, categories,
    and the real parent email list, via `/admin/liberty`. Chapters and the first
    show's dances are in.
-2. **Verify the page-speed RPCs live before upgrading Netlify.** Netlify's UI
-   confirms the functions run in N. Virginia (`iad`), while Supabase is London
-   (`eu-west-2`). The parent shop and show pages now each fetch their page data
-   through one `SECURITY INVOKER` Postgres function, retaining RLS while
-   removing the remaining cross-region Data API round trips. The signed-out
-   root route also goes directly to `/login` instead of `/` → `/shows` →
-   `/login`. Apply `20260909223000_page_load_bundles.sql`, deploy, and compare
-   authenticated timings before paying for a configurable Netlify region.
+2. **Evaluate the improved live experience before upgrading Netlify.** The RPCs
+   are applied and working; the September 22 comparison above verifies the next
+   round of improvements in production. Last authenticated dashboard inspection
+   placed functions in N. Virginia (`iad`), while Supabase is London (`eu-west-2`).
+   The September 22 region-settings page requires sign-in, so the region was not
+   re-confirmed that day. Keep London compute as the next infrastructure option
+   if typical page latency remains unacceptable; do not promise it will remove
+   every intermittent slow response.
 3. **Decide on Bunny Token Authentication.** Referrer allowlisting is on, but
    it's deterrence only — a spoofed `Referer` still fetches the MP4, and always
    could (Bunny accepts its own player domain). Token Authentication is the only
