@@ -2,6 +2,33 @@
 
 Key choices made during the build and the reasoning behind them. For the original product decisions (pricing model, invite-only, whole-show purchase, etc.), see `docs/Dance Show Platform - Master Brief.md` — this file covers decisions made *during implementation* that extend or reconcile that spec.
 
+## September 22 performance follow-up
+
+The parent page RPCs now run concurrently with the profile/onboarding check.
+They still use the caller's cookie-bound client and SECURITY INVOKER/RLS; no
+page content is returned before both operations complete. This removes a serial
+profile → RPC wait without caching personalised HTML or entitlement decisions.
+
+Poster authorisation stays outside a shared Next.js Data Cache. Only the
+processed WebP bytes are cached, keyed by source URL and output width for one
+hour. Each server request still verifies the caller and re-reads the row through
+RLS before accessing those bytes. Browser responses remain private. UUID upload
+URLs invalidate naturally; mutable legacy Bunny URLs may take up to an hour to
+refresh. Upstream failures throw instead of populating the shared cache and
+return a non-cacheable 502 to the browser.
+
+Admin school reads use React request-local cache, including an admin gate, so
+layouts and pages share a single authorised lookup. Performance categories are
+embedded with performance rows instead of fetched in a later round trip. Chapter
+playback similarly embeds the related full-show video in one RLS-protected read,
+still only when the viewer requests playback.
+
+Loading boundaries on shop, show and school-admin pages allow navigation feedback
+before page data finishes. First-byte time now includes that loading shell and
+must not be compared to previous full-page TTFB as if it measured finished content;
+compare complete HTML response time as well. No hosting region, plan or database
+schema changed.
+
 ## Full-show downloads stream through a browser worker
 
 Bunny's MP4 fallback is a playback URL: it returns `video/mp4` without a

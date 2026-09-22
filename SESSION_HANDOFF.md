@@ -4,6 +4,26 @@ What to pick up next. Update this file at the end of each working session so the
 
 ## Immediate priorities
 
+**September 22 performance follow-up**: parent RPCs overlap profile checks;
+posters cache processed bytes behind fresh per-request RLS; admin school lookups
+are request-deduplicated and category links embedded; chapter playback uses a
+single relational read; shop/show/admin navigation has loading boundaries.
+No hosting upgrade or schema migration is required. Tests:
+`node --test scripts/performance-regression.test.mjs`, TypeScript, production build.
+Local production checks against the real Supabase project passed: pages render,
+playback join matches the original recording, and anonymous callers cannot fetch
+a warmed poster cache or protected show content. Anonymous show requests can now
+return a streamed 200 containing Next's login redirect after the loading shell;
+this is expected, not an authentication bypass.
+
+Before deployment, live warm complete-response medians (5 authenticated samples)
+were shop **910ms**, show **920ms**, Performances admin **2350ms**. Repeated
+full-show poster responses were about **2060ms** without a browser cache. These
+are HTTP timings, not browser LCP; compare complete responses after deployment,
+not just the earlier first byte enabled by streaming. Final live comparison is
+pending deployment. The temporary audit sessions send no email and are revoked
+with local-scope sign-out so existing browser sessions remain untouched.
+
 **Done since the last session**: shows now support an optional discounted sale
 price, shown to parents with the regular price crossed out and a Sale tag; the
 discounted amount is also used for Stripe Checkout. This requires migration

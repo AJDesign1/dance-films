@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import sharp from "sharp";
 import { getUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { fetchPosterImage } from "@/lib/bunny";
+import { getProcessedPoster } from "@/lib/poster-cache";
 
 // Bunny's poster frames are fetched with an outbound `Referer` header, and
 // resized with sharp — both Node-only.
@@ -55,13 +54,17 @@ export async function GET(
 
   if (!url) return NOT_FOUND;
 
-  const upstream = await fetchPosterImage(url);
-  if (!upstream) return NOT_FOUND;
-
-  const webp = await sharp(Buffer.from(await upstream.arrayBuffer()))
-    .resize({ width: WIDTH[kind], withoutEnlargement: true })
-    .webp({ quality: 78 })
-    .toBuffer();
+  let webp: Buffer;
+  try {
+    // RLS above is deliberately outside the shared cache and runs on every
+    // request, including when another authorised viewer has warmed the image.
+    webp = Buffer.from(await getProcessedPoster(url, WIDTH[kind]), "base64");
+  } catch {
+    return new NextResponse(null, {
+      status: 502,
+      headers: { "Cache-Control": "private, no-store" },
+    });
+  }
 
   return new NextResponse(new Uint8Array(webp), {
     headers: {

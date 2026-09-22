@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -33,7 +34,9 @@ export async function requireAdmin() {
  * Load a school for management by slug (service role — admin sees disabled
  * schools and all fields too). Returns null if not found.
  */
-export async function getManagedSchool(slug: string): Promise<ManagedSchool | null> {
+// Request-local only: layout and page share one authorised school lookup.
+export const getManagedSchool = cache(async (slug: string): Promise<ManagedSchool | null> => {
+  await requireAdmin();
   const admin = createAdminClient();
   const { data } = await admin
     .from("schools")
@@ -41,4 +44,4 @@ export async function getManagedSchool(slug: string): Promise<ManagedSchool | nu
     .eq("slug", slug)
     .maybeSingle();
   return (data as ManagedSchool | null) ?? null;
-}
+});

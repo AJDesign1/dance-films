@@ -39,22 +39,19 @@ export default async function PerformancesPage({
 
   const [{ data: video }, { data: perfs }, { data: cats }] = await Promise.all([
     admin.from("show_videos").select("full_show_bunny_video_id, duration_seconds, download_url, full_show_thumbnail_url").eq("show_id", activeShow.id).maybeSingle(),
-    admin.from("performances").select("id, title, bunny_video_id, thumbnail_url, duration_seconds, sort_order, video_source, clip_start_seconds, clip_end_seconds").eq("show_id", activeShow.id).order("sort_order", { ascending: true }),
+    admin.from("performances").select("id, title, bunny_video_id, thumbnail_url, duration_seconds, sort_order, video_source, clip_start_seconds, clip_end_seconds, performance_categories(category_id)").eq("show_id", activeShow.id).order("sort_order", { ascending: true }),
     admin.from("categories").select("id, name, kind, sort_order").eq("show_id", activeShow.id).order("sort_order", { ascending: true }),
   ]);
-
-  const perfIds = (perfs ?? []).map((p) => p.id);
-  const { data: links } = perfIds.length
-    ? await admin.from("performance_categories").select("performance_id, category_id").in("performance_id", perfIds)
-    : { data: [] as { performance_id: string; category_id: string }[] };
 
   const catKind = new Map((cats ?? []).map((c) => [c.id, c.kind]));
   const groupByPerf = new Map<string, string>();
   const styleByPerf = new Map<string, string>();
-  for (const l of links ?? []) {
-    const kind = catKind.get(l.category_id);
-    if (kind === "group") groupByPerf.set(l.performance_id, l.category_id);
-    else if (kind === "style") styleByPerf.set(l.performance_id, l.category_id);
+  for (const perf of perfs ?? []) {
+    for (const link of perf.performance_categories) {
+      const kind = catKind.get(link.category_id);
+      if (kind === "group") groupByPerf.set(perf.id, link.category_id);
+      else if (kind === "style") styleByPerf.set(perf.id, link.category_id);
+    }
   }
 
   const performances: PerfRow[] = (perfs ?? []).map((p) => ({

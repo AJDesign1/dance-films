@@ -1,4 +1,5 @@
 import { requireOnboardedProfile } from "@/lib/auth";
+import { notFound } from "next/navigation";
 import { getCurrentSchool } from "@/lib/school";
 import { createClient } from "@/lib/supabase/server";
 import { firstName } from "@/lib/format";
@@ -12,16 +13,19 @@ import styles from "./shop.module.css";
 type ShowsPageRow = Omit<ShopShow, "owned"> & { id: string; owned: boolean };
 
 export default async function ShowsPage() {
-  // Independent of each other — see the same grouping on the show page.
-  const [profile, school, supabase] = await Promise.all([
+  const schoolPromise = getCurrentSchool();
+  // The RPC uses the caller's cookies and RLS. It can run while the profile
+  // gate is in flight; nothing is rendered until both have completed.
+  const pagePromise = Promise.all([schoolPromise, createClient()]).then(([school, supabase]) => {
+    if (!school) notFound();
+    return supabase.rpc("get_shows_page", { p_school_id: school.id });
+  });
+  const [profile, school, { data, error }] = await Promise.all([
     requireOnboardedProfile(),
-    getCurrentSchool(),
-    createClient(),
+    schoolPromise,
+    pagePromise,
   ]);
-
-  // One Data API call instead of separate shows + entitlements requests. The
-  // database function is SECURITY INVOKER, so the same RLS policies apply.
-  const { data } = await supabase.rpc("get_shows_page", { p_school_id: school!.id });
+  if (error) throw new Error("Unable to load shows");
   const showRows = (data ?? []) as unknown as ShowsPageRow[];
 
   const shows: ShopShow[] = showRows.map((s) => ({

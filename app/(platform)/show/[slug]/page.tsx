@@ -53,21 +53,22 @@ export default async function ShowPage({
 }) {
   const { slug } = await params;
   const { purchase } = await searchParams;
-  // Independent of each other: the profile gate and the tenant lookup were two
-  // serial round trips purely because they were written on consecutive lines.
-  const [profile, school, supabase] = await Promise.all([
-    requireOnboardedProfile(),
-    getCurrentSchool(),
-    createClient(),
-  ]);
-
-  // One Data API request returns the show, ownership and (when entitled) all
-  // page content. The SECURITY INVOKER function preserves every existing RLS
-  // boundary while eliminating transatlantic round trips between each query.
-  const { data } = await supabase.rpc("get_show_page", {
-    p_school_id: school!.id,
-    p_show_slug: slug,
+  const schoolPromise = getCurrentSchool();
+  // RLS protects this query independently of the onboarding gate. Start it
+  // as soon as the tenant is known instead of waiting for the profile query.
+  const pagePromise = Promise.all([schoolPromise, createClient()]).then(([school, supabase]) => {
+    if (!school) notFound();
+    return supabase.rpc("get_show_page", {
+      p_school_id: school.id,
+      p_show_slug: slug,
+    });
   });
+  const [profile, school, { data, error }] = await Promise.all([
+    requireOnboardedProfile(),
+    schoolPromise,
+    pagePromise,
+  ]);
+  if (error) throw new Error("Unable to load show");
   const bundle = data as unknown as ShowPageBundle | null;
 
   if (!bundle) notFound();

@@ -27,9 +27,8 @@ export type PlaybackSource = {
  *  - 'show'       → the show's own full recording, plus the dance's start/end
  *                   so the player can present a slice of it as its own video.
  *  - 'standalone' → its own uploaded video, exactly as before.
- * Both re-check entitlement the same way: the second read is scoped to the
- * show_id that came off the (already RLS-filtered) performance row, so a
- * chapter can't reach a recording the caller isn't entitled to.
+ * The related show/video is embedded in the same Data API request. Every
+ * relation retains its RLS check; no video identifier is fetched at page load.
  */
 export async function getEmbedUrl(kind: "full" | "perf", id: string): Promise<PlaybackSource | null> {
   const user = await getUser();
@@ -40,7 +39,7 @@ export async function getEmbedUrl(kind: "full" | "perf", id: string): Promise<Pl
   if (kind === "perf") {
     const { data: perf } = await supabase
       .from("performances")
-      .select("show_id, video_source, bunny_video_id, clip_start_seconds, clip_end_seconds")
+      .select("video_source, bunny_video_id, clip_start_seconds, clip_end_seconds, shows(show_videos(full_show_bunny_video_id))")
       .eq("id", id)
       .maybeSingle();
     if (!perf) return null;
@@ -50,11 +49,7 @@ export async function getEmbedUrl(kind: "full" | "perf", id: string): Promise<Pl
       return url ? { url, startSeconds: null, endSeconds: null } : null;
     }
 
-    const { data: video } = await supabase
-      .from("show_videos")
-      .select("full_show_bunny_video_id")
-      .eq("show_id", perf.show_id)
-      .maybeSingle();
+    const video = perf.shows?.show_videos;
     if (!video?.full_show_bunny_video_id) return null;
 
     const url = bunnyEmbedUrl(video.full_show_bunny_video_id, {
