@@ -224,11 +224,24 @@ email scanners using the link before the parent. Both invite and access-code
 emails preserve their tenant origin and intended post-login page. The legacy
 PKCE `/auth/callback` route remains for links that were sent before the change.
 
-Supabase's Magic Link template must use:
+Supabase's **Magic Link** template must use:
 
 ```html
 <p><a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email">Sign in</a></p>
 ```
+
+Supabase's separate **Confirm signup** template must use the same token-hash
+route (with suitable button wording):
+
+```html
+<p><a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email">Confirm email address</a></p>
+```
+
+This was corrected in the live Supabase project on 28 September 2026. Without
+it, a brand-new email receives Supabase's default one-click `ConfirmationURL`,
+then reaches `/auth/magic-link` without `token_hash` or `type` and sees “This
+link isn't valid”. Existing Auth users use the Magic Link template, which is
+why the defect affected new parents only.
 
 After any template or deployment change, request a **fresh** email for testing;
 previously consumed links cannot be repaired.

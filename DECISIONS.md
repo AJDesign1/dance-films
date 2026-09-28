@@ -491,10 +491,13 @@ that URL while checking the message, consuming its single-use token before the
 parent clicks it. The PKCE version also ties the exchange to the browser that
 requested the link, which is fragile when the email opens elsewhere.
 
-Supabase's template now sends `TokenHash` to `/auth/magic-link`. That route only
-renders a branded **Finish signing in** page; it does not verify anything on the
-initial GET. Verification happens at `/auth/confirm` only after the person
-presses the page's button. Automated link previews may safely visit the first
-page without consuming the token, while the token-hash flow works independently
-of the browser that originally requested the email. The old PKCE callback stays
-in place so already-sent links retain their existing route.
+Supabase's **Magic Link** and **Confirm signup** templates both send `TokenHash`
+to `/auth/magic-link`. The second template matters because `signInWithOtp()`
+uses Confirm signup for an email that does not yet have an Auth user, including
+a parent's first access-code redemption. That route only renders a branded
+**Finish signing in** page; it does not verify anything on the initial GET.
+Verification happens at `/auth/confirm` only after the person presses the
+page's button. Automated link previews may safely visit the first page without
+consuming the token, while the token-hash flow works independently of the
+browser that originally requested the email. The old PKCE callback stays in
+place so already-sent links retain their existing route.
