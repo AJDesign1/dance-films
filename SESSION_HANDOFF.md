@@ -232,3 +232,18 @@ Supabase's Magic Link template must use:
 
 After any template or deployment change, request a **fresh** email for testing;
 previously consumed links cannot be repaired.
+
+## Parent login hierarchy
+
+The Liberty login page now makes **email + access code** the default route.
+Both fields appear together under “Access your Liberty Dance videos”, and
+submitting **View videos** calls the existing `redeemAccessCode()` flow (invite
+the email, then send the normal secure magic link). Returning users have a
+visually secondary “Already registered?” email form beneath it which continues
+to call the existing `requestMagicLink()` action. No authentication, database,
+or password logic was added or changed.
+
+The mobile hero was shortened from 420px to 240px so a parent arriving from a
+poster QR code sees the primary form and its button in the first phone viewport.
+Verified with `npx tsc --noEmit`, a production `npm run build`, and a responsive
+browser check at 390×844.

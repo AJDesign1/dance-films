@@ -2,7 +2,7 @@
 
 import { useState, useTransition, type CSSProperties } from "react";
 import { requestMagicLink } from "@/app/(platform)/login/actions";
-import { checkAccessCode, redeemAccessCode } from "@/app/(platform)/login/access-code-actions";
+import { redeemAccessCode } from "@/app/(platform)/login/access-code-actions";
 import CoverImage from "@/components/platform/CoverImage";
 import styles from "./LoginScreen.module.css";
 
@@ -12,7 +12,7 @@ type Props = {
   heroImageUrl: string | null;
 };
 
-type View = "idle" | "sent" | "not_invited" | "code" | "code_email";
+type View = "access" | "sent" | "not_invited";
 
 const primaryBtn: CSSProperties = {
   width: "100%",
@@ -82,91 +82,73 @@ const labelStyle: CSSProperties = {
   marginBottom: 9,
 };
 
-const linkBtn: CSSProperties = {
-  display: "block",
-  width: "100%",
-  textAlign: "center",
-  marginTop: 18,
-  background: "none",
-  border: "none",
-  padding: 0,
-  fontSize: 13,
-  fontWeight: 600,
-  color: "var(--text-2)",
-  cursor: "pointer",
-  textDecoration: "underline",
-  textUnderlineOffset: 3,
-};
-
 export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: Props) {
-  const [view, setView] = useState<View>("idle");
-  const [email, setEmail] = useState("");
+  const [view, setView] = useState<View>("access");
+  const [accessEmail, setAccessEmail] = useState("");
+  const [returningEmail, setReturningEmail] = useState("");
   const [sentEmail, setSentEmail] = useState("");
+  const [sentFromAccessCode, setSentFromAccessCode] = useState(false);
   const [code, setCode] = useState("");
   const [codeError, setCodeError] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [accessError, setAccessError] = useState<string | null>(null);
+  const [magicLinkError, setMagicLinkError] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<"access" | "magic" | null>(null);
   const [pending, startTransition] = useTransition();
+  const displaySchoolName = schoolName.replace(/\s+Company$/i, "");
 
-  function submit() {
-    setError(null);
+  function submitMagicLink() {
+    setMagicLinkError(null);
+    setPendingAction("magic");
     startTransition(async () => {
-      const res = await requestMagicLink(email);
-      if (res.status === "sent") {
-        setSentEmail(res.email);
-        setView("sent");
-      } else if (res.status === "not_invited") {
-        setSentEmail(res.email);
-        setView("not_invited");
-      } else {
-        setError(res.message);
+      try {
+        const res = await requestMagicLink(returningEmail);
+        if (res.status === "sent") {
+          setSentEmail(res.email);
+          setSentFromAccessCode(false);
+          setView("sent");
+        } else if (res.status === "not_invited") {
+          setSentEmail(res.email);
+          setView("not_invited");
+        } else {
+          setMagicLinkError(res.message);
+        }
+      } finally {
+        setPendingAction(null);
       }
     });
   }
 
-  function submitCode() {
+  function submitAccessCode() {
     setCodeError(null);
+    setAccessError(null);
+    setPendingAction("access");
     startTransition(async () => {
-      const res = await checkAccessCode(code);
-      if (res.status === "valid") setView("code_email");
-      else setCodeError("That code isn't valid. Check with your school and try again.");
-    });
-  }
-
-  function submitRedeem() {
-    setError(null);
-    startTransition(async () => {
-      const res = await redeemAccessCode(code, email);
-      if (res.status === "sent") {
-        setSentEmail(res.email);
-        setView("sent");
-      } else if (res.status === "invalid_code") {
-        setCodeError("That code isn't valid anymore.");
-        setView("code");
-      } else {
-        setError(res.message);
+      try {
+        const res = await redeemAccessCode(code, accessEmail);
+        if (res.status === "sent") {
+          setSentEmail(res.email);
+          setSentFromAccessCode(true);
+          setView("sent");
+        } else if (res.status === "invalid_code") {
+          setCodeError("That code isn't valid. Check it and try again.");
+        } else {
+          setAccessError(res.message);
+        }
+      } finally {
+        setPendingAction(null);
       }
     });
   }
 
   function reset() {
-    setView("idle");
-    setEmail("");
+    setView("access");
+    setAccessEmail("");
+    setReturningEmail("");
     setCode("");
-    setError(null);
+    setAccessError(null);
+    setMagicLinkError(null);
     setCodeError(null);
   }
-
-  function useAccessCode() {
-    setError(null);
-    setCodeError(null);
-    setView("code");
-  }
-
-  const accessCodeLink = (
-    <button type="button" onClick={useAccessCode} style={linkBtn}>
-      Having trouble? Use an access code
-    </button>
-  );
 
   return (
     <div
@@ -217,6 +199,7 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
 
       {/* Form panel */}
       <div
+        className={styles.formPanel}
         style={{
           flex: "1 1 360px",
           display: "flex",
@@ -231,49 +214,97 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
             {schoolName}
           </div>
 
-          {view === "idle" && (
+          {view === "access" && (
             <>
-              <h1 style={h1Style}>Welcome back</h1>
+              <h1 style={{ ...h1Style, fontSize: "clamp(35px, 8vw, 44px)" }}>
+                Access your {displaySchoolName} videos
+              </h1>
               <p style={{ margin: "0 0 26px", color: "var(--text-2)", fontSize: 15.5, lineHeight: 1.55 }}>
-                {schoolName} is invite-only. Enter your email and we&apos;ll send you a secure link to
-                sign in — no password to remember.
+                Enter the email address you want to use and the access code from {schoolName}.
               </p>
-              <label style={labelStyle}>
-                Email address
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setError(null);
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  submitAccessCode();
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") submit();
-                }}
-                placeholder="you@example.com"
-                autoComplete="email"
-                style={inputStyle}
-              />
-              <div style={{ minHeight: 16, marginTop: error ? 9 : 0, fontSize: 12.5, color: "var(--danger)", fontWeight: 600 }}>
-                {error ?? ""}
-              </div>
-              <button onClick={submit} disabled={pending} style={{ ...primaryBtn, marginTop: 14, opacity: pending ? 0.7 : 1 }}>
-                {pending ? "Sending…" : "Send me a login link"}
-                {!pending && (
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M3 8h9M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </button>
-              <p style={{ margin: "16px 0 0", display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12.5, color: "var(--text-2)", lineHeight: 1.5 }}>
-                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="1.5" style={{ flex: "0 0 auto", marginTop: 1 }}>
-                  <path d="M8 1.8l5 2v3.4c0 3-2 5.2-5 6.4-3-1.2-5-3.4-5-6.4V3.8l5-2z" strokeLinejoin="round" />
-                  <path d="M5.8 8l1.6 1.6L10.4 6.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                No passwords, ever. The link signs you in on this device — we&apos;ll never share your email.
-              </p>
-              {accessCodeLink}
+              >
+                <label htmlFor="access-email" style={labelStyle}>Email address</label>
+                <input
+                  id="access-email"
+                  name="email"
+                  type="email"
+                  value={accessEmail}
+                  onChange={(event) => {
+                    setAccessEmail(event.target.value);
+                    setAccessError(null);
+                  }}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  required
+                  style={inputStyle}
+                />
+                <label htmlFor="access-code" style={{ ...labelStyle, marginTop: 18 }}>Access code</label>
+                <input
+                  id="access-code"
+                  name="access-code"
+                  value={code}
+                  onChange={(event) => {
+                    setCode(event.target.value);
+                    setCodeError(null);
+                  }}
+                  placeholder="e.g. ABCD1234"
+                  autoCapitalize="characters"
+                  autoComplete="one-time-code"
+                  required
+                  style={{ ...inputStyle, fontFamily: "ui-monospace, monospace", letterSpacing: ".08em" }}
+                />
+                <div aria-live="polite" style={{ minHeight: 16, marginTop: codeError || accessError ? 9 : 0, fontSize: 12.5, color: "var(--danger)", fontWeight: 600 }}>
+                  {codeError ?? accessError ?? ""}
+                </div>
+                <button type="submit" disabled={pending} style={{ ...primaryBtn, marginTop: 14, opacity: pending ? 0.7 : 1 }}>
+                  {pendingAction === "access" ? "Sending…" : "View videos"}
+                  {pendingAction !== "access" && (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                      <path d="M3 8h9M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+              </form>
+
+              <section className={styles.returningUsers} aria-labelledby="returning-users-heading">
+                <h2 id="returning-users-heading" className={styles.returningTitle}>Already registered?</h2>
+                <p className={styles.returningCopy}>
+                  Enter your email address and we&apos;ll send you a secure magic link.
+                </p>
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    submitMagicLink();
+                  }}
+                >
+                  <label htmlFor="returning-email" style={labelStyle}>Email address</label>
+                  <input
+                    id="returning-email"
+                    name="returning-email"
+                    type="email"
+                    value={returningEmail}
+                    onChange={(event) => {
+                      setReturningEmail(event.target.value);
+                      setMagicLinkError(null);
+                    }}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    required
+                    style={inputStyle}
+                  />
+                  <div aria-live="polite" style={{ minHeight: 16, marginTop: magicLinkError ? 9 : 0, fontSize: 12.5, color: "var(--danger)", fontWeight: 600 }}>
+                    {magicLinkError ?? ""}
+                  </div>
+                  <button type="submit" disabled={pending} style={{ ...secondaryBtn, opacity: pending ? 0.7 : 1 }}>
+                    {pendingAction === "magic" ? "Sending…" : "Send magic link"}
+                  </button>
+                </form>
+              </section>
             </>
           )}
 
@@ -287,8 +318,8 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
               </div>
               <h1 style={{ ...h1Style, fontSize: 40 }}>Check your inbox</h1>
               <p style={{ margin: "0 0 24px", color: "var(--text-2)", fontSize: 15.5, lineHeight: 1.55 }}>
-                We&apos;ve sent a login link to <strong style={{ color: "var(--text)" }}>{sentEmail}</strong>. Open it on
-                this device to sign in.
+                {sentFromAccessCode ? "Your access is ready. We’ve" : "We’ve"} sent a secure login link to{" "}
+                <strong style={{ color: "var(--text)" }}>{sentEmail}</strong>. Open it on this device to view your videos.
               </p>
               <button onClick={reset} style={secondaryBtn}>
                 Use a different email
@@ -296,7 +327,6 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
               <p style={{ margin: "18px 0 0", textAlign: "center", fontSize: 12.5, color: "var(--text-2)" }}>
                 Didn&apos;t get it? Check your spam folder.
               </p>
-              {accessCodeLink}
             </>
           )}
 
@@ -311,86 +341,11 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
               </div>
               <h1 style={{ ...h1Style, fontSize: 38 }}>We can&apos;t find your invitation</h1>
               <p style={{ margin: "0 0 24px", color: "var(--text-2)", fontSize: 15.5, lineHeight: 1.55 }}>
-                There&apos;s no invitation for <strong style={{ color: "var(--text)" }}>{sentEmail}</strong> yet. {schoolName} is
-                invite-only — please contact {schoolName} and we&apos;ll happily add you to the list.
+                There&apos;s no registration for <strong style={{ color: "var(--text)" }}>{sentEmail}</strong> yet. If this is
+                your first visit, use the access code from {schoolName}.
               </p>
               <button onClick={reset} style={primaryBtn}>
-                Try another email
-              </button>
-              <div style={{ marginTop: 18, padding: "16px 18px", borderRadius: 10, background: "var(--surface-2)", textAlign: "center" }}>
-                <p style={{ margin: "0 0 10px", fontSize: 14, fontWeight: 600, color: "var(--text)" }}>
-                  Do you have an access code?
-                </p>
-                <button onClick={useAccessCode} style={secondaryBtn}>
-                  Use my access code
-                </button>
-              </div>
-            </>
-          )}
-
-          {view === "code" && (
-            <>
-              <h1 style={h1Style}>Use an access code</h1>
-              <p style={{ margin: "0 0 26px", color: "var(--text-2)", fontSize: 15.5, lineHeight: 1.55 }}>
-                If {schoolName} gave you an access code, enter it here to get set up.
-              </p>
-              <label style={labelStyle}>Access code</label>
-              <input
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value);
-                  setCodeError(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") submitCode();
-                }}
-                placeholder="e.g. ABCD1234"
-                autoCapitalize="characters"
-                autoComplete="off"
-                style={{ ...inputStyle, fontFamily: "ui-monospace, monospace", letterSpacing: ".08em" }}
-              />
-              <div style={{ minHeight: 16, marginTop: codeError ? 9 : 0, fontSize: 12.5, color: "var(--danger)", fontWeight: 600 }}>
-                {codeError ?? ""}
-              </div>
-              <button onClick={submitCode} disabled={pending} style={{ ...primaryBtn, marginTop: 14, opacity: pending ? 0.7 : 1 }}>
-                {pending ? "Checking…" : "Continue"}
-              </button>
-              <button onClick={reset} style={secondaryBtn}>
-                Back to login
-              </button>
-            </>
-          )}
-
-          {view === "code_email" && (
-            <>
-              <h1 style={h1Style}>Almost there</h1>
-              <p style={{ margin: "0 0 26px", color: "var(--text-2)", fontSize: 15.5, lineHeight: 1.55 }}>
-                Enter your email and we&apos;ll get your account set up and send you a secure sign-in link.
-              </p>
-              <label style={labelStyle}>Email address</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setError(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") submitRedeem();
-                }}
-                placeholder="you@example.com"
-                autoComplete="email"
-                autoFocus
-                style={inputStyle}
-              />
-              <div style={{ minHeight: 16, marginTop: error ? 9 : 0, fontSize: 12.5, color: "var(--danger)", fontWeight: 600 }}>
-                {error ?? ""}
-              </div>
-              <button onClick={submitRedeem} disabled={pending} style={{ ...primaryBtn, marginTop: 14, opacity: pending ? 0.7 : 1 }}>
-                {pending ? "Sending…" : "Send me a login link"}
-              </button>
-              <button onClick={() => setView("code")} style={secondaryBtn}>
-                Back
+                Use an access code
               </button>
             </>
           )}
