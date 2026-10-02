@@ -4,6 +4,28 @@ What to pick up next. Update this file at the end of each working session so the
 
 ## Immediate priorities
 
+**October 2 first-load follow-up (local, not deployed)**: school `/` now internally
+rewrites to login or shows instead of issuing another browser request. Cookie
+presence is only a routing hint; destination pages still verify identity and
+onboarding. Session refresh preserves the rewrite and forwards fresh cookies.
+Login identity and branding reads overlap. Owned show cards are real links and
+prefetch protected page data after 800ms of visibility, or on interaction; unowned
+cards retain checkout behaviour. This is browser-local prefetch, not shared
+protected-page caching. Native Sharp processing is imported only on poster cache
+misses. The admin invitation-count badge streams independently of the main page,
+after the existing admin gate. No schema, hosting, or auth-flow changes.
+
+Verification: TypeScript, production build, and 13 regression tests passed.
+Local production root returned 200 with zero redirects; browser rendered Liberty's
+access form. An HTTP invocation of the access-code server action at rewritten `/`
+returned `invalid_code` for a deliberately invalid test code (no email/invite).
+Anonymous protected show access and a fake-cookie root request still returned
+Next's login redirect; anonymous admin access redirected to `/admin/login`.
+Refreshed-cookie routing is covered by a mocked regression test. Authenticated
+browser prefetch and live Netlify cold-start improvement are not yet measured.
+Do not describe this as a measured production speedup. Admin changed-row-only
+saves and further database-read consolidation remain separate work.
+
 **September 22 performance follow-up**: parent RPCs overlap profile checks;
 posters cache processed bytes behind fresh per-request RLS; admin school lookups
 are request-deduplicated and category links embedded; chapter playback uses a

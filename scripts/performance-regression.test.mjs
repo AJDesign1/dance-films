@@ -16,7 +16,8 @@ function load(relativePath, dependencies) {
   });
   const module = { exports: {} };
   vm.runInNewContext(outputText, {
-    module, exports: module.exports, Buffer, Uint8Array, Response,
+    module, exports: module.exports, Buffer, Uint8Array, Response, Headers,
+    process: { env: {} },
     require: (name) => {
       if (!(name in dependencies)) throw new Error(`Unexpected dependency: ${name}`);
       return dependencies[name];
@@ -24,6 +25,64 @@ function load(relativePath, dependencies) {
   });
   return module.exports;
 }
+
+function entryMiddleware({ refresh = false } = {}) {
+  const next = require("next/server");
+  let authCalls = 0;
+  const { middleware } = load("middleware.ts", {
+    "next/server": next,
+    "@/lib/tenant": {
+      SCHOOL_SLUG_HEADER: "x-school-slug",
+      schoolSlugFromHost: (host, params) => params.get("school") || (host === "liberty.dancefilms.co.uk" ? "liberty" : null),
+    },
+    "@/lib/cookieDomain": { sharedCookieDomain: () => undefined },
+    "@supabase/ssr": { createServerClient: (_url, _key, { cookies }) => ({ auth: {
+      getClaims: async () => {
+        authCalls++;
+        if (refresh) cookies.setAll([{ name: "sb-test", value: "refreshed", options: { path: "/" } }]);
+        return { data: { claims: { sub: "viewer" } } };
+      },
+      getUser: async () => { throw new Error("Unexpected remote auth lookup"); },
+    } }) },
+  });
+  return {
+    authCalls: () => authCalls,
+    request: (url, cookie) => middleware(new next.NextRequest(url, {
+      headers: { host: new URL(url).host, ...(cookie ? { cookie } : {}) },
+    })),
+  };
+}
+
+test("signed-out school entry serves login without a redirect or auth call", async () => {
+  const subject = entryMiddleware();
+  const response = await subject.request("https://liberty.dancefilms.co.uk/?from=poster");
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("location"), null);
+  assert.equal(response.headers.get("x-middleware-rewrite"), "https://liberty.dancefilms.co.uk/login?from=poster");
+  assert.equal(response.headers.get("x-middleware-request-x-school-slug"), "liberty");
+  assert.equal(subject.authCalls(), 0);
+});
+
+test("signed-in entry rewrite survives session refresh and forwards fresh cookies", async () => {
+  const subject = entryMiddleware({ refresh: true });
+  const response = await subject.request("https://liberty.dancefilms.co.uk/", "sb-test=old");
+  assert.equal(response.headers.get("x-middleware-rewrite"), "https://liberty.dancefilms.co.uk/shows");
+  assert.match(response.headers.get("x-middleware-request-cookie"), /sb-test=refreshed/);
+  assert.match(response.headers.get("set-cookie"), /sb-test=refreshed/);
+  assert.equal(subject.authCalls(), 1);
+});
+
+test("entry optimisation leaves apex, admin and explicit routes unchanged", async () => {
+  const subject = entryMiddleware();
+  const apex = await subject.request("https://dancefilms.co.uk/");
+  assert.equal(apex.headers.get("x-middleware-rewrite"), "https://dancefilms.co.uk/coming-soon");
+  for (const path of ["/admin/liberty", "/auth/confirm", "/show/summer", "/login"]) {
+    const response = await subject.request(`https://liberty.dancefilms.co.uk${path}`);
+    assert.equal(response.headers.get("x-middleware-rewrite"), null);
+  }
+  const preview = await subject.request("http://localhost:3100/?school=liberty");
+  assert.equal(preview.headers.get("x-middleware-rewrite"), "http://localhost:3100/login?school=liberty");
+});
 
 function query(data, selected) {
   const chain = {

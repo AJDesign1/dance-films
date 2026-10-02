@@ -1,6 +1,5 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
-import sharp from "sharp";
 import { fetchPosterImage } from "@/lib/bunny";
 
 /**
@@ -14,6 +13,8 @@ export const getProcessedPoster = unstable_cache(
     const upstream = await fetchPosterImage(url);
     // Throw rather than caching an empty result after a temporary upstream error.
     if (!upstream) throw new Error("Poster source unavailable");
+    // Native image processing is needed only on a cache miss.
+    const { default: sharp } = await import("sharp");
     const webp = await sharp(Buffer.from(await upstream.arrayBuffer()))
       .resize({ width, withoutEnlargement: true })
       .webp({ quality: 78 })

@@ -5,9 +5,8 @@ import LoginScreen from "@/components/platform/LoginScreen";
 
 export default async function LoginPage() {
   // Already signed in → straight to the shop.
-  if (await getUser()) redirect("/shows");
-
-  const school = await getCurrentSchool();
+  const [user, school] = await Promise.all([getUser(), getCurrentSchool()]);
+  if (user) redirect("/shows");
 
   return (
     <LoginScreen

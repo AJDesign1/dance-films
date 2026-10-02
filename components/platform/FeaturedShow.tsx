@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { ShowCardAction } from "./OwnedShowLink";
 import styles from "@/app/(platform)/shows/shop.module.css";
 import ShowPrice from "@/components/platform/ShowPrice";
 import CheckoutModal from "@/components/platform/CheckoutModal";
@@ -10,28 +10,13 @@ import type { ShopShow } from "@/components/platform/ShowCard";
 
 /** "Latest production" hero card. Owned → open show; not owned → open checkout. */
 export default function FeaturedShow({ show, email }: { show: ShopShow; email: string }) {
-  const router = useRouter();
   const [checkout, setCheckout] = useState(false);
-
-  function activate() {
-    if (show.owned) router.push(`/show/${show.slug}`);
-    else setCheckout(true);
-  }
 
   return (
     <>
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={activate}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            activate();
-          }
-        }}
+      <ShowCardAction
+        owned={show.owned} href={`/show/${show.slug}`} onPurchase={() => setCheckout(true)}
         className={styles.featuredCard}
-        style={{ display: "block", cursor: "pointer" }}
       >
         <div className={styles.featMinH} style={{ position: "relative", borderRadius: 16, overflow: "hidden", display: "flex", background: "var(--surface-2)", boxShadow: "var(--card-shadow)" }}>
           {show.artwork_url ? (
@@ -75,7 +60,7 @@ export default function FeaturedShow({ show, email }: { show: ShopShow; email: s
             </div>
           </div>
         </div>
-      </div>
+      </ShowCardAction>
 
       {checkout && <CheckoutModal show={show} email={email} onClose={() => setCheckout(false)} />}
     </>

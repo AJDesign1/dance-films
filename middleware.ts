@@ -38,7 +38,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
   }
 
-  let response = NextResponse.next({ request: { headers: requestHeaders } });
   const domain = sharedCookieDomain(request.headers.get("host"));
 
   // Only refresh the session when there is one to refresh. Sessions live
@@ -50,14 +49,15 @@ export async function middleware(request: NextRequest) {
     .getAll()
     .some((c) => c.name.startsWith("sb-"));
 
-  // Avoid / -> /shows -> /login for a signed-out visitor. Each hop invokes the
-  // dynamic Next.js function, so the old login-first path paid for two extra
-  // server responses before rendering the sign-in screen.
-  if (slug && pathname === "/" && !hasAuthCookie) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
-  }
+  // Serve the entry page in this request. A poster QR code usually points at
+  // '/', so redirecting it makes the very first visit pay for another request.
+  // Cookies only choose a destination; that page still verifies actual access.
+  const entryUrl = slug && pathname === "/" ? request.nextUrl.clone() : null;
+  if (entryUrl) entryUrl.pathname = hasAuthCookie ? "/shows" : "/login";
+  const makeResponse = () => entryUrl
+    ? NextResponse.rewrite(entryUrl, { request: { headers: requestHeaders } })
+    : NextResponse.next({ request: { headers: requestHeaders } });
+  let response = makeResponse();
 
   if (hasAuthCookie) {
     // Keep the Supabase session fresh (writes refreshed auth cookies onto the response).
@@ -73,7 +73,8 @@ export async function middleware(request: NextRequest) {
             cookiesToSet.forEach(({ name, value }) =>
               request.cookies.set(name, value),
             );
-            response = NextResponse.next({ request: { headers: requestHeaders } });
+            requestHeaders.set("cookie", request.headers.get("cookie") ?? "");
+            response = makeResponse();
             cookiesToSet.forEach(({ name, value, options }) =>
               response.cookies.set(name, value, { ...options, domain }),
             );

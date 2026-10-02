@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { ShowCardAction } from "./OwnedShowLink";
 import styles from "@/app/(platform)/shows/shop.module.css";
 import ShowPrice from "@/components/platform/ShowPrice";
 import CheckoutModal from "@/components/platform/CheckoutModal";
@@ -20,26 +20,12 @@ export type ShopShow = {
 
 /** Grid poster card (3:4). Owned → open show; not owned → open checkout. */
 export default function ShowCard({ show, email }: { show: ShopShow; email: string }) {
-  const router = useRouter();
   const [checkout, setCheckout] = useState(false);
-
-  function activate() {
-    if (show.owned) router.push(`/show/${show.slug}`);
-    else setCheckout(true);
-  }
 
   return (
     <>
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={activate}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            activate();
-          }
-        }}
+      <ShowCardAction
+        owned={show.owned} href={`/show/${show.slug}`} onPurchase={() => setCheckout(true)}
         className={styles.cardLink}
       >
         <div style={{ position: "relative", aspectRatio: "3 / 4", borderRadius: 12, overflow: "hidden", background: "var(--surface-2)", boxShadow: "var(--card-shadow)" }}>
@@ -83,7 +69,7 @@ export default function ShowCard({ show, email }: { show: ShopShow; email: strin
             </div>
           </div>
         </div>
-      </div>
+      </ShowCardAction>
 
       {checkout && <CheckoutModal show={show} email={email} onClose={() => setCheckout(false)} />}
     </>
