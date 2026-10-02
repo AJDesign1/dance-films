@@ -19,8 +19,10 @@ rows return only for owned shows), and any row that stays hidden falls back to
 the proxy path, so the failure mode is yesterday's behaviour, not a broken
 grid. Verified: TypeScript, build, 14 regression tests (show-page mock extended
 for the new query), and the embedded select shape returned all 32 rows against
-the live schema. Not verified: an authenticated browser load (no parent
-session available here) — worth one look at a show page after deploy.
+the live schema. Verified live after deploy (`d0f1656`) in an authenticated
+browser session: the 32-dance show page made 36 requests to the storage
+render endpoint (all 200) and exactly two to `/api/thumbnail`, both for the
+Bunny-hosted full-show poster; the grid rendered with posters in place.
 
 **October 2 CDN entry page**: signed-out requests for school `/` and `/login`
 now rewrite in middleware to `/entry/<slug>` — a prerendered route (SSG,
