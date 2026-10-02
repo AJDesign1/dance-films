@@ -25,12 +25,22 @@ contract, one added pinning that signed-in `/login` stays dynamic. Against a
 local production server: `/` and `/login` serve the sign-in screen signed-out;
 a fake `sb-` cookie gets the /shows path, not the cached page; an unknown slug
 404s; the access-code action returned its normal validation error through the
-rewrite; ISR artefacts (`liberty.html`/`.rsc`) materialised on disk. NOT yet
-verified live: that Netlify serves the rewrite target from its durable cache —
-local `next start` marks the outer rewritten response `private, no-cache`, but
-on Netlify the durable cache keys on the rewritten path. After deploy, check
-`cache-status` on `/` for a Durable/Edge hit and re-measure cold TTFB; if it
-still bypasses, the fallback is serving `/entry/<slug>` directly.
+rewrite; ISR artefacts (`liberty.html`/`.rsc`) materialised on disk.
+
+Live verification after deploy (`6516624`): `/` serves with `cache-status:
+"Netlify Edge"; hit; ttl=300` / `"Netlify Durable"; hit` and `cache-control:
+public` (was `private, no-cache, no-store`); a request carrying a fake `sb-`
+cookie shows `fwd=bypass` and does not receive the sign-in page. First visit
+after 8 min idle, past the TTL: **2.1s** (cache refresh in progress), then
+0.5–0.9s; within the 5-minute window 0.12–0.63s, against 3–7s before. The
+refresh window is real: for a short burst after the TTL lapses, requests show
+`fwd=bypass` and pay ~0.7–1.2s while the entry repopulates, then hits resume.
+If that residual matters, the knob is the page's `revalidate = 300` — raising
+it (branding edits already purge via `SCHOOLS_CACHE_TAG`) would shrink how
+often anyone sees a refresh, but whether `revalidateTag` actually purges
+Netlify's durable cache for this page has not been tested live; verify that
+before relying on a long TTL, or a branding edit could take up to the full
+TTL to appear.
 
 **October 2 first-load follow-up (deployed as `a70992a`)**: school `/` now internally
 rewrites to login or shows instead of issuing another browser request. Cookie
