@@ -7,6 +7,7 @@ import { formatDuration, formatRuntime } from "@/lib/format";
 import Footer from "@/components/platform/Footer";
 import BuyButton from "@/components/platform/BuyButton";
 import ShowExperience, { type PerfItem } from "@/components/platform/ShowExperience";
+import { publicPosterSrc } from "@/lib/publicPoster";
 import CoverImage from "@/components/platform/CoverImage";
 import ShowPrice from "@/components/platform/ShowPrice";
 import styles from "./show.module.css";
@@ -63,10 +64,24 @@ export default async function ShowPage({
       p_show_slug: slug,
     });
   });
-  const [profile, school, { data, error }] = await Promise.all([
+  // Poster URLs for the grid, in parallel with the bundle (RLS returns rows
+  // only for an owned show). Supabase-hosted posters become direct CDN URLs —
+  // see lib/publicPoster.ts; hidden rows or Bunny-hosted posters fall back to
+  // the gated /api/thumbnail proxy when the grid is built below.
+  const postersPromise = Promise.all([schoolPromise, createClient()]).then(([school, supabase]) =>
+    school
+      ? supabase
+          .from("performances")
+          .select("id, thumbnail_url, shows!inner(school_id, slug)")
+          .eq("shows.school_id", school.id)
+          .eq("shows.slug", slug)
+      : null,
+  );
+  const [profile, school, { data, error }, posters] = await Promise.all([
     requireOnboardedProfile(),
     schoolPromise,
     pagePromise,
+    postersPromise,
   ]);
   if (error) throw new Error("Unable to load show");
   const bundle = data as unknown as ShowPageBundle | null;
@@ -132,6 +147,10 @@ export default async function ShowPage({
 
   const catById = new Map((catRows ?? []).map((c) => [c.id, c]));
 
+  const directPoster = new Map(
+    (posters?.data ?? []).map((r) => [r.id, publicPosterSrc(r.thumbnail_url, 400)]),
+  );
+
   const performances: PerfItem[] = (perfRows ?? []).map((p) => {
     const cats = p.category_ids.map((id) => catById.get(id)).filter(Boolean);
     const group = cats.find((c) => c!.kind === "group")?.name ?? null;
@@ -139,9 +158,10 @@ export default async function ShowPage({
     return {
       id: p.id,
       title: p.title,
-      // Only whether there's a poster — the Bunny URL itself carries the
-      // video id, so it stays server-side (see /api/thumbnail).
-      hasThumbnail: p.has_thumbnail,
+      // A Supabase-hosted poster goes into markup directly (public bucket, no
+      // video id in the URL). A Bunny-hosted one carries the video id, so only
+      // the gated proxy path is exposed (see /api/thumbnail).
+      posterSrc: directPoster.get(p.id) ?? (p.has_thumbnail ? `/api/thumbnail/perf/${p.id}` : null),
       duration: formatDuration(p.duration_seconds),
       group,
       style,

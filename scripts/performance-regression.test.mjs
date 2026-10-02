@@ -196,6 +196,9 @@ for (const name of ["shows", "show/[slug]"]) {
     let notifyRpc;
     const profile = new Promise((resolve) => { releaseProfile = resolve; });
     const rpcStarted = new Promise((resolve) => { notifyRpc = resolve; });
+    // The poster-source query chain: awaiting the builder resolves to itself,
+    // so `posters?.data` stays empty and the page takes the proxy fallback.
+    const posterQuery = { select: () => posterQuery, eq: () => posterQuery, data: [] };
     const dependencies = {
       "react/jsx-runtime": require("react/jsx-runtime"),
       "next/navigation": { notFound: () => { throw new Error("not found"); } },
@@ -203,7 +206,8 @@ for (const name of ["shows", "show/[slug]"]) {
       "@/lib/auth": { requireOnboardedProfile: () => profile },
       "@/lib/school": { getCurrentSchool: async () => ({ id: "school", name: "School" }) },
       "@/lib/format": {},
-      "@/lib/supabase/server": { createClient: async () => ({ rpc: async () => {
+      "@/lib/publicPoster": { publicPosterSrc: () => null },
+      "@/lib/supabase/server": { createClient: async () => ({ from: () => posterQuery, rpc: async () => {
         notifyRpc();
         return { data: name === "shows" ? [] : { show: { slug: "show", title: "Show" }, owned: false }, error: null };
       } }) },

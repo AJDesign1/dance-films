@@ -8,7 +8,7 @@ import DownloadConfirmModal from "@/components/platform/DownloadConfirmModal";
 export type PerfItem = {
   id: string; // DB uuid — safe to expose; bunny_video_id is NOT sent to the client
   title: string;
-  hasThumbnail: boolean;
+  posterSrc: string | null;
   duration: string;
   group: string | null;
   style: string | null;
@@ -359,8 +359,8 @@ export default function ShowExperience({
           <button key={p.id} className={styles.progRow} onClick={() => play({ type: "perf", id: p.id })}>
             <div className={styles.progNum}>{pad2(performances.indexOf(p) + 1)}</div>
             <div className={styles.progThumb}>
-              {p.hasThumbnail ? (
-                <Poster src={`/api/thumbnail/perf/${p.id}`} />
+              {p.posterSrc ? (
+                <Poster src={p.posterSrc} />
               ) : (
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, var(--brand-2), var(--ink))" }} />
               )}
@@ -465,12 +465,13 @@ export default function ShowExperience({
 }
 
 /**
- * A video poster frame, served by our own entitlement-gated proxy rather than
- * fetched from Bunny by the browser (see /api/thumbnail). Deliberately a plain
- * <img>, not the `CoverImage`/next-image wrapper the school's own photos use:
- * the optimiser fetches server-side without the caller's session cookie, so it
- * can't read a gated route. Bunny's poster frames are modest JPEGs, so this
- * costs bytes on the small grid thumbnails but nothing that shows.
+ * A video poster frame. Supabase-hosted posters arrive as direct CDN URLs
+ * (public bucket, resized by the storage render endpoint — see
+ * lib/publicPoster.ts); Bunny-hosted ones still come through our
+ * entitlement-gated proxy because their URL embeds the video id (see
+ * /api/thumbnail). Deliberately a plain <img>, not the `CoverImage`/next-image
+ * wrapper the school's own photos use: the optimiser fetches server-side
+ * without the caller's session cookie, so it can't read the gated route.
  */
 function Poster({ src }: { src: string }) {
   return (

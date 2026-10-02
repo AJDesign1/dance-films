@@ -4,6 +4,24 @@ What to pick up next. Update this file at the end of each working session so the
 
 ## Immediate priorities
 
+**October 2 direct poster delivery**: the show page's performance tiles now
+render Supabase-storage poster URLs directly (resized through the storage
+render endpoint, width 400 / quality 78 ≈ 20–30KB), instead of each tile
+invoking the entitlement-gated `/api/thumbnail` function — 32 tiles meant 32
+concurrent invocations per view, the burst most likely to fan out into cold
+instances. This leaks nothing new: those files live in the **public** `artwork`
+bucket and their URLs carry no Bunny video id (parent-reported: thumbnails were
+the slowest part of an otherwise-quick first parent visit). Bunny-hosted
+posters — the full-show frame, whose URL embeds the video id — still use the
+proxy, chosen per-URL in `lib/publicPoster.ts`. The URLs come from one extra
+RLS-checked select run in parallel with the `get_show_page` RPC (no migration;
+rows return only for owned shows), and any row that stays hidden falls back to
+the proxy path, so the failure mode is yesterday's behaviour, not a broken
+grid. Verified: TypeScript, build, 14 regression tests (show-page mock extended
+for the new query), and the embedded select shape returned all 32 rows against
+the live schema. Not verified: an authenticated browser load (no parent
+session available here) — worth one look at a show page after deploy.
+
 **October 2 CDN entry page**: signed-out requests for school `/` and `/login`
 now rewrite in middleware to `/entry/<slug>` — a prerendered route (SSG,
 `revalidate = 300`) outside the `(platform)` layout that renders the same
