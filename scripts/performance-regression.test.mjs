@@ -53,14 +53,28 @@ function entryMiddleware({ refresh = false } = {}) {
   };
 }
 
-test("signed-out school entry serves login without a redirect or auth call", async () => {
+test("signed-out school entry serves the prerendered sign-in page without a redirect or auth call", async () => {
   const subject = entryMiddleware();
   const response = await subject.request("https://liberty.dancefilms.co.uk/?from=poster");
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("location"), null);
-  assert.equal(response.headers.get("x-middleware-rewrite"), "https://liberty.dancefilms.co.uk/login?from=poster");
+  assert.equal(response.headers.get("x-middleware-rewrite"), "https://liberty.dancefilms.co.uk/entry/liberty?from=poster");
   assert.equal(response.headers.get("x-middleware-request-x-school-slug"), "liberty");
   assert.equal(subject.authCalls(), 0);
+});
+
+test("signed-out /login serves the prerendered page; signed-in /login stays dynamic", async () => {
+  const signedOut = entryMiddleware();
+  const login = await signedOut.request("https://liberty.dancefilms.co.uk/login");
+  assert.equal(login.headers.get("x-middleware-rewrite"), "https://liberty.dancefilms.co.uk/entry/liberty");
+  assert.equal(signedOut.authCalls(), 0);
+
+  // With a session cookie, /login must reach the dynamic page (it redirects to
+  // /shows itself) rather than a cached signed-out sign-in screen.
+  const signedIn = entryMiddleware();
+  const dynamicLogin = await signedIn.request("https://liberty.dancefilms.co.uk/login", "sb-test=token");
+  assert.equal(dynamicLogin.headers.get("x-middleware-rewrite"), null);
+  assert.equal(signedIn.authCalls(), 1);
 });
 
 test("signed-in entry rewrite survives session refresh and forwards fresh cookies", async () => {
@@ -76,12 +90,12 @@ test("entry optimisation leaves apex, admin and explicit routes unchanged", asyn
   const subject = entryMiddleware();
   const apex = await subject.request("https://dancefilms.co.uk/");
   assert.equal(apex.headers.get("x-middleware-rewrite"), "https://dancefilms.co.uk/coming-soon");
-  for (const path of ["/admin/liberty", "/auth/confirm", "/show/summer", "/login"]) {
+  for (const path of ["/admin/liberty", "/auth/confirm", "/show/summer"]) {
     const response = await subject.request(`https://liberty.dancefilms.co.uk${path}`);
     assert.equal(response.headers.get("x-middleware-rewrite"), null);
   }
   const preview = await subject.request("http://localhost:3100/?school=liberty");
-  assert.equal(preview.headers.get("x-middleware-rewrite"), "http://localhost:3100/login?school=liberty");
+  assert.equal(preview.headers.get("x-middleware-rewrite"), "http://localhost:3100/entry/liberty?school=liberty");
 });
 
 function query(data, selected) {

@@ -4,7 +4,35 @@ What to pick up next. Update this file at the end of each working session so the
 
 ## Immediate priorities
 
-**October 2 first-load follow-up (local, not deployed)**: school `/` now internally
+**October 2 CDN entry page**: signed-out requests for school `/` and `/login`
+now rewrite in middleware to `/entry/<slug>` — a prerendered route (SSG,
+`revalidate = 300`) outside the `(platform)` layout that renders the same
+LoginScreen from the school's public branding, with tenancy as a path param
+because a `headers()` read would force dynamic rendering. Purpose: the sign-in
+page, the first page every parent loads, can be served by Netlify's CDN without
+waking a serverless function. Measured cold first responses on the live site
+were 2.97–6.98s after ~5–7 min idle across five runs, while the CDN-served
+`/coming-soon` answers in ~0.13s — that gap is the point of this change.
+Signed-in `/login` still reaches the dynamic page (which redirects to /shows);
+`/` with a session cookie still rewrites to /shows. The cached page holds only
+the anon-readable school row — no video identifiers, no user data — and
+branding edits purge it through the existing `SCHOOLS_CACHE_TAG` revalidation,
+with the 300s TTL as the self-healing backstop.
+
+Verification: TypeScript, production build (`/entry/[slug]` listed as ● SSG),
+and 14 regression tests — two middleware tests updated to the new rewrite
+contract, one added pinning that signed-in `/login` stays dynamic. Against a
+local production server: `/` and `/login` serve the sign-in screen signed-out;
+a fake `sb-` cookie gets the /shows path, not the cached page; an unknown slug
+404s; the access-code action returned its normal validation error through the
+rewrite; ISR artefacts (`liberty.html`/`.rsc`) materialised on disk. NOT yet
+verified live: that Netlify serves the rewrite target from its durable cache —
+local `next start` marks the outer rewritten response `private, no-cache`, but
+on Netlify the durable cache keys on the rewritten path. After deploy, check
+`cache-status` on `/` for a Durable/Edge hit and re-measure cold TTFB; if it
+still bypasses, the fallback is serving `/entry/<slug>` directly.
+
+**October 2 first-load follow-up (deployed as `a70992a`)**: school `/` now internally
 rewrites to login or shows instead of issuing another browser request. Cookie
 presence is only a routing hint; destination pages still verify identity and
 onboarding. Session refresh preserves the rewrite and forwards fresh cookies.
@@ -22,9 +50,13 @@ returned `invalid_code` for a deliberately invalid test code (no email/invite).
 Anonymous protected show access and a fake-cookie root request still returned
 Next's login redirect; anonymous admin access redirected to `/admin/login`.
 Refreshed-cookie routing is covered by a mocked regression test. Authenticated
-browser prefetch and live Netlify cold-start improvement are not yet measured.
-Do not describe this as a measured production speedup. Admin changed-row-only
-saves and further database-read consolidation remain separate work.
+browser prefetch is not yet measured. Live cold starts after deployment, each
+run after ~5–7 min idle on the school root: 2.97s/0.79s/1.61s/0.69s and
+5.91s/1.82s/0.76s/0.75s. The second response improved clearly (was 4.2–4.5s
+on three pre-deploy runs); the first response did not reliably improve —
+treat the redirect removal as the measured win, not the cold boot. Admin
+changed-row-only saves and further database-read consolidation remain
+separate work.
 
 **September 22 performance follow-up**: parent RPCs overlap profile checks;
 posters cache processed bytes behind fresh per-request RLS; admin school lookups

@@ -62,8 +62,12 @@ export type School = {
  *
  * Writes call revalidateTag(SCHOOLS_CACHE_TAG); the TTL is a safety net so a
  * missed invalidation self-heals in minutes rather than persisting.
+ *
+ * Exported for the prerendered /entry/[slug] page, which receives the slug as
+ * a path param — it must not go through getCurrentSchool(), whose headers()
+ * read would force dynamic rendering and defeat the CDN caching.
  */
-const loadSchoolBySlug = unstable_cache(
+export const loadSchoolBySlug = unstable_cache(
   async (slug: string): Promise<School | null> => {
     const supabase = createAnonClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -49,11 +49,25 @@ export async function middleware(request: NextRequest) {
     .getAll()
     .some((c) => c.name.startsWith("sb-"));
 
-  // Serve the entry page in this request. A poster QR code usually points at
-  // '/', so redirecting it makes the very first visit pay for another request.
-  // Cookies only choose a destination; that page still verifies actual access.
+  // Signed-out '/' and '/login' rewrite to the per-school prerendered sign-in
+  // page, which the CDN serves without waking a function — cold boots measured
+  // 3–7s, and this is the first page every parent loads. The cookie check only
+  // picks a destination; the shared cache entry holds public branding alone,
+  // and sign-in POSTs always bypass the cache. Signed-out means no sb-*
+  // cookies, so skipping the session-refresh and stale-cookie blocks below
+  // loses nothing.
+  if (slug && !hasAuthCookie && (pathname === "/" || pathname === "/login")) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/entry/${slug}`;
+    return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+  }
+
+  // A signed-in visit to '/' serves the shop in this same request rather than
+  // redirecting (a poster QR code usually points at '/', and a redirect makes
+  // that first visit pay for a second request). The cookie only picks the
+  // destination; /shows still verifies actual access.
   const entryUrl = slug && pathname === "/" ? request.nextUrl.clone() : null;
-  if (entryUrl) entryUrl.pathname = hasAuthCookie ? "/shows" : "/login";
+  if (entryUrl) entryUrl.pathname = "/shows";
   const makeResponse = () => entryUrl
     ? NextResponse.rewrite(entryUrl, { request: { headers: requestHeaders } })
     : NextResponse.next({ request: { headers: requestHeaders } });
