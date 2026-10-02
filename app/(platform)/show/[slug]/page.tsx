@@ -148,7 +148,8 @@ export default async function ShowPage({
   const catById = new Map((catRows ?? []).map((c) => [c.id, c]));
 
   const directPoster = new Map(
-    (posters?.data ?? []).map((r) => [r.id, publicPosterSrc(r.thumbnail_url, 400)]),
+    // 400×225: the grid tile is 16:9 at 150px (96px mobile), doubled for retina.
+    (posters?.data ?? []).map((r) => [r.id, publicPosterSrc(r.thumbnail_url, 400, 225)]),
   );
 
   const performances: PerfItem[] = (perfRows ?? []).map((p) => {

@@ -217,6 +217,11 @@ export default function ShowExperience({
     setSource(null);
   };
 
+  // "Summer Showcase 2026" already names the year — appending show_year again
+  // would read "… 2026 2026", so only add it when the title doesn't carry it.
+  const titleWithYear =
+    showYear && !showTitle.includes(String(showYear)) ? `${showTitle} ${showYear}` : showTitle;
+
   // Owner-only download, resolved on demand (URL never in page markup).
   // Only runs after the customer confirms in the terms modal — never on the
   // button click itself, and never for streaming/watching.
@@ -235,7 +240,7 @@ export default function ShowExperience({
         download.searchParams.set("source", url);
         download.searchParams.set(
           "filename",
-          `${showTitle}${showYear ? ` ${showYear}` : ""} - Full Show.mp4`,
+          `${titleWithYear} - Full Show.mp4`,
         );
         window.location.assign(download);
       } else {
@@ -271,7 +276,7 @@ export default function ShowExperience({
         </div>
         <div style={{ position: "absolute", left: 20, bottom: 18, textAlign: "left", pointerEvents: "none" }}>
           <div className={styles.fullTitle} style={{ fontFamily: "var(--disp)", fontWeight: 700, letterSpacing: ".02em", textTransform: "uppercase", color: "#fff" }}>
-            {showTitle} {showYear ?? ""} — full show
+            {titleWithYear} — full show
           </div>
           {fullShowDuration && <div style={{ fontSize: 12.5, color: "#c0ccd6", marginTop: 5 }}>{fullShowDuration}</div>}
         </div>
@@ -299,7 +304,7 @@ export default function ShowExperience({
 
       {confirmingDownload && (
         <DownloadConfirmModal
-          title={`${showTitle}${showYear ? ` ${showYear}` : ""} — full show`}
+          title={`${titleWithYear} — full show`}
           pending={downloading}
           onConfirm={confirmDownload}
           onClose={() => setConfirmingDownload(false)}
