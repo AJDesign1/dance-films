@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { loadSchoolBySlug } from "@/lib/school";
 import { themeToCssVars, themeMode } from "@/lib/theme";
 import LoginScreen from "@/components/platform/LoginScreen";
+import { imageMetadata } from "@/lib/media";
+import { ImageMetadataProvider } from "@/components/platform/ImageMetadata";
 
 /**
  * The prerendered sign-in page, one per school: /entry/<slug>.
@@ -40,17 +42,18 @@ export default async function EntryPage({
   if (!school) notFound();
 
   const theme = school.theme ?? {};
+  const images = await imageMetadata(school.id, [school.logo_white_url, school.hero_image_url].filter((u): u is string => !!u));
   return (
     <div
       data-app
       data-theme={themeMode(theme)}
       style={{ ...themeToCssVars(theme), minHeight: "100vh", background: "var(--desk)" }}
     >
-      <LoginScreen
+      <ImageMetadataProvider images={images}><LoginScreen
         schoolName={school.name}
         logoWhiteUrl={school.logo_white_url}
         heroImageUrl={school.hero_image_url}
-      />
+      /></ImageMetadataProvider>
     </div>
   );
 }

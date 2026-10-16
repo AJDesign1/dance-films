@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MAX_ARTWORK_BYTES, tooLargeMessage } from "@/lib/uploads";
+import { registerMedia } from "@/lib/media";
 
 export type ShowForm = {
   title: string;
@@ -74,6 +75,7 @@ export async function uploadShowArtwork(schoolId: string, formData: FormData): P
   if (error) return { error: "Upload failed. Please try again." };
 
   const { data } = admin.storage.from("artwork").getPublicUrl(path);
+  await registerMedia(schoolId, "artwork", path, file.name);
   return { url: data.publicUrl };
 }
 

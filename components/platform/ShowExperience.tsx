@@ -1,4 +1,5 @@
 "use client";
+import { MetadataImage } from "./ImageMetadata";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import styles from "@/app/(platform)/show/[slug]/show.module.css";
@@ -481,7 +482,7 @@ export default function ShowExperience({
 function Poster({ src }: { src: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <MetadataImage
       src={src}
       alt=""
       loading="lazy"

@@ -6,6 +6,7 @@ import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
 import { createShow, updateShow, uploadShowArtwork, type ShowForm } from "@/app/(admin)/admin/[slug]/shows/actions";
 import { MAX_ARTWORK_BYTES, isRedirectError, tooLargeMessage, uploadFailedMessage } from "@/lib/uploads";
 import { compressImage } from "@/lib/imageCompress";
+import MediaPicker from "./MediaPicker";
 
 export type EditableShow = {
   id: string;
@@ -110,6 +111,7 @@ export default function ShowEditor({
         <label className={styles.fieldLabel}>Intro text</label>
         <textarea className={styles.textarea} rows={4} value={form.intro_text} onChange={(e) => set("intro_text", e.target.value)} />
         <label className={styles.fieldLabel}>Cover artwork</label>
+        <MediaPicker schoolId={schoolId} onSelect={url => set("artwork_url", url)} />
         <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
           <div style={{ flex: "0 0 auto", width: 110, aspectRatio: "3/4", borderRadius: "var(--r-md)", border: "1px solid var(--border)", background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             {form.artwork_url ? (

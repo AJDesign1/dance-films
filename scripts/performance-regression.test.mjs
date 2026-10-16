@@ -207,6 +207,8 @@ for (const name of ["shows", "show/[slug]"]) {
       "@/lib/school": { getCurrentSchool: async () => ({ id: "school", name: "School" }) },
       "@/lib/format": {},
       "@/lib/publicPoster": { publicPosterSrc: () => null },
+      "@/lib/media": { imageMetadata: async () => ({}) },
+      "@/components/platform/ImageMetadata": { ImageMetadataProvider: () => null, MetadataImage: () => null },
       "@/lib/supabase/server": { createClient: async () => ({ from: () => posterQuery, rpc: async () => {
         notifyRpc();
         return { data: name === "shows" ? [] : { show: { slug: "show", title: "Show" }, owned: false }, error: null };

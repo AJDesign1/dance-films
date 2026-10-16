@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/admin";
 import { SCHOOLS_CACHE_TAG } from "@/lib/school";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MAX_IMAGE_BYTES, tooLargeMessage } from "@/lib/uploads";
+import { registerMedia } from "@/lib/media";
 
 export type BrandingForm = {
   name: string;
@@ -61,6 +62,7 @@ export async function uploadBrandingImage(
   if (error) return { error: "Upload failed. Please try again." };
 
   const { data } = admin.storage.from("branding").getPublicUrl(path);
+  await registerMedia(schoolId, "branding", path, file.name);
   return { url: data.publicUrl };
 }
 

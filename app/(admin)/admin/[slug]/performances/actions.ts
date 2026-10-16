@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { parseClock, formatClock } from "@/lib/format";
 import { fetchBunnyVideo } from "@/lib/bunny";
 import { MAX_IMAGE_BYTES, tooLargeMessage } from "@/lib/uploads";
+import { registerMedia } from "@/lib/media";
 
 export type ActionResult = { ok: true; message?: string } | { error: string };
 export type UploadResult = { url: string } | { error: string };
@@ -408,6 +409,7 @@ export async function uploadThumbnailImage(schoolId: string, formData: FormData)
   if (error) return { error: "Upload failed. Please try again." };
 
   const { data } = admin.storage.from("artwork").getPublicUrl(path);
+  await registerMedia(schoolId, "artwork", path, file.name);
   return { url: data.publicUrl };
 }
 
@@ -523,6 +525,7 @@ export async function uploadPerformanceThumbnail(
     .from("artwork")
     .upload(path, file, { contentType: file.type, upsert: true, cacheControl: "31536000" });
   if (uploadError) return { error: "Upload failed. Please try again." };
+  await registerMedia(show.school_id, "artwork", path, file.name);
 
   const { data } = admin.storage.from("artwork").getPublicUrl(path);
   const { error: updateError } = await admin

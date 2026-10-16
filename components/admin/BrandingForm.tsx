@@ -5,6 +5,7 @@ import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
 import { updateBranding, uploadBrandingImage, type BrandingForm as FormT } from "@/app/(admin)/admin/[slug]/branding/actions";
 import { MAX_IMAGE_BYTES, isRedirectError, tooLargeMessage, uploadFailedMessage } from "@/lib/uploads";
 import { compressImage } from "@/lib/imageCompress";
+import MediaPicker from "./MediaPicker";
 
 const FONTS = ["Big Shoulders Display", "Poppins", "Montserrat", "Hanken Grotesk", "Playfair Display"];
 
@@ -86,6 +87,7 @@ export default function BrandingForm({
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div>
               <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Colour logo (light bg)</label>
+              <MediaPicker schoolId={schoolId} onSelect={url => set("logoColourUrl", url)} />
               <div style={{ height: 96, borderRadius: "var(--r-md)", border: "1px solid var(--border)", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                 {form.logoColourUrl ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={form.logoColourUrl} alt="" style={{ maxHeight: "78%", maxWidth: "82%", objectFit: "contain" }} /> : <span style={{ fontSize: 11, color: "var(--text-3)" }}>No logo yet</span>}
               </div>
@@ -96,6 +98,7 @@ export default function BrandingForm({
             </div>
             <div>
               <label className={styles.fieldLabel} style={{ marginTop: 0 }}>White logo (dark bg)</label>
+              <MediaPicker schoolId={schoolId} onSelect={url => set("logoWhiteUrl", url)} />
               <div style={{ height: 96, borderRadius: "var(--r-md)", border: "1px solid var(--border)", background: "var(--sidebar)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                 {form.logoWhiteUrl ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={form.logoWhiteUrl} alt="" style={{ maxHeight: "78%", maxWidth: "82%", objectFit: "contain" }} /> : <span style={{ fontSize: 11, color: "var(--text-3)" }}>No logo yet</span>}
               </div>
@@ -136,6 +139,7 @@ export default function BrandingForm({
 
         <div className={`${styles.card} ${styles.cardPad}`}>
           <div className={styles.cardTitle} style={{ marginBottom: 4 }}>Sign-in photo</div>
+          <MediaPicker schoolId={schoolId} onSelect={url => set("signInImageUrl", url)} />
           <p style={{ fontSize: 12.5, color: "var(--text-2)", margin: "0 0 12px" }}>Shown on the login screen (left panel).</p>
           <div style={{ height: 150, borderRadius: "var(--r-md)", border: "1px solid var(--border)", background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             {form.signInImageUrl ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={form.signInImageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 11, color: "var(--text-3)" }}>No photo yet</span>}

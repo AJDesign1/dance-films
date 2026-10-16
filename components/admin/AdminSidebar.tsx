@@ -24,6 +24,7 @@ export default function AdminSidebar({
     { key: "school-page", label: "School page", href: `${base}/school-page` },
     { key: "dashboard", label: "Dashboard", href: base },
     { key: "shows", label: "Shows", href: `${base}/shows` },
+    { key: "media", label: "Media library", href: `${base}/media` },
     { key: "categories", label: "Categories", href: `${base}/categories` },
     { key: "parents", label: "Invited parents", href: `${base}/parents`, badge: invitedPending || undefined },
     { key: "access-codes", label: "Access codes", href: `${base}/access-codes` },

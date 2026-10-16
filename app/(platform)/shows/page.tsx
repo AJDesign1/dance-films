@@ -9,6 +9,8 @@ import FeaturedShow from "@/components/platform/FeaturedShow";
 import CoverImage from "@/components/platform/CoverImage";
 import ShowCard, { type ShopShow } from "@/components/platform/ShowCard";
 import styles from "./shop.module.css";
+import { imageMetadata } from "@/lib/media";
+import { ImageMetadataProvider } from "@/components/platform/ImageMetadata";
 
 type ShowsPageRow = Omit<ShopShow, "owned"> & { id: string; owned: boolean };
 
@@ -42,9 +44,10 @@ export default async function ShowsPage() {
   const featured = shows[0];
   const rest = shows.slice(1);
   const schoolName = school?.name ?? "Dance Films";
+  const images = school ? await imageMetadata(school.id, shows.map(s => s.artwork_url).filter((u): u is string => !!u)) : {};
 
   return (
-    <div style={{ background: "var(--surface)" }}>
+    <ImageMetadataProvider images={images}><div style={{ background: "var(--surface)" }}>
       <PlatformHeader schoolName={schoolName} logoWhiteUrl={school?.logo_white_url ?? null} name={profile.name} email={profile.email} />
 
       <div className={styles.body}>
@@ -96,7 +99,7 @@ export default async function ShowsPage() {
       />
 
       <Footer schoolName={schoolName} logoWhiteUrl={school?.logo_white_url ?? null} />
-    </div>
+    </div></ImageMetadataProvider>
   );
 }
 

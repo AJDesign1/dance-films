@@ -1,5 +1,27 @@
 # Decisions
 
+## October 16: host-independent image delivery and school media library
+
+SiteGround rejects Next's default `/_next/image` requests with 403. Original
+Supabase uploads remain intact. A custom Next image loader now generates direct
+Supabase render URLs and responsive srcsets, retaining resizing/compression
+without coupling delivery to the host's image optimizer. A square `contain`
+bounding box preserves original proportions; the existing CSS crop is unchanged.
+
+Media metadata lives in `media_assets`, keyed by school, bucket and storage path,
+not on each usage: reusing an upload reuses its title/alt text. Existing URLs stay
+valid and all school-folder uploads are indexed. Null alt means retain the
+component's contextual fallback; empty alt means explicitly decorative.
+Captions/descriptions are stored for management, not automatically injected into
+finished layouts. This is an image library, not a marketing CMS or a guarantee
+that login-protected pages will be indexed by search engines.
+
+The full catalogue and notes are admin-only. Server rendering retrieves only
+title/alt for URLs that the page has already authorised; Bunny sources are never
+added to the public catalogue. The new table explicitly revokes inherited
+privileges before granting policy-covered admin operations. No file-delete UI
+is provided, so reusing an image cannot accidentally break existing pages.
+
 Key choices made during the build and the reasoning behind them. For the original product decisions (pricing model, invite-only, whole-show purchase, etc.), see `docs/Dance Show Platform - Master Brief.md` — this file covers decisions made *during implementation* that extend or reconcile that spec.
 
 ## September 22 performance follow-up

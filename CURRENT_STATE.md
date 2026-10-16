@@ -4,6 +4,11 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 
 ## Done
 
+- **School media library:** existing uploads indexed; upload/reuse/search,
+  editable title/alt/caption/description, admin-only catalogue RLS, title/alt
+  applied to parent-facing image components. Images use Supabase transforms
+  directly because SiteGround rejects Next's default optimizer endpoint.
+
 | Area | Status |
 |---|---|
 | Schema + RLS | ✅ 14 migrations applied (`supabase/migrations/`), RLS enabled on every table, `service_role` granted project-wide |
@@ -42,6 +47,11 @@ Snapshot of what's built vs outstanding, as of the latest commit. Treat the code
 - **Photo galleries, per-dance download, PayPal** — explicitly out of scope for V1
 
 ## Needs confirmation
+
+- SiteGround currently serves apex/Liberty after web DNS cutover, but does not
+  support automatic arbitrary-school hostname mappings on this shared Node.js
+  setup. A wildcard-capable hosting arrangement is still required. Netlify
+  remains available; the older hosting row above describes the previous setup.
 
 - Whether Bunny's Token Authentication will be set up (signed, time-limited URLs — the only option that would genuinely stop a direct file fetch; referrer allowlisting, now on, is deterrence only — see `DECISIONS.md`)
 

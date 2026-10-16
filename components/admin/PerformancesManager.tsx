@@ -7,6 +7,8 @@ import { MAX_IMAGE_BYTES, tooLargeMessage, uploadFailedMessage } from "@/lib/upl
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { formatClock } from "@/lib/format";
 import { compressImage } from "@/lib/imageCompress";
+import MediaPicker from "./MediaPicker";
+import { choosePerformanceMedia } from "@/app/(admin)/admin/[slug]/media/actions";
 import {
   addPerformance, removePerformance, reorderPerformance,
   bulkAddPerformances, uploadThumbnailImage, savePerformancesPage,
@@ -466,6 +468,7 @@ export default function PerformancesManager({
           onChange={(e) => setFull({ downloadUrl: e.target.value })} />
         <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 6 }}>Leave blank to hide the download button. The link is entitlement-gated — only owners can fetch it.</div>
         <label className={styles.fieldLabel}>Poster image (shown before playback)</label>
+        <MediaPicker schoolId={schoolId} onSelect={url => setFull({ thumbnailUrl: url })} />
         <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
           <div
             style={{
@@ -545,6 +548,7 @@ export default function PerformancesManager({
               total={draft.rows.length}
               slug={slug}
               showId={showId}
+              schoolId={schoolId}
               groups={groups}
               styleCats={styleCats}
               busy={busy}
@@ -552,6 +556,10 @@ export default function PerformancesManager({
               onReorder={(dir) => structural(() => reorderPerformance(p.id, slug, dir))}
               onRemove={() => structural(() => removePerformance(p.id, slug))}
               onRefresh={() => router.refresh()}
+              onChooseImage={url => structural(async () => {
+                const result = await choosePerformanceMedia(schoolId, showId, p.id, url);
+                if ('error' in result) setError(result.error ?? 'Could not choose image.');
+              })}
             />
           ))}
         </div>
@@ -561,14 +569,15 @@ export default function PerformancesManager({
 }
 
 function Row({
-  perf: p, index: i, total, slug, showId, groups, styleCats, busy, onChange, onReorder, onRemove, onRefresh,
+  perf: p, index: i, total, slug, showId, schoolId, groups, styleCats, busy, onChange, onReorder, onRemove, onRefresh, onChooseImage,
 }: {
-  perf: PerfRow; index: number; total: number; slug: string; showId: string;
+  perf: PerfRow; index: number; total: number; slug: string; showId: string; schoolId: string;
   groups: Cat[]; styleCats: Cat[]; busy: boolean;
   onChange: (patch: Partial<PerfRow>) => void;
   onReorder: (dir: -1 | 1) => void;
   onRemove: () => void;
   onRefresh: () => void;
+  onChooseImage: (url: string) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -607,6 +616,7 @@ function Row({
         </div>
 
         <div>
+          <MediaPicker compact schoolId={schoolId} onSelect={onChooseImage} />
           <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickFile(f); }} />
           <button

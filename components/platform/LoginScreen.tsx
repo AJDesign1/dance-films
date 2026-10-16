@@ -4,6 +4,7 @@ import { useState, useTransition, type CSSProperties } from "react";
 import { requestMagicLink } from "@/app/(platform)/login/actions";
 import { redeemAccessCode } from "@/app/(platform)/login/access-code-actions";
 import CoverImage from "@/components/platform/CoverImage";
+import { MetadataImage } from "./ImageMetadata";
 import styles from "./LoginScreen.module.css";
 
 type Props = {
@@ -185,7 +186,7 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
         />
         {logoWhiteUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={logoWhiteUrl} alt={schoolName} className={styles.heroLogoImg} />
+          <MetadataImage src={logoWhiteUrl} alt={schoolName} className={styles.heroLogoImg} />
         ) : (
           <div className={styles.heroLogoText}>{schoolName}</div>
         )}

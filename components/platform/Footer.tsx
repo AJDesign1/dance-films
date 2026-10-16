@@ -1,3 +1,5 @@
+import { MetadataImage } from "./ImageMetadata";
+
 /**
  * Platform footer — school copyright + the discreet, persistent Dance Films
  * credit (links out to the marketing site once it exists).
@@ -25,7 +27,7 @@ export default function Footer({
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {logoWhiteUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoWhiteUrl} alt={schoolName} style={{ height: 28, filter: "brightness(0) invert(1)" }} />
+            <MetadataImage src={logoWhiteUrl} alt={schoolName} style={{ height: 28, filter: "brightness(0) invert(1)" }} />
           ) : (
             <span style={{ fontFamily: "var(--disp)", fontWeight: 800, fontSize: 18, textTransform: "uppercase", color: "#fff" }}>
               {schoolName}

@@ -1,4 +1,5 @@
 import AccountMenu from "@/components/platform/AccountMenu";
+import { MetadataImage } from "./ImageMetadata";
 import styles from "@/app/(platform)/shows/shop.module.css";
 
 /**
@@ -21,7 +22,7 @@ export default function PlatformHeader({
       <div className={styles.headInner}>
         {logoWhiteUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className={styles.logo} src={logoWhiteUrl} alt={schoolName} />
+          <MetadataImage className={styles.logo} src={logoWhiteUrl} alt={schoolName} />
         ) : (
           <span className={styles.logoWord}>{schoolName}</span>
         )}

@@ -11,6 +11,8 @@ import { publicPosterSrc } from "@/lib/publicPoster";
 import CoverImage from "@/components/platform/CoverImage";
 import ShowPrice from "@/components/platform/ShowPrice";
 import styles from "./show.module.css";
+import { imageMetadata } from "@/lib/media";
+import { ImageMetadataProvider, MetadataImage } from "@/components/platform/ImageMetadata";
 
 type ShowPageBundle = {
   show: {
@@ -89,6 +91,7 @@ export default async function ShowPage({
   if (!bundle) notFound();
 
   const { show, owned } = bundle;
+  const images = school ? await imageMetadata(school.id, [show.artwork_url, ...(posters?.data ?? []).map(p => p.thumbnail_url)].filter((u): u is string => !!u)) : {};
 
   const schoolName = school?.name ?? "Dance Films";
   const logoWhite = school?.logo_white_url ?? null;
@@ -99,7 +102,7 @@ export default async function ShowPage({
       <div className={styles.headInner}>
         {logoWhite ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className={styles.headLogo} src={logoWhite} alt={schoolName} />
+          <MetadataImage className={styles.headLogo} src={logoWhite} alt={schoolName} />
         ) : (
           <span className={styles.headWord}>{schoolName}</span>
         )}
@@ -116,7 +119,7 @@ export default async function ShowPage({
 
   if (!owned) {
     return (
-      <div style={{ background: "var(--surface)", minHeight: "100vh" }}>
+      <ImageMetadataProvider images={images}><div style={{ background: "var(--surface)", minHeight: "100vh" }}>
         {header}
         <Hero show={show} runtime="" perfCount={null} />
         <div className={styles.body}>
@@ -136,7 +139,7 @@ export default async function ShowPage({
           </div>
         </div>
         <Footer schoolName={schoolName} logoWhiteUrl={logoWhite} />
-      </div>
+      </div></ImageMetadataProvider>
     );
   }
 
@@ -173,7 +176,7 @@ export default async function ShowPage({
   const styleList = (catRows ?? []).filter((c) => c.kind === "style").map((c) => c.name);
 
   return (
-    <div style={{ background: "var(--surface)" }}>
+    <ImageMetadataProvider images={images}><div style={{ background: "var(--surface)" }}>
       {header}
       <Hero show={show} runtime={formatRuntime(video?.duration_seconds)} perfCount={performances.length} />
       {purchase === "success" && (
@@ -195,7 +198,7 @@ export default async function ShowPage({
         styles={styleList}
       />
       <Footer schoolName={schoolName} logoWhiteUrl={logoWhite} />
-    </div>
+    </div></ImageMetadataProvider>
   );
 }
 

@@ -4,6 +4,42 @@ What to pick up next. Update this file at the end of each working session so the
 
 ## Immediate priorities
 
+**October 16 image delivery + media library:** SiteGround's `/_next/image`
+returns 403 on both apex and Liberty, while original Supabase objects return
+200. `CoverImage` now uses a responsive Supabase transform loader (contain
+bounding box, preserving proportions), bypassing the host optimizer. Existing
+SVG logos and gated Bunny poster handling are preserved.
+
+Each school now has `/admin/<slug>/media`: searchable/paginated existing
+uploads, multiple compressed uploads, title, nullable alt text (explicit
+decorative option), caption and description. Reusable pickers are available
+in Branding, School page, Show artwork and full-show/performance posters.
+Title/alt metadata is rendered for in-use page images; captions/descriptions
+remain library data, not new visible copy. The catalogue is admin-only with
+RLS and explicit grants; parent markup receives only title/alt for already
+authorised image URLs, never the full catalogue or notes.
+
+Migrations `20261016193000` and `20261016194500` are applied and recorded in
+the linked DB; 74 existing files indexed without moving/deleting uploads.
+Types regenerated. Historical migration timestamp drift predates this work:
+do NOT blindly `db push --include-all` or repair the old versions. The second
+migration removes inherited authenticated TRUNCATE/TRIGGER/REFERENCES grants;
+RLS alone would not protect TRUNCATE. Verified ordinary-parent SELECT returns
+zero rows, anon has no SELECT, authenticated has no TRUNCATE.
+
+Deployment checks are recorded at the end of this session. Baseline: 19
+regression tests and TypeScript pass; production build passes with network
+access for next/font. No live payment, fresh auth email or video/download
+transaction was exercised in this change.
+
+**Hosting migration context:** web DNS apex is 35.214.10.32, www and wildcard
+CNAME point to dancefilms.co.uk. Existing email DNS remains. SiteGround support
+bound Liberty SSL and Node.js routing; Liberty and apex work, but support says
+their shared Node.js plan CANNOT provide zero-touch arbitrary tenant subdomains.
+New automatic school onboarding is now an explicit user requirement and remains
+unresolved infrastructure work. Netlify has NOT been removed. The prior Netlify
+setup also required manual domain aliases (as documented below).
+
 **October 2 direct poster delivery**: the show page's performance tiles now
 render Supabase-storage poster URLs directly (resized through the storage
 render endpoint, width 400 / quality 78 ≈ 20–30KB), instead of each tile

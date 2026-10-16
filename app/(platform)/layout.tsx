@@ -1,5 +1,7 @@
 import { getCurrentSchool } from "@/lib/school";
 import { themeToCssVars, themeMode } from "@/lib/theme";
+import { imageMetadata } from "@/lib/media";
+import { ImageMetadataProvider } from "@/components/platform/ImageMetadata";
 
 /**
  * Customer-platform shell. Loads the current school's theme from the DB and
@@ -14,6 +16,7 @@ export default async function PlatformLayout({
 }) {
   const school = await getCurrentSchool();
   const theme = school?.theme ?? {};
+  const images = school ? await imageMetadata(school.id, [school.logo_colour_url, school.logo_white_url, school.hero_image_url, school.about_image_url, school.team_image_url].filter((u): u is string => !!u)) : {};
 
   return (
     <div
@@ -21,7 +24,7 @@ export default async function PlatformLayout({
       data-theme={themeMode(theme)}
       style={{ ...themeToCssVars(theme), minHeight: "100vh", background: "var(--desk)" }}
     >
-      {children}
+      <ImageMetadataProvider images={images}>{children}</ImageMetadataProvider>
     </div>
   );
 }

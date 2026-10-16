@@ -5,6 +5,7 @@ import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
 import { uploadBrandingImage, type BrandingSlot } from "@/app/(admin)/admin/[slug]/branding/actions";
 import { MAX_IMAGE_BYTES, isRedirectError, tooLargeMessage, uploadFailedMessage } from "@/lib/uploads";
 import { compressImage } from "@/lib/imageCompress";
+import MediaPicker from "./MediaPicker";
 import { updateSchoolPage, type SchoolPageForm as FormT } from "@/app/(admin)/admin/[slug]/school-page/actions";
 
 export default function SchoolPageForm({
@@ -71,6 +72,7 @@ export default function SchoolPageForm({
       {/* About the school */}
       <div className={`${styles.card} ${styles.cardPad}`}>
         <div className={styles.cardTitle} style={{ marginBottom: 4 }}>About {schoolName}</div>
+        <MediaPicker schoolId={schoolId} onSelect={url => set("aboutImageUrl", url)} />
         <p style={{ fontSize: 12.5, color: "var(--text-2)", margin: "0 0 14px" }}>
           A short introduction to the school — copy on the left, photo on the right.
           The heading is always &ldquo;About {schoolName}&rdquo;, so it follows the school name automatically.
@@ -116,6 +118,7 @@ export default function SchoolPageForm({
       {/* Meet the media team */}
       <div className={`${styles.card} ${styles.cardPad}`}>
         <div className={styles.cardTitle} style={{ marginBottom: 4 }}>Meet the media team</div>
+        <MediaPicker schoolId={schoolId} onSelect={url => set("teamImageUrl", url)} />
         <p style={{ fontSize: 12.5, color: "var(--text-2)", margin: "0 0 14px" }}>
           Who filmed the shows — shown as a full-width band under the About section.
         </p>
