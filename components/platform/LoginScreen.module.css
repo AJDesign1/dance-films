@@ -9,18 +9,19 @@
   background: var(--surface-2);
 }
 
-.heroLogoImg {
+.heroLogoLink {
   position: absolute;
   top: 30px;
   left: 30px;
+  display: inline-flex;
+}
+
+.heroLogoImg {
   height: 104px;
   filter: brightness(0) invert(1);
 }
 
 .heroLogoText {
-  position: absolute;
-  top: 30px;
-  left: 30px;
   font-family: var(--disp);
   font-weight: 800;
   font-size: 30px;
@@ -83,7 +84,8 @@
 
 @media (max-width: 640px) {
   .hero { min-height: 240px; }
-  .heroLogoImg { top: 22px; left: 22px; height: 56px; }
+  .heroLogoLink { top: 22px; left: 22px; }
+  .heroLogoImg { height: 56px; }
   .heroLogoText { font-size: 22px; }
   .heroContent { left: 22px; right: 22px; bottom: 24px; }
   .heroTitle { font-size: 27px; max-width: 18ch; }

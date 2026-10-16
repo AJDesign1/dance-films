@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, type CSSProperties } from "react";
+import Link from "next/link";
 import { requestMagicLink } from "@/app/(platform)/login/actions";
 import { redeemAccessCode } from "@/app/(platform)/login/access-code-actions";
 import CoverImage from "@/components/platform/CoverImage";
@@ -184,12 +185,14 @@ export default function LoginScreen({ schoolName, logoWhiteUrl, heroImageUrl }: 
             pointerEvents: "none",
           }}
         />
-        {logoWhiteUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <MetadataImage src={logoWhiteUrl} alt={schoolName} className={styles.heroLogoImg} />
-        ) : (
-          <div className={styles.heroLogoText}>{schoolName}</div>
-        )}
+        <Link href="/" aria-label={`${schoolName} homepage`} prefetch={false} className={styles.heroLogoLink}>
+          {logoWhiteUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <MetadataImage src={logoWhiteUrl} alt={schoolName} className={styles.heroLogoImg} />
+          ) : (
+            <div className={styles.heroLogoText}>{schoolName}</div>
+          )}
+        </Link>
         <div className={styles.heroContent}>
           <div className={styles.heroTitle}>Relive the show, whenever you like.</div>
           <p className={styles.heroSubtitle}>

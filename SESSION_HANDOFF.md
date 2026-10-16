@@ -4,6 +4,13 @@ What to pick up next. Update this file at the end of each working session so the
 
 ## Immediate priorities
 
+**October 16 school logo navigation:** the shows header, individual-show header
+and sign-in hero logo (including text fallbacks) now link to `/` on the current
+school hostname, with an accessible school-homepage label. Existing root routing
+chooses shows versus sign-in; no authentication or tenant logic changed. Logo
+prefetch is disabled to avoid unnecessary dynamic root requests. TypeScript,
+production build and all 19 regression tests passed.
+
 **October 16 image delivery + media library:** SiteGround's `/_next/image`
 returns 403 on both apex and Liberty, while original Supabase objects return
 200. `CoverImage` now uses a responsive Supabase transform loader (contain

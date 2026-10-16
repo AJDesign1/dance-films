@@ -100,12 +100,14 @@ export default async function ShowPage({
   const header = (
     <div className={styles.headBar}>
       <div className={styles.headInner}>
-        {logoWhite ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <MetadataImage className={styles.headLogo} src={logoWhite} alt={schoolName} />
-        ) : (
-          <span className={styles.headWord}>{schoolName}</span>
-        )}
+        <Link href="/" aria-label={`${schoolName} homepage`} prefetch={false} style={{ display: "inline-flex" }}>
+          {logoWhite ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <MetadataImage className={styles.headLogo} src={logoWhite} alt={schoolName} />
+          ) : (
+            <span className={styles.headWord}>{schoolName}</span>
+          )}
+        </Link>
         <Link
           href="/shows"
           style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", padding: "9px 14px", borderRadius: "var(--r-sm)", border: "1px solid rgba(255,255,255,.32)", background: "rgba(12,20,26,.4)", backdropFilter: "blur(6px)", color: "#fff" }}
