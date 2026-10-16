@@ -368,6 +368,17 @@ previously consumed links cannot be repaired.
 
 ## Parent login hierarchy
 
+### 16 October 2026 — media deployment verification
+
+SiteGround reports commit `1c281732` Completed. Verified the live Liberty media
+library loads existing assets, searches, and saves title/alt metadata. Saved a
+descriptive title and alt text on the existing Summer Showcase cover and verified
+both propagate to the parent page. The show artwork, performance thumbnails,
+school/about photo, team photo and logos decode successfully on the live site.
+Type-check, production build and 19 regression tests passed. Multi-file upload
+and image selection were not exercised against production; authentication,
+payments and downloads were not re-tested in this change.
+
 The Liberty login page now makes **email + access code** the default route.
 Both fields appear together under “Access your Liberty Dance videos”, and
 submitting **View videos** calls the existing `redeemAccessCode()` flow (invite
