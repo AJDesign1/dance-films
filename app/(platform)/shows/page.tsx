@@ -39,6 +39,7 @@ export default async function ShowsPage() {
     sale_price_pence: s.sale_price_pence,
     artwork_url: s.artwork_url,
     owned: s.owned,
+    status: s.status,
   }));
 
   const featured = shows[0];

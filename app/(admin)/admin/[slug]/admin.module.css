@@ -79,3 +79,41 @@
   .content { padding: 18px; }
   .header { padding: 0 16px; }
 }
+
+
+/* Intrinsic action sizing prevents buttons spilling into the status column.
+   The shared grid keeps headings aligned; narrow containers scroll locally. */
+.showsList { overflow-x: auto; container-type: inline-size; }
+.showsTable { min-width: 1040px; }
+.showRow {
+  display: grid;
+  grid-template-columns: 36px minmax(160px, 1fr) 64px 150px 130px 290px;
+  gap: var(--sp-3);
+  align-items: center;
+  padding: var(--sp-3) var(--sp-5);
+  border-bottom: 1px solid var(--border);
+}
+.showHeading {
+  font-size: var(--fs-label); font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-3);
+}
+.showRow > * { min-width: 0; }
+.showRow .badge { white-space: nowrap; max-width: 100%; }
+.showActions { display: flex; gap: var(--sp-2); justify-content: flex-end; white-space: nowrap; }
+.showActions > * { flex-shrink: 0; }
+
+@container (max-width: 1038px) {
+  .showsTable { min-width: 0; }
+  .showRow { grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1fr); padding: var(--sp-3); }
+  .showHeading { display: none; }
+  .showRow > :first-child { grid-column: 1; grid-row: 1 / 5; }
+  .showRow > :nth-child(2) { grid-column: 2 / -1; }
+  .showRow > :nth-child(3) { grid-column: 2; }
+  .showRow > :nth-child(4) { grid-column: 3; }
+  .showRow .badge { grid-column: 2 / -1; }
+  .showActions { grid-column: 2 / -1; justify-content: flex-start; flex-wrap: wrap; }
+  .showRow > [data-label]::before {
+    content: attr(data-label); display: block; color: var(--text-3);
+    font-size: var(--fs-label); font-weight: 700; margin-bottom: var(--sp-1);
+  }
+}

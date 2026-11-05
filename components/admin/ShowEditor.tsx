@@ -18,7 +18,7 @@ export type EditableShow = {
   sale_price_pence: number | null;
   intro_text: string | null;
   artwork_url: string | null;
-  status: "draft" | "published";
+  status: "draft" | "coming_soon" | "published";
 };
 
 export default function ShowEditor({
@@ -134,10 +134,12 @@ export default function ShowEditor({
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         <div className={`${styles.card} ${styles.cardPad}`}>
           <div className={styles.cardTitle} style={{ marginBottom: 14 }}>Publish</div>
-          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-            <button onClick={() => set("status", "draft")} className={form.status === "draft" ? styles.primaryBtn : styles.secondaryBtn} style={{ flex: 1 }}>Draft</button>
-            <button onClick={() => set("status", "published")} className={form.status === "published" ? styles.primaryBtn : styles.secondaryBtn} style={{ flex: 1 }}>Published</button>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+            <button aria-pressed={form.status === "draft"} onClick={() => set("status", "draft")} className={form.status === "draft" ? styles.primaryBtn : styles.secondaryBtn} style={{ flex: 1 }}>Draft</button>
+            <button onClick={() => set("status", "coming_soon")} className={form.status === "coming_soon" ? styles.primaryBtn : styles.secondaryBtn} aria-pressed={form.status === "coming_soon"}>Coming Soon</button>
+            <button aria-pressed={form.status === "published"} onClick={() => set("status", "published")} className={form.status === "published" ? styles.primaryBtn : styles.secondaryBtn} style={{ flex: 1 }}>Published</button>
           </div>
+          <p style={{ fontSize: 12.5, color: "var(--text-2)" }}>Coming Soon needs no videos or pricing. Published requires a full-show video and valid pricing. Adding videos never publishes a show.</p>
           <button className={styles.primaryBtn} style={{ width: "100%" }} disabled={pending} onClick={save}>{pending ? "Saving…" : "Save show"}</button>
           <Link href={`/admin/${slug}/shows`} className={styles.secondaryBtn} style={{ width: "100%", marginTop: 10 }}>Cancel</Link>
           {error && <div className={`${styles.msg} ${styles.msgErr}`}>{error}</div>}

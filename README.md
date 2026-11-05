@@ -60,3 +60,23 @@ Admin is gated by `profiles.is_admin`. Magic-link email delivery is not yet conf
 - [`CHANGELOG.md`](CHANGELOG.md) — chronological build log
 - [`AI_INSTRUCTIONS.md`](AI_INSTRUCTIONS.md) — rules for any AI agent working in this repo
 - [`SESSION_HANDOFF.md`](SESSION_HANDOFF.md) — open items / what to do next
+
+## Show status enhancement
+
+Shows support Draft, Coming Soon and Published. Coming Soon is listed in the
+existing school shop (with its existing sign-in/invitation rules), opens an
+availability message, and cannot unlock checkout, the protected show page,
+playback or downloads. Draft stays hidden. Published requires valid pricing
+and a full-show video; adding a video does not change status.
+
+Deploy `20261105193000_coming_soon_status.sql` and then
+`20261105193001_coming_soon_access.sql` before deploying the application.
+The enum addition must commit before the second migration uses its value.
+These migrations preserve existing shows, orders, videos and entitlements.
+
+Run application regressions with `node --test scripts/*regression.test.mjs`.
+`scripts/show-status-regression.sql` tests publication validation, purchase
+restrictions, school isolation and status transitions under RLS. Run it only
+against a disposable test database with the application migrations applied;
+its fixtures roll back. Production checkout still uses the existing Stripe
+flow; no real payments are made by these tests.

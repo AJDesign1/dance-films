@@ -16,7 +16,7 @@ export type ShowForm = {
   sale_price: string; // optional pounds, raw input
   intro_text: string;
   artwork_url: string;
-  status: "draft" | "published";
+  status: "draft" | "coming_soon" | "published";
 };
 
 function parseForm(f: ShowForm) {
@@ -83,9 +83,12 @@ export async function createShow(schoolId: string, slug: string, form: ShowForm)
   await requireAdmin();
   const data = parseForm(form);
   if (!data.title) return { error: "Enter a show title." };
-  const priceError = validatePrice(data, form.sale_price);
+  if (!["draft", "coming_soon", "published"].includes(form.status)) return { error: "Choose a valid show status." };
+  const priceError = data.status === "published" ? validatePrice(data, form.sale_price) : null;
   if (priceError) return { error: priceError };
   const admin = createAdminClient();
+
+  if (data.status === "published") return { error: "Save as Draft or Coming Soon first, then add a full-show video before publishing." };
 
   const explicit = slugify(form.slug.trim());
   let showSlug: string;
@@ -116,9 +119,15 @@ export async function updateShow(showId: string, schoolId: string, slug: string,
   await requireAdmin();
   const data = parseForm(form);
   if (!data.title) return { error: "Enter a show title." };
-  const priceError = validatePrice(data, form.sale_price);
+  if (!["draft", "coming_soon", "published"].includes(form.status)) return { error: "Choose a valid show status." };
+  const priceError = data.status === "published" ? validatePrice(data, form.sale_price) : null;
   if (priceError) return { error: priceError };
   const admin = createAdminClient();
+
+  if (data.status === "published") {
+    const { data: video, error: videoError } = await admin.from("show_videos").select("full_show_bunny_video_id").eq("show_id", showId).maybeSingle();
+    if (videoError || !video?.full_show_bunny_video_id?.trim()) return { error: "Add a full-show video before publishing." };
+  }
 
   // Fall back to deriving from the (possibly just-changed) title if the URL
   // field was cleared, rather than erroring on an empty slug.
@@ -135,7 +144,8 @@ export async function updateShow(showId: string, schoolId: string, slug: string,
   const { error } = await admin
     .from("shows")
     .update({ slug: showSlug, ...data })
-    .eq("id", showId);
+    .eq("id", showId)
+    .eq("school_id", schoolId);
   if (error) return { error: "Couldn't save the show." };
   revalidatePath(`/admin/${slug}/shows`);
   redirect(`/admin/${slug}/shows`);

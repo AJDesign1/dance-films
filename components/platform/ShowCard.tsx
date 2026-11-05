@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ShowCardAction } from "./OwnedShowLink";
 import styles from "@/app/(platform)/shows/shop.module.css";
 import ShowPrice from "@/components/platform/ShowPrice";
+import ComingSoonModal from "@/components/platform/ComingSoonModal";
 import CheckoutModal from "@/components/platform/CheckoutModal";
 import CoverImage from "@/components/platform/CoverImage";
 
@@ -16,16 +17,18 @@ export type ShopShow = {
   sale_price_pence: number | null;
   artwork_url: string | null;
   owned: boolean;
+  status: "published" | "coming_soon";
 };
 
 /** Grid poster card (3:4). Owned → open show; not owned → open checkout. */
 export default function ShowCard({ show, email }: { show: ShopShow; email: string }) {
   const [checkout, setCheckout] = useState(false);
+  const comingSoon = show.status === "coming_soon";
 
   return (
     <>
       <ShowCardAction
-        owned={show.owned} href={`/show/${show.slug}`} onPurchase={() => setCheckout(true)}
+        owned={!comingSoon && show.owned} href={`/show/${show.slug}`} onPurchase={() => setCheckout(true)}
         className={styles.cardLink}
       >
         <div style={{ position: "relative", aspectRatio: "3 / 4", borderRadius: 12, overflow: "hidden", background: "var(--surface-2)", boxShadow: "var(--card-shadow)" }}>
@@ -38,11 +41,11 @@ export default function ShowCard({ show, email }: { show: ShopShow; email: strin
 
           <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 5, pointerEvents: "none" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(12,20,26,.72)", backdropFilter: "blur(3px)", color: "#fff", fontSize: 9.5, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", padding: "4px 7px", borderRadius: "var(--r-sm)" }}>
-              <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l9 5-9 5V3z" /></svg>Video
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l9 5-9 5V3z" /></svg>{comingSoon ? "Coming Soon" : "Video"}
             </span>
           </div>
 
-          {show.owned && (
+          {!comingSoon && show.owned && (
             <span style={{ position: "absolute", top: 10, left: 10, display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.94)", color: "var(--success)", fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", padding: "5px 9px", borderRadius: 7, pointerEvents: "none" }}>
               <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M3 8.5l3.5 3.5L13 5" strokeLinecap="round" strokeLinejoin="round" /></svg>Owned
             </span>
@@ -55,9 +58,9 @@ export default function ShowCard({ show, email }: { show: ShopShow; email: strin
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 10 }}>
               <span style={{ fontSize: 12.5, fontWeight: 700, color: "#fff" }}>
                 {show.show_year ? `${show.show_year} · ` : ""}
-                <ShowPrice show={show} color="#fff" />
+                {!comingSoon && <ShowPrice show={show} color="#fff" />}
               </span>
-              {show.owned ? (
+              {comingSoon ? <span style={pill("var(--surface)", "var(--text)")}>Coming Soon</span> : show.owned ? (
                 <span style={pill("var(--accent)", "#fff")}>
                   <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l9 5-9 5V3z" /></svg>Watch
                 </span>
@@ -71,7 +74,7 @@ export default function ShowCard({ show, email }: { show: ShopShow; email: strin
         </div>
       </ShowCardAction>
 
-      {checkout && <CheckoutModal show={show} email={email} onClose={() => setCheckout(false)} />}
+      {checkout && (comingSoon ? <ComingSoonModal onClose={() => setCheckout(false)} /> : <CheckoutModal show={show} email={email} onClose={() => setCheckout(false)} />)}
     </>
   );
 }

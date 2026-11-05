@@ -4,6 +4,14 @@ What to pick up next. Update this file at the end of each working session so the
 
 ## Immediate priorities
 
+**November 5 Coming Soon migrations:** `20261105193000` and `20261105193001`
+are applied and recorded in the linked Dance Films Supabase project. Only these
+two migrations were applied; historical timestamp differences were preserved.
+Existing shows, videos, performances, orders and entitlements were verified
+unchanged. The existing Published show's listing and protected-page RPCs passed
+an authenticated read check. Database types were regenerated. The corresponding
+Coming Soon UI/server changes are still local and need application deployment.
+
 **October 16 school logo navigation:** the shows header, individual-show header
 and sign-in hero logo (including text fallbacks) now link to `/` on the current
 school hostname, with an accessible school-homepage label. Existing root routing

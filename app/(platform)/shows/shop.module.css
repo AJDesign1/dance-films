@@ -159,3 +159,19 @@
   .seasonGap { margin-top: 38px; }
   .teamBreakout { margin: 34px -18px -34px; }
 }
+
+
+.comingSoonDialog {
+  padding: 0; width: min(460px, calc(100% - var(--sp-6)));
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  background: var(--surface); color: var(--text); box-shadow: var(--shadow);
+}
+.comingSoonDialog::backdrop { background: color-mix(in srgb, var(--ink) 65%, transparent); }
+.comingSoonBody { padding: var(--sp-5); }
+.comingSoonBody h2 { margin: 0; font-family: var(--disp); font-size: var(--fs-h3); }
+.comingSoonBody p { margin: var(--sp-4) 0; font-size: var(--fs-body); }
+.comingSoonBody button {
+  padding: var(--sp-3) var(--sp-5); border: 1px solid var(--border);
+  border-radius: var(--r-md); background: var(--surface-2); color: var(--text);
+  font-family: var(--body); font-weight: 700; cursor: pointer;
+}

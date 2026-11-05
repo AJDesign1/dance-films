@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ShowCardAction } from "./OwnedShowLink";
 import styles from "@/app/(platform)/shows/shop.module.css";
 import ShowPrice from "@/components/platform/ShowPrice";
+import ComingSoonModal from "@/components/platform/ComingSoonModal";
 import CheckoutModal from "@/components/platform/CheckoutModal";
 import CoverImage from "@/components/platform/CoverImage";
 import type { ShopShow } from "@/components/platform/ShowCard";
@@ -11,11 +12,12 @@ import type { ShopShow } from "@/components/platform/ShowCard";
 /** "Latest production" hero card. Owned → open show; not owned → open checkout. */
 export default function FeaturedShow({ show, email }: { show: ShopShow; email: string }) {
   const [checkout, setCheckout] = useState(false);
+  const comingSoon = show.status === "coming_soon";
 
   return (
     <>
       <ShowCardAction
-        owned={show.owned} href={`/show/${show.slug}`} onPurchase={() => setCheckout(true)}
+        owned={!comingSoon && show.owned} href={`/show/${show.slug}`} onPurchase={() => setCheckout(true)}
         className={styles.featuredCard}
       >
         <div className={styles.featMinH} style={{ position: "relative", borderRadius: 16, overflow: "hidden", display: "flex", background: "var(--surface-2)", boxShadow: "var(--card-shadow)" }}>
@@ -34,14 +36,14 @@ export default function FeaturedShow({ show, email }: { show: ShopShow; email: s
                 {show.show_year ? ` · ${show.show_year}` : ""}
               </div>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.16)", backdropFilter: "blur(4px)", color: "#fff", fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", padding: "4px 9px", borderRadius: "var(--r-sm)" }}>
-                Video
+                {comingSoon ? "Coming Soon" : "Video"}
               </span>
             </div>
             <h2 className={styles.featTitle} style={{ fontFamily: "var(--disp)", fontWeight: 800, lineHeight: ".96", letterSpacing: ".01em", textTransform: "uppercase", color: "#fff", margin: "10px 0 18px" }}>
               {show.title}
             </h2>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14 }}>
-              {show.owned ? (
+              {comingSoon ? <span style={cta("var(--surface)", "var(--text)")}>Coming Soon</span> : show.owned ? (
                 <>
                   <span style={cta("var(--accent)", "#fff")}>
                     <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l9 5-9 5V3z" /></svg>Watch the full show
@@ -62,7 +64,7 @@ export default function FeaturedShow({ show, email }: { show: ShopShow; email: s
         </div>
       </ShowCardAction>
 
-      {checkout && <CheckoutModal show={show} email={email} onClose={() => setCheckout(false)} />}
+      {checkout && (comingSoon ? <ComingSoonModal onClose={() => setCheckout(false)} /> : <CheckoutModal show={show} email={email} onClose={() => setCheckout(false)} />)}
     </>
   );
 }

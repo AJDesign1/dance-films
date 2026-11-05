@@ -595,7 +595,7 @@ export type Database = {
       order_status: "pending" | "paid" | "refunded"
       performance_video_source: "show" | "standalone"
       school_status: "active" | "disabled"
-      show_status: "draft" | "published"
+      show_status: "draft" | "published" | "coming_soon"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -733,7 +733,7 @@ export const Constants = {
       order_status: ["pending", "paid", "refunded"],
       performance_video_source: ["show", "standalone"],
       school_status: ["active", "disabled"],
-      show_status: ["draft", "published"],
+      show_status: ["draft", "published", "coming_soon"],
     },
   },
 } as const

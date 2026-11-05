@@ -18,7 +18,7 @@ export type ShowRow = {
   show_year: number | null;
   price_pence: number;
   sale_price_pence: number | null;
-  status: "draft" | "published";
+  status: "draft" | "coming_soon" | "published";
   perfCount: number;
 };
 
@@ -68,13 +68,13 @@ export default function ShowsList({ slug, shows }: { slug: string; shows: ShowRo
   }
 
   return (
-    <div className={styles.card} style={{ overflowX: "auto" }}>
-      <div style={{ minWidth: 800 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "36px minmax(200px,1fr) 90px 150px 104px 170px", gap: 12, padding: "12px 20px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--text-3)" }}>
-          <span></span><span>Show</span><span>Year</span><span>Price</span><span>Status</span><span></span>
+    <div className={`${styles.card} ${styles.showsList}`}>
+      <div className={styles.showsTable}>
+        <div className={`${styles.showRow} ${styles.showHeading}`}>
+          <span></span><span>Show</span><span>Year</span><span>Price</span><span>Status</span><span>Actions</span>
         </div>
         {shows.map((s, i) => (
-          <div key={s.id} style={{ display: "grid", gridTemplateColumns: "36px minmax(200px,1fr) 90px 150px 104px 170px", gap: 12, alignItems: "center", padding: "13px 20px", borderBottom: "1px solid var(--border)" }}>
+          <div key={s.id} className={styles.showRow}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
               <button className={styles.quietBtn} style={{ padding: 2, border: "none" }} disabled={pending || i === 0} onClick={() => move(s.id, -1)}>▲</button>
               <button className={styles.quietBtn} style={{ padding: 2, border: "none" }} disabled={pending || i === shows.length - 1} onClick={() => move(s.id, 1)}>▼</button>
@@ -83,10 +83,10 @@ export default function ShowsList({ slug, shows }: { slug: string; shows: ShowRo
               <div style={{ fontFamily: "var(--disp)", fontWeight: 700, fontSize: 19, textTransform: "uppercase", letterSpacing: ".01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.title}</div>
               <div style={{ fontSize: 12, color: "var(--text-3)" }}>{s.perfCount} performances{s.season ? ` · ${s.season}` : ""}</div>
             </div>
-            <span style={{ fontSize: 14, color: "var(--text-2)" }}>{s.show_year ?? "—"}</span>
-            <span style={{ fontSize: 14, fontWeight: 600 }}><ShowPrice show={s} /></span>
-            <span className={`${styles.badge} ${s.status === "published" ? styles.badgeOk : styles.badgeWarn}`}>{s.status === "published" ? "Published" : "Draft"}</span>
-            <div style={{ display: "flex", gap: 7, justifyContent: "flex-end" }}>
+            <span data-label="Year" style={{ fontSize: 14, color: "var(--text-2)" }}>{s.show_year ?? "—"}</span>
+            <span data-label="Price" style={{ fontSize: 14, fontWeight: 600 }}><ShowPrice show={s} /></span>
+            <span className={`${styles.badge} ${s.status === "published" ? styles.badgeOk : styles.badgeWarn}`}>{s.status === "published" ? "Published" : s.status === "coming_soon" ? "Coming Soon" : "Draft"}</span>
+            <div className={styles.showActions}>
               <Link href={`/admin/${slug}/performances?show=${s.id}`} className={styles.quietBtn}>Performances</Link>
               <Link href={`/admin/${slug}/shows/${s.id}`} className={styles.quietBtn}>Edit</Link>
               <button className={styles.dangerBtn} disabled={pending} onClick={() => askDelete(s.id)}>Delete</button>

@@ -39,8 +39,9 @@ export async function getEmbedUrl(kind: "full" | "perf", id: string): Promise<Pl
   if (kind === "perf") {
     const { data: perf } = await supabase
       .from("performances")
-      .select("video_source, bunny_video_id, clip_start_seconds, clip_end_seconds, shows(show_videos(full_show_bunny_video_id))")
+      .select("video_source, bunny_video_id, clip_start_seconds, clip_end_seconds, shows!inner(status, show_videos(full_show_bunny_video_id))")
       .eq("id", id)
+      .eq("shows.status", "published")
       .maybeSingle();
     if (!perf) return null;
 
@@ -63,8 +64,9 @@ export async function getEmbedUrl(kind: "full" | "perf", id: string): Promise<Pl
   // dances inside it are configured to do.
   const { data } = await supabase
     .from("show_videos")
-    .select("full_show_bunny_video_id")
+    .select("full_show_bunny_video_id, shows!inner(status)")
     .eq("show_id", id)
+    .eq("shows.status", "published")
     .maybeSingle();
   if (!data?.full_show_bunny_video_id) return null;
   const url = bunnyEmbedUrl(data.full_show_bunny_video_id, { autoplay: true });
@@ -87,8 +89,9 @@ export async function getFullShowDownloadUrl(showId: string): Promise<string | n
   const supabase = await createClient();
   const { data } = await supabase
     .from("show_videos")
-    .select("download_url")
+    .select("download_url, shows!inner(status)")
     .eq("show_id", showId)
+    .eq("shows.status", "published")
     .maybeSingle();
 
   if (!data?.download_url) return null;
