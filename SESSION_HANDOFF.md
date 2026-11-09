@@ -4,13 +4,21 @@ What to pick up next. Update this file at the end of each working session so the
 
 ## Immediate priorities
 
+**November 9 Coming Soon styling:** stronger status badges use a solid brand
+accent background, larger text and heavier weight on parent cards and the admin
+Shows list. School branding stays on parent surfaces; Dance Films pink stays in
+admin. TypeScript and all 31 regressions pass.
+
 **November 5 Coming Soon migrations:** `20261105193000` and `20261105193001`
 are applied and recorded in the linked Dance Films Supabase project. Only these
 two migrations were applied; historical timestamp differences were preserved.
 Existing shows, videos, performances, orders and entitlements were verified
 unchanged. The existing Published show's listing and protected-page RPCs passed
 an authenticated read check. Database types were regenerated. The corresponding
-Coming Soon UI/server changes are still local and need application deployment.
+Coming Soon UI/server changes were pushed as `e93c677` to `master`; SiteGround
+auto-deployment started on November 5. The updated live admin list and Coming
+Soon editor option were observed. Authenticated live database checks passed
+for both the Published and Coming Soon listing/protected-page rules. The user confirmed the SiteGround deployment worked on November 6. No show data was changed by deployment verification.
 
 **October 16 school logo navigation:** the shows header, individual-show header
 and sign-in hero logo (including text fallbacks) now link to `/` on the current

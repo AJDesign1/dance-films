@@ -85,7 +85,7 @@ export default function ShowsList({ slug, shows }: { slug: string; shows: ShowRo
             </div>
             <span data-label="Year" style={{ fontSize: 14, color: "var(--text-2)" }}>{s.show_year ?? "—"}</span>
             <span data-label="Price" style={{ fontSize: 14, fontWeight: 600 }}><ShowPrice show={s} /></span>
-            <span className={`${styles.badge} ${s.status === "published" ? styles.badgeOk : styles.badgeWarn}`}>{s.status === "published" ? "Published" : s.status === "coming_soon" ? "Coming Soon" : "Draft"}</span>
+            <span className={`${styles.badge} ${s.status === "published" ? styles.badgeOk : s.status === "coming_soon" ? styles.badgeComingSoon : styles.badgeWarn}`}>{s.status === "published" ? "Published" : s.status === "coming_soon" ? "Coming Soon" : "Draft"}</span>
             <div className={styles.showActions}>
               <Link href={`/admin/${slug}/performances?show=${s.id}`} className={styles.quietBtn}>Performances</Link>
               <Link href={`/admin/${slug}/shows/${s.id}`} className={styles.quietBtn}>Edit</Link>

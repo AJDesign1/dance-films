@@ -175,3 +175,11 @@
   border-radius: var(--r-md); background: var(--surface-2); color: var(--text);
   font-family: var(--body); font-weight: 700; cursor: pointer;
 }
+
+.comingSoonBadge {
+  display: inline-flex; align-items: center;
+  padding: var(--sp-2) var(--sp-3); border-radius: var(--r-sm);
+  background: var(--accent); color: var(--on-accent);
+  font-family: var(--body); font-size: var(--fs-meta); font-weight: 800;
+  letter-spacing: .06em; text-transform: uppercase;
+}

@@ -35,7 +35,7 @@ export default function FeaturedShow({ show, email }: { show: ShopShow; email: s
                 {show.season ?? "Show"}
                 {show.show_year ? ` · ${show.show_year}` : ""}
               </div>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.16)", backdropFilter: "blur(4px)", color: "#fff", fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", padding: "4px 9px", borderRadius: "var(--r-sm)" }}>
+              <span className={comingSoon ? styles.comingSoonBadge : undefined} style={comingSoon ? undefined : { display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.16)", backdropFilter: "blur(4px)", color: "#fff", fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", padding: "4px 9px", borderRadius: "var(--r-sm)" }}>
                 {comingSoon ? "Coming Soon" : "Video"}
               </span>
             </div>
@@ -43,7 +43,7 @@ export default function FeaturedShow({ show, email }: { show: ShopShow; email: s
               {show.title}
             </h2>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14 }}>
-              {comingSoon ? <span style={cta("var(--surface)", "var(--text)")}>Coming Soon</span> : show.owned ? (
+              {comingSoon ? <span style={{ ...cta("var(--accent)", "var(--on-accent)"), fontWeight: 800, fontSize: 18 }}>Coming Soon</span> : show.owned ? (
                 <>
                   <span style={cta("var(--accent)", "#fff")}>
                     <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l9 5-9 5V3z" /></svg>Watch the full show
