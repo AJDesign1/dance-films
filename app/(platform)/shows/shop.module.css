@@ -103,23 +103,43 @@
 /* Copy-only: don't leave a lone column hugging the left edge. */
 .aboutNoPhoto { grid-template-columns: minmax(0, 72ch); }
 
-.team {
-  display: flex;
-  flex-wrap: wrap;
-  background: var(--paper);
-  border-top: 1px solid var(--border);
-  /* This band always sits on the light --paper ground, even under a dark theme,
-     where the inherited text tokens are near-white — #EAF0F4 on #F5F1E8 is a
-     1.05:1 ratio, i.e. invisible. Re-point them at ink-based values for
-     everything inside, so the band stays readable under either theme. */
-  --text: var(--ink);
-  --text-2: color-mix(in srgb, var(--ink) 68%, var(--paper));
-  --border: color-mix(in srgb, var(--ink) 16%, var(--paper));
+/* Gallery and editorial quote use the existing school theme tokens. */
+.behindScenes { padding-block: var(--sp-5) var(--sp-8); }
+.galleryTitle, .behindLensTitle {
+  font-family: var(--disp);
+  font-weight: 800;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--track-title);
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 0 0 var(--sp-6);
 }
-.teamPhoto { position: relative; flex: 1 1 300px; min-height: 260px; background: var(--surface); }
-.teamPhoto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.teamBody { flex: 1 1 360px; display: flex; flex-direction: column; justify-content: center; padding: 40px 36px; }
-.teamBio { margin: 16px 0 0; color: var(--text-2); font-size: 15px; line-height: 1.6; max-width: 52ch; white-space: pre-line; }
+.galleryGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); }
+.galleryTile { position: relative; aspect-ratio: 4 / 3; padding: 0; border: 0; border-radius: var(--r-lg); overflow: hidden; background: var(--surface-2); cursor: zoom-in; }
+.galleryOpen { position: absolute; right: var(--sp-3); bottom: var(--sp-3); display: grid; place-items: center; width: var(--sp-6); height: var(--sp-6); border-radius: var(--r-pill); background: var(--surface); color: var(--text); font-size: var(--fs-title); }
+.behindLens { background: var(--surface-2); border-top: 1px solid var(--border); }
+.behindLensBody { max-width: 1000px; margin-inline: auto; padding: calc(var(--sp-8) + var(--sp-5)) var(--sp-7); }
+.behindLensTitle { font-size: var(--fs-title); letter-spacing: var(--track-label); }
+.personalQuote { position: relative; margin: 0; padding-top: var(--sp-7); }
+.quoteMark { position: absolute; top: calc(-1 * var(--sp-5)); left: 0; font-family: var(--disp); font-size: var(--fs-display); line-height: 1; color: var(--accent); opacity: .25; pointer-events: none; }
+.personalQuote blockquote { margin: 0; }
+.personalQuote p { margin: 0; font-family: var(--body); font-size: clamp(var(--fs-h3), 2.6vw, var(--fs-h2)); font-weight: 400; line-height: 1.55; color: var(--text); text-wrap: pretty; white-space: pre-line; overflow-wrap: anywhere; }
+.quoteAttribution { display: flex; flex-direction: column; gap: var(--sp-1); margin-top: var(--sp-7); color: var(--text-2); font-size: var(--fs-body); line-height: 1.5; overflow-wrap: anywhere; }
+.quoteName { font-weight: 700; color: var(--text); }
+.galleryLightbox { width: min(95vw, 1280px); max-height: 95dvh; padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); color: var(--text); }
+.galleryLightbox::backdrop { background: color-mix(in srgb, var(--ink) 88%, transparent); }
+.lightboxImage { position: relative; height: min(70dvh, 800px); margin-block: var(--sp-4); }
+.lightboxImage img { object-fit: contain !important; }
+.lightboxToolbar { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); }
+.lightboxToolbar button { font-family: var(--body); color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); cursor: pointer; }
+.lightboxCaption { font-size: var(--fs-meta); color: var(--text-2); overflow-wrap: anywhere; }
+@media (max-width: 900px) { .galleryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 540px) {
+  .galleryGrid { grid-template-columns: minmax(0, 1fr); }
+  .behindScenes { padding-bottom: var(--sp-7); }
+  .behindLensBody { padding: var(--sp-8) var(--sp-5); }
+  .lightboxCaption { display: none; }
+}
 /* Matches the grid card height at each column count (aspect-ratio 3:4,
    minus the grid's own gap) so the hero reads as one consistent row height
    with the cards below it, not a shorter banner. */
@@ -142,7 +162,6 @@
   .featMinH { min-height: 236px; }
   .featPad { padding: 26px 22px; }
   .featTitle { font-size: 44px; }
-  .teamPhoto { min-height: 160px; flex-basis: 100%; }
   .about { margin-top: 52px; padding-top: 46px; padding-bottom: 50px; }
   .aboutTitle { font-size: 30px; }
   .aboutText { font-size: 15px; }

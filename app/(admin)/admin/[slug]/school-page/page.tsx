@@ -11,11 +11,10 @@ export default async function SchoolPageContentPage({ params }: { params: Promis
   const initial: FormT = {
     aboutText: school.about_text ?? "",
     aboutImageUrl: school.about_image_url ?? "",
-    teamName: school.team_name ?? "",
-    teamRole: school.team_role ?? "",
-    teamBio: school.team_bio ?? "",
-    teamTagline: school.team_tagline ?? "",
-    teamImageUrl: school.team_image_url ?? "",
+    galleryImageUrls: school.gallery_image_urls ?? [],
+    quoteText: school.quote_text ?? "",
+    quoteName: school.quote_name ?? "",
+    quoteRole: school.quote_role ?? "",
   };
 
   return (

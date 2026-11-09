@@ -4,6 +4,19 @@ What to pick up next. Update this file at the end of each working session so the
 
 ## Immediate priorities
 
+**November 9 school gallery and quote:** migration `20261109120000_school_gallery_quote`
+is applied and recorded in the Dance Films Supabase project. Liberty's supplied
+quote is seeded; its existing team photo is retained as the first gallery image.
+School introduction/photo and show data are unchanged. The school-page CMS now
+manages up to six ordered gallery images and optional quote text/name/role.
+The new sections use school branding; the quote has no photo. Live database
+types were regenerated through the Supabase Management API using saved CLI
+authentication. All 37 regressions and the production build pass. Local browser
+checks covered gallery breakpoints, lightbox keyboard/focus behaviour, and CMS
+upload/remove/reorder/edit/save using an isolated fixture. User preference:
+complete migrations and deployment as part of website changes, rather than
+leaving those steps to the user. Deploy via the existing `master` auto-deploy.
+
 **November 9 Coming Soon styling:** stronger status badges use a solid brand
 accent background, larger text and heavier weight on parent cards and the admin
 Shows list. School branding stays on parent surfaces; Dance Films pink stays in

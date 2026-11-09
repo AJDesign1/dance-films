@@ -11,6 +11,8 @@ import ShowCard, { type ShopShow } from "@/components/platform/ShowCard";
 import styles from "./shop.module.css";
 import { imageMetadata } from "@/lib/media";
 import { ImageMetadataProvider } from "@/components/platform/ImageMetadata";
+import SchoolQuote from "./SchoolQuote";
+import SchoolGallery from "./SchoolGallery";
 
 type ShowsPageRow = Omit<ShopShow, "owned"> & { id: string; owned: boolean };
 
@@ -45,7 +47,7 @@ export default async function ShowsPage() {
   const featured = shows[0];
   const rest = shows.slice(1);
   const schoolName = school?.name ?? "Dance Films";
-  const images = school ? await imageMetadata(school.id, shows.map(s => s.artwork_url).filter((u): u is string => !!u)) : {};
+  const images = school ? await imageMetadata(school.id, [...shows.map(s => s.artwork_url), school.about_image_url, ...(school.gallery_image_urls ?? [])].filter((u): u is string => !!u)) : {};
 
   return (
     <ImageMetadataProvider images={images}><div style={{ background: "var(--surface)" }}>
@@ -89,15 +91,10 @@ export default async function ShowsPage() {
         )}
 
         <AboutSchool schoolName={schoolName} text={school?.about_text ?? null} imageUrl={school?.about_image_url ?? null} />
+        <SchoolGallery images={school?.gallery_image_urls ?? []} schoolName={schoolName} />
       </div>
 
-      <MediaTeam
-        name={school?.team_name ?? null}
-        role={school?.team_role ?? null}
-        bio={school?.team_bio ?? null}
-        tagline={school?.team_tagline ?? null}
-        imageUrl={school?.team_image_url ?? null}
-      />
+      <SchoolQuote text={school?.quote_text ?? null} name={school?.quote_name ?? null} role={school?.quote_role ?? null} />
 
       <Footer schoolName={schoolName} logoWhiteUrl={school?.logo_white_url ?? null} />
     </div></ImageMetadataProvider>
@@ -134,53 +131,6 @@ function AboutSchool({
           <CoverImage src={imageUrl} sizes="(max-width: 820px) 100vw, 560px" />
         </div>
       )}
-    </section>
-  );
-}
-
-/** Media-team band — full-width. Same per-school editing/hiding rules as above. */
-function MediaTeam({
-  name,
-  role,
-  bio,
-  tagline,
-  imageUrl,
-}: {
-  name: string | null;
-  role: string | null;
-  bio: string | null;
-  tagline: string | null;
-  imageUrl: string | null;
-}) {
-  if (!name && !bio && !imageUrl) return null;
-
-  return (
-    <section className={styles.team}>
-      <div className={styles.teamPhoto}>
-        {imageUrl ? (
-          <CoverImage src={imageUrl} alt={name ?? ""} sizes="(max-width: 640px) 100vw, 50vw" />
-        ) : (
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, var(--surface-2), var(--brand-2))" }} />
-        )}
-      </div>
-      <div className={styles.teamBody}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--accent)" }}>
-          Meet the media team
-        </div>
-        {name && (
-          <h2 style={{ fontFamily: "var(--disp)", fontWeight: 800, fontSize: 34, letterSpacing: ".01em", textTransform: "uppercase", color: "var(--brand-2)", margin: "12px 0 4px" }}>
-            {name}
-          </h2>
-        )}
-        {role && <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)" }}>{role}</div>}
-        {bio && <p className={styles.teamBio}>{bio}</p>}
-        {tagline && (
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-            <span style={{ flex: "0 0 auto", width: 7, height: 7, borderRadius: "var(--r-pill)", background: "var(--accent)", marginTop: 7 }} />
-            <span style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.5 }}>{tagline}</span>
-          </div>
-        )}
-      </div>
     </section>
   );
 }

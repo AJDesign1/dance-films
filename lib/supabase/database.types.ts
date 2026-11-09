@@ -427,12 +427,16 @@ export type Database = {
           about_image_url: string | null
           about_text: string | null
           created_at: string
+          gallery_image_urls: string[]
           hero_image_url: string | null
           id: string
           logo_colour_url: string | null
           logo_white_url: string | null
           name: string
           platform_name: string | null
+          quote_name: string | null
+          quote_role: string | null
+          quote_text: string | null
           slug: string
           status: Database["public"]["Enums"]["school_status"]
           team_bio: string | null
@@ -446,12 +450,16 @@ export type Database = {
           about_image_url?: string | null
           about_text?: string | null
           created_at?: string
+          gallery_image_urls?: string[]
           hero_image_url?: string | null
           id?: string
           logo_colour_url?: string | null
           logo_white_url?: string | null
           name: string
           platform_name?: string | null
+          quote_name?: string | null
+          quote_role?: string | null
+          quote_text?: string | null
           slug: string
           status?: Database["public"]["Enums"]["school_status"]
           team_bio?: string | null
@@ -465,12 +473,16 @@ export type Database = {
           about_image_url?: string | null
           about_text?: string | null
           created_at?: string
+          gallery_image_urls?: string[]
           hero_image_url?: string | null
           id?: string
           logo_colour_url?: string | null
           logo_white_url?: string | null
           name?: string
           platform_name?: string | null
+          quote_name?: string | null
+          quote_role?: string | null
+          quote_text?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["school_status"]
           team_bio?: string | null

@@ -5,6 +5,7 @@ import styles from "@/app/(admin)/admin/[slug]/admin.module.css";
 import { uploadBrandingImage, type BrandingSlot } from "@/app/(admin)/admin/[slug]/branding/actions";
 import { MAX_IMAGE_BYTES, isRedirectError, tooLargeMessage, uploadFailedMessage } from "@/lib/uploads";
 import { compressImage } from "@/lib/imageCompress";
+import css from "./SchoolPageForm.module.css";
 import MediaPicker from "./MediaPicker";
 import { updateSchoolPage, type SchoolPageForm as FormT } from "@/app/(admin)/admin/[slug]/school-page/actions";
 
@@ -25,7 +26,7 @@ export default function SchoolPageForm({
   const [uploading, setUploading] = useState<string | null>(null);
   const set = <K extends keyof FormT>(k: K, v: FormT[K]) => setForm((f) => ({ ...f, [k]: v }));
 
-  async function uploadImage(slot: BrandingSlot, field: keyof FormT, file: File) {
+  async function uploadImage(slot: BrandingSlot, field: "aboutImageUrl" | "galleryImageUrls", file: File) {
     setMsg(null);
     setUploading(slot);
     try {
@@ -38,7 +39,11 @@ export default function SchoolPageForm({
       const fd = new FormData();
       fd.set("file", image);
       const res = await uploadBrandingImage(schoolId, slot, fd);
-      if ("url" in res) set(field, res.url as FormT[typeof field]);
+      if ("url" in res) {
+        if (field === "galleryImageUrls") {
+          setForm(f => ({ ...f, galleryImageUrls: [...f.galleryImageUrls, res.url].slice(0, 6) }));
+        } else set(field, res.url);
+      }
       else setMsg({ ok: false, text: res.error });
     } catch (e) {
       // An expired session redirects to sign-in — let that through rather than
@@ -60,13 +65,25 @@ export default function SchoolPageForm({
   }
 
   const aboutEmpty = !form.aboutText.trim() && !form.aboutImageUrl;
-  const teamEmpty = !form.teamName.trim() && !form.teamBio.trim() && !form.teamImageUrl;
+  const busy = pending || !!uploading;
+  function addGalleryImage(url: string) {
+    setForm(f => f.galleryImageUrls.length >= 6 || f.galleryImageUrls.includes(url) ? f : ({ ...f, galleryImageUrls: [...f.galleryImageUrls, url] }));
+  }
+  function moveGalleryImage(index: number, delta: number) {
+    setForm(f => {
+      const urls = [...f.galleryImageUrls];
+      const target = index + delta;
+      if (target < 0 || target >= urls.length) return f;
+      [urls[index], urls[target]] = [urls[target], urls[index]];
+      return { ...f, galleryImageUrls: urls };
+    });
+  }
 
   return (
     <div style={{ maxWidth: 720, display: "flex", flexDirection: "column", gap: 18 }}>
       <p style={{ fontSize: 13, color: "var(--text-2)", margin: 0, lineHeight: 1.55 }}>
-        These two sections appear on {schoolName}&apos;s shows page, below the shows.
-        Leave a section empty and it won&apos;t appear at all.
+        These sections appear on {schoolName}&apos;s shows page, below the shows.
+        Leave the gallery empty or clear the quote to hide either section independently.
       </p>
 
       {/* About the school */}
@@ -115,70 +132,58 @@ export default function SchoolPageForm({
         {aboutEmpty && <div className={styles.msg} style={{ color: "var(--text-3)" }}>Empty — this section is hidden on the school&apos;s page.</div>}
       </div>
 
-      {/* Meet the media team */}
       <div className={`${styles.card} ${styles.cardPad}`}>
-        <div className={styles.cardTitle} style={{ marginBottom: 4 }}>Meet the media team</div>
-        <MediaPicker schoolId={schoolId} onSelect={url => set("teamImageUrl", url)} />
-        <p style={{ fontSize: 12.5, color: "var(--text-2)", margin: "0 0 14px" }}>
-          Who filmed the shows — shown as a full-width band under the About section.
-        </p>
-
-        <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-          <div style={{ flex: "0 0 auto", width: 168 }}>
-            <div style={{ aspectRatio: "4/3", borderRadius: "var(--r-md)", border: "1px solid var(--border)", background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-              {form.teamImageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={form.teamImageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : (
-                <span style={{ fontSize: 11, color: "var(--text-3)" }}>No photo yet</span>
-              )}
-            </div>
-            <label className={styles.secondaryBtn} style={{ marginTop: 8, width: "100%", cursor: uploading ? "default" : "pointer" }}>
-              {uploading === "team" ? "Uploading…" : form.teamImageUrl ? "Replace photo" : "Upload photo"}
-              <input type="file" accept="image/*" style={{ display: "none" }} disabled={!!uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage("team", "teamImageUrl", f); e.target.value = ""; }} />
+        <h2 className={styles.cardTitle}>Behind the Scenes</h2>
+        <p className={css.help}>Add up to six backstage, rehearsal or performance photos. Use the arrows to change their order. Removing a photo here keeps it in the media library.</p>
+        <fieldset disabled={busy} className={css.fieldset}>
+          <ol className={css.gallery}>
+            {form.galleryImageUrls.map((url, index) => (
+              <li key={url} className={css.galleryItem}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt={`Gallery photo ${index + 1}`} />
+                <div className={css.controls}>
+                  <span>{index + 1}</span>
+                  <button type="button" className={styles.secondaryBtn} disabled={index === 0} aria-label={`Move photo ${index + 1} earlier`} onClick={() => moveGalleryImage(index, -1)}>←</button>
+                  <button type="button" className={styles.secondaryBtn} disabled={index === form.galleryImageUrls.length - 1} aria-label={`Move photo ${index + 1} later`} onClick={() => moveGalleryImage(index, 1)}>→</button>
+                  <button type="button" className={styles.secondaryBtn} aria-label={`Remove photo ${index + 1}`} onClick={() => setForm(f => ({ ...f, galleryImageUrls: f.galleryImageUrls.filter((_, i) => i !== index) }))}>Remove</button>
+                </div>
+              </li>
+            ))}
+          </ol>
+          {form.galleryImageUrls.length < 6 && <div className={css.controls}>
+            <MediaPicker schoolId={schoolId} onSelect={addGalleryImage} />
+            <label className={styles.secondaryBtn}>
+              {uploading === "gallery" ? "Uploading…" : "Upload photo"}
+              <input type="file" accept="image/*" className={css.file} disabled={busy} onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) void uploadImage("gallery", "galleryImageUrls", file);
+                e.target.value = "";
+              }} />
             </label>
-            {form.teamImageUrl && (
-              <button className={styles.secondaryBtn} style={{ marginTop: 8, width: "100%" }} onClick={() => set("teamImageUrl", "")}>
-                Remove photo
-              </button>
-            )}
+          </div>}
+        </fieldset>
+        <p className={css.help} aria-live="polite">{form.galleryImageUrls.length} / 6 photos. {!form.galleryImageUrls.length && "Empty — this gallery is hidden on the school's page."}</p>
+      </div>
+
+      <div className={`${styles.card} ${styles.cardPad}`}>
+        <h2 className={styles.cardTitle}>Behind the Lens</h2>
+        <p className={css.help}>A personal quote in a full-width section, without a photograph. Leave the quote blank to hide it.</p>
+        <label htmlFor="school-quote" className={styles.fieldLabel}>Quote</label>
+        <textarea id="school-quote" className={styles.textarea} rows={7} maxLength={5000} value={form.quoteText} onChange={e => set("quoteText", e.target.value)} />
+        <div className={css.attribution}>
+          <div>
+            <label htmlFor="quote-name" className={styles.fieldLabel}>Attribution name</label>
+            <input id="quote-name" className={styles.input} maxLength={200} value={form.quoteName} onChange={e => set("quoteName", e.target.value)} />
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <div>
-                <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Name</label>
-                <input className={styles.input} value={form.teamName} onChange={(e) => set("teamName", e.target.value)} placeholder="e.g. Alex Jarvis" />
-              </div>
-              <div>
-                <label className={styles.fieldLabel} style={{ marginTop: 0 }}>Role</label>
-                <input className={styles.input} value={form.teamRole} onChange={(e) => set("teamRole", e.target.value)} placeholder="e.g. Founder, Dance Films" />
-              </div>
-            </div>
-            <label className={styles.fieldLabel}>Bio</label>
-            <textarea
-              className={styles.textarea}
-              rows={5}
-              value={form.teamBio}
-              onChange={(e) => set("teamBio", e.target.value)}
-              placeholder="A couple of sentences about who filmed the show and how they work."
-            />
-            <label className={styles.fieldLabel}>Highlight line</label>
-            <input
-              className={styles.input}
-              value={form.teamTagline}
-              onChange={(e) => set("teamTagline", e.target.value)}
-              placeholder="e.g. Multi-camera capture, colour-graded for a cinematic finish."
-            />
-            <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 6 }}>
-              One short line, shown with a bullet under the bio.
-            </div>
+          <div>
+            <label htmlFor="quote-role" className={styles.fieldLabel}>Role</label>
+            <input id="quote-role" className={styles.input} maxLength={200} value={form.quoteRole} onChange={e => set("quoteRole", e.target.value)} />
           </div>
         </div>
-        {teamEmpty && <div className={styles.msg} style={{ color: "var(--text-3)" }}>Empty — this section is hidden on the school&apos;s page.</div>}
       </div>
 
       <div style={{ display: "flex", gap: 10, position: "sticky", bottom: 0, padding: "14px 0", alignItems: "center", background: "var(--app-bg)" }}>
-        <button className={styles.primaryBtn} disabled={pending} onClick={save}>{pending ? "Saving…" : "Save changes"}</button>
+        <button className={styles.primaryBtn} disabled={busy} onClick={save}>{pending ? "Saving…" : "Save changes"}</button>
         <a href={`/?school=${slug}`} target="_blank" rel="noreferrer" className={styles.secondaryBtn}>View live page</a>
         {msg && <span className={`${styles.msg} ${msg.ok ? styles.msgOk : styles.msgErr}`} style={{ margin: 0 }}>{msg.text}</span>}
       </div>

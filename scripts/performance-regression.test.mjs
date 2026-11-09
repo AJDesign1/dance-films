@@ -214,6 +214,8 @@ for (const name of ["shows", "show/[slug]"]) {
         return { data: name === "shows" ? [] : { show: { slug: "show", title: "Show" }, owned: false }, error: null };
       } }) },
       "./shop.module.css": { default: {} },
+      "./SchoolQuote": { default: () => null },
+      "./SchoolGallery": { default: () => null },
       "./show.module.css": { default: {} },
     };
     for (const component of ["PlatformHeader", "Footer", "FeaturedShow", "CoverImage", "ShowCard", "BuyButton", "ShowExperience", "ShowPrice"]) {

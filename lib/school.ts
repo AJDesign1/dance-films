@@ -11,11 +11,14 @@ import type { SchoolTheme } from "@/lib/theme";
 export const SCHOOLS_CACHE_TAG = "schools";
 
 /**
- * Editable copy for the two content bands on the shop page ("About <school>"
- * and "Meet the media team"). Managed per school at /admin/{slug}/school-page;
- * a band is hidden entirely when its fields are empty.
+ * Editable introduction, gallery and quote on the shop page, plus retained
+ * legacy team content. Managed per school at /admin/{slug}/school-page.
  */
 export type SchoolPageContent = {
+  gallery_image_urls: string[];
+  quote_text: string | null;
+  quote_name: string | null;
+  quote_role: string | null;
   about_text: string | null;
   about_image_url: string | null;
   team_name: string | null;
@@ -27,7 +30,7 @@ export type SchoolPageContent = {
 
 /** Column list for the page-content fields, shared by the school loaders. */
 export const PAGE_CONTENT_COLUMNS =
-  "about_text, about_image_url, team_name, team_role, team_bio, team_tagline, team_image_url";
+  "about_text, about_image_url, team_name, team_role, team_bio, team_tagline, team_image_url, gallery_image_urls, quote_text, quote_name, quote_role";
 
 export type School = {
   id: string;
