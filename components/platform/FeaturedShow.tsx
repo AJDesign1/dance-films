@@ -43,7 +43,7 @@ export default function FeaturedShow({ show, email }: { show: ShopShow; email: s
               {show.title}
             </h2>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14 }}>
-              {comingSoon ? <span style={{ ...cta("var(--accent)", "var(--on-accent)"), fontWeight: 800, fontSize: 18 }}>Coming Soon</span> : show.owned ? (
+              {comingSoon ? null : show.owned ? (
                 <>
                   <span style={cta("var(--accent)", "#fff")}>
                     <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l9 5-9 5V3z" /></svg>Watch the full show

@@ -39,7 +39,7 @@ export default function ShowCard({ show, email }: { show: ShopShow; email: strin
           )}
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(12,20,26,0) 42%,rgba(12,20,26,.88) 100%)", pointerEvents: "none" }} />
 
-          <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 5, pointerEvents: "none" }}>
+          <div style={{ position: "absolute", top: comingSoon ? "var(--sp-4)" : 10, right: comingSoon ? "var(--sp-4)" : 10, display: "flex", gap: 5, pointerEvents: "none" }}>
             <span className={comingSoon ? styles.comingSoonBadge : undefined} style={comingSoon ? undefined : { display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(12,20,26,.72)", backdropFilter: "blur(3px)", color: "#fff", fontSize: 9.5, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", padding: "4px 7px", borderRadius: "var(--r-sm)" }}>
               {!comingSoon && <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l9 5-9 5V3z" /></svg>}{comingSoon ? "Coming Soon" : "Video"}
             </span>
@@ -57,10 +57,10 @@ export default function ShowCard({ show, email }: { show: ShopShow; email: strin
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 10 }}>
               <span style={{ fontSize: 12.5, fontWeight: 700, color: "#fff" }}>
-                {show.show_year ? `${show.show_year} · ` : ""}
+                {show.show_year ? `${show.show_year}${comingSoon ? "" : " · "}` : ""}
                 {!comingSoon && <ShowPrice show={show} color="#fff" />}
               </span>
-              {comingSoon ? <span style={{ ...pill("var(--accent)", "var(--on-accent)"), fontWeight: 800, fontSize: 14 }}>Coming Soon</span> : show.owned ? (
+              {comingSoon ? null : show.owned ? (
                 <span style={pill("var(--accent)", "#fff")}>
                   <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l9 5-9 5V3z" /></svg>Watch
                 </span>
